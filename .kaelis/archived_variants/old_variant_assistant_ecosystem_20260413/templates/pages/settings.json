@@ -1,0 +1,47 @@
+{
+  "title": "设置",
+  "pageType": "form",
+  "loaderModules": "standard",
+  "assetsPath": "../assets",
+  "basePath": "",
+  "navItems": [
+    { "id": "dashboard", "label": "首页", "href": "dashboard.html", "active": false },
+    { "id": "chat", "label": "对话", "href": "chat.html", "active": false },
+    { "id": "plugins", "label": "插件", "href": "plugins.html", "active": false },
+    { "id": "settings", "label": "设置", "href": "settings.html", "active": true }
+  ],
+  "userAvatar": "张",
+  "notificationCount": 0,
+  "content": {
+    "sections": [
+      {
+        "id": "general",
+        "title": "通用设置",
+        "icon": "⚙️",
+        "settings": [
+          { "id": "language", "label": "语言", "type": "select", "value": "zh-CN", "options": [{"value": "zh-CN", "label": "简体中文"}, {"value": "en", "label": "English"}] },
+          { "id": "theme", "label": "主题", "type": "radio", "value": "dark", "options": [{"value": "light", "label": "浅色"}, {"value": "dark", "label": "深色"}, {"value": "auto", "label": "跟随系统"}] }
+        ]
+      },
+      {
+        "id": "notifications",
+        "title": "通知设置",
+        "icon": "🔔",
+        "settings": [
+          { "id": "emailNotify", "label": "邮件通知", "type": "toggle", "value": true },
+          { "id": "pushNotify", "label": "推送通知", "type": "toggle", "value": true },
+          { "id": "smsNotify", "label": "短信通知", "type": "toggle", "value": false }
+        ]
+      },
+      {
+        "id": "ai",
+        "title": "AI 设置",
+        "icon": "🤖",
+        "settings": [
+          { "id": "defaultModel", "label": "默认模型", "type": "select", "value": "deepseek", "options": [{"value": "deepseek", "label": "DeepSeek Chat"}, {"value": "claude", "label": "Claude 3.5"}, {"value": "gpt4", "label": "GPT-4"}] },
+          { "id": "contextRounds", "label": "上下文记忆轮数", "type": "number", "value": 10, "min": 1, "max": 50 }
+        ]
+      }
+    ]
+  }
+}

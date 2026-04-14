@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>集成中心 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .integrations-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .integrations-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .category-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+        .category-tab { padding: 10px 20px; border: none; background: white; border-radius: 20px; font-size: 14px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .category-tab.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; }
+        .integrations-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .integration-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; transition: all 0.2s; }
+        .integration-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .integration-icon { width: 64px; height: 64px; background: #f8fafc; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; }
+        .integration-card h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .integration-card p { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+        .integration-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .integration-status.connected { background: #dcfce7; color: #16a34a; }
+        .integration-status.disconnected { background: #f3f4f6; color: #6b7280; }
+        .connect-btn { width: 100%; padding: 10px; margin-top: 12px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .connect-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .connect-btn.connected { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">集成中心</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="integrations-header">
+            <h1>第三方集成</h1>
+        </div>
+        <div class="category-tabs">
+            <button class="category-tab active">全部</button>
+            <button class="category-tab">消息</button>
+            <button class="category-tab">监控</button>
+            <button class="category-tab">存储</button>
+            <button class="category-tab">代码</button>
+        </div>
+        <div class="integrations-grid">
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>Slack</h3>
+                <p>团队消息通知</p>
+                <span class="integration-status connected">● 已连接</span>
+                <button class="connect-btn connected">管理</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>Datadog</h3>
+                <p>监控和告警</p>
+                <span class="integration-status connected">● 已连接</span>
+                <button class="connect-btn connected">管理</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>AWS S3</h3>
+                <p>对象存储</p>
+                <span class="integration-status connected">● 已连接</span>
+                <button class="connect-btn connected">管理</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>GitHub</h3>
+                <p>代码仓库</p>
+                <span class="integration-status connected">● 已连接</span>
+                <button class="connect-btn connected">管理</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>Docker Hub</h3>
+                <p>镜像仓库</p>
+                <span class="integration-status disconnected">○ 未连接</span>
+                <button class="connect-btn">连接</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>Vault</h3>
+                <p>密钥管理</p>
+                <span class="integration-status connected">● 已连接</span>
+                <button class="connect-btn connected">管理</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>SendGrid</h3>
+                <p>邮件服务</p>
+                <span class="integration-status disconnected">○ 未连接</span>
+                <button class="connect-btn">连接</button>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">??</div>
+                <h3>Jira</h3>
+                <p>项目管理</p>
+                <span class="integration-status disconnected">○ 未连接</span>
+                <button class="connect-btn">连接</button>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard,plugins"></script>
+
+</body>
+</html>
+

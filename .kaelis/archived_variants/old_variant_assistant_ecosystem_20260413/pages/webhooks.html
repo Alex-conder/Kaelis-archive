@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhookπ‹¿Ì - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-webhook-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .webhooks-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .webhook-item { display: flex; align-items: center; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; }
+        .webhook-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 16px; }
+        .webhook-info { flex: 1; }
+        .webhook-name { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .webhook-url { font-size: 13px; color: #64748b; font-family: monospace; }
+        .webhook-events { display: flex; gap: 8px; margin-top: 8px; }
+        .event-tag { padding: 4px 10px; background: #dbeafe; color: #2563eb; border-radius: 20px; font-size: 12px; }
+        .webhook-status { padding: 6px 14px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 16px; }
+        .webhook-stats { text-align: right; margin-right: 16px; }
+        .webhook-stats .success { font-size: 18px; font-weight: 700; color: #22c55e; }
+        .webhook-stats .failed { font-size: 13px; color: #ef4444; }
+        .webhook-actions { display: flex; gap: 8px; }
+        .action-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">Webhookπ‹¿Ì</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <h1>Webhook ∂©‘ƒ</h1>
+            <button class="new-webhook-btn">+ –¬Ω®Webhook</button>
+        </div>
+        <div class="webhooks-card">
+            <h2 class="card-title">ªÓ‘æ∂©‘ƒ</h2>
+            <div class="webhook-item">
+                <div class="webhook-icon">??</div>
+                <div class="webhook-info">
+                    <div class="webhook-name">Slack Õ®÷™</div>
+                    <div class="webhook-url">https://hooks.slack.com/services/T000/B000/XXXX</div>
+                    <div class="webhook-events"><span class="event-tag">deployment</span><span class="event-tag">alert</span></div>
+                </div>
+                <span class="webhook-status">ªÓ‘æ</span>
+                <div class="webhook-stats"><div class="success">99.8%</div><div class="failed">2  ß∞‹</div></div>
+                <div class="webhook-actions"><button class="action-btn">≤‚ ‘</button><button class="action-btn">±‡º≠</button></div>
+            </div>
+            <div class="webhook-item">
+                <div class="webhook-icon">??</div>
+                <div class="webhook-info">
+                    <div class="webhook-name">Datadog ºØ≥…</div>
+                    <div class="webhook-url">https://api.datadoghq.com/api/v1/events</div>
+                    <div class="webhook-events"><span class="event-tag">metrics</span><span class="event-tag">logs</span></div>
+                </div>
+                <span class="webhook-status">ªÓ‘æ</span>
+                <div class="webhook-stats"><div class="success">100%</div><div class="failed">0  ß∞‹</div></div>
+                <div class="webhook-actions"><button class="action-btn">≤‚ ‘</button><button class="action-btn">±‡º≠</button></div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis Áªü‰∏ÄÂä†ËΩΩÂô?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

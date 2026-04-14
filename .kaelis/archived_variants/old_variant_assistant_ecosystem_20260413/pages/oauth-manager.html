@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开放平台连接 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #A1A1AA; }
+        
+        .platform-section { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+        .connected-count { padding: 6px 14px; background: rgba(34,197,94,0.2); color: #22C55E; border-radius: 20px; font-size: 14px; font-weight: 600; }
+        
+        .platform-list { display: flex; flex-direction: column; gap: 16px; }
+        .platform-item { display: flex; align-items: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; }
+        .platform-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(136,72,249,0.3); }
+        .platform-item.connected { border-color: rgba(34,197,94,0.3); }
+        .platform-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-right: 20px; }
+        .platform-info { flex: 1; }
+        .platform-name { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+        .platform-desc { font-size: 14px; color: #A1A1AA; }
+        .platform-status { display: flex; align-items: center; gap: 16px; }
+        .status-badge { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .status-badge.connected { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .status-badge.disconnected { background: rgba(255,255,255,0.1); color: #A1A1AA; }
+        .connect-btn { padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; }
+        .connect-btn.connect { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; }
+        .connect-btn.connect:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        .connect-btn.disconnect { background: transparent; color: #EF4444; border: 1px solid rgba(239,68,68,0.3); }
+        .connect-btn.disconnect:hover { background: rgba(239,68,68,0.1); }
+        
+        .sync-info { display: flex; align-items: center; gap: 24px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: #6B7280; }
+        .sync-info-item { display: flex; align-items: center; gap: 6px; }
+        
+        /* OAuth弹窗 */
+        .oauth-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .oauth-modal.show { display: flex; }
+        .oauth-card { background: #171717; border-radius: 20px; padding: 40px; text-align: center; max-width: 420px; width: 90%; }
+        .oauth-icon { width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 24px; }
+        .oauth-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+        .oauth-desc { color: #A1A1AA; margin-bottom: 32px; line-height: 1.6; }
+        .oauth-permissions { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left; }
+        .permission-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #BD95FF; }
+        .permission-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: #A1A1AA; }
+        .oauth-actions { display: flex; gap: 12px; }
+        .oauth-btn { flex: 1; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; }
+        .oauth-btn.authorize { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; }
+        .oauth-btn.authorize:hover { transform: translateY(-2px); }
+        .oauth-btn.cancel { background: transparent; color: #A1A1AA; border: 1px solid rgba(255,255,255,0.2); }
+        .oauth-btn.cancel:hover { border-color: var(--primary); color: white; }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; transform: translateX(150%); transition: transform 0.3s; z-index: 1001; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: #22C55E; }
+        .toast.error { background: #EF4444; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 开放平台连接</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">连接开放平台</h1>
+            <p class="page-subtitle">管理您的第三方平台连接，导入插件和资源</p>
+        </div>
+        
+        <div class="platform-section">
+            <div class="section-header">
+                <h2 class="section-title">?? 代码托管平台</h2>
+                <span class="connected-count">2/4 已连接</span>
+            </div>
+            <div class="platform-list">
+                <div class="platform-item connected">
+                    <div class="platform-icon" style="background:#24292E;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">GitHub</div>
+                        <div class="platform-desc">全球最大的代码托管平台，支持Git版本控制</div>
+                        <div class="sync-info">
+                            <span class="sync-info-item">?? @kaelis-user</span>
+                            <span class="sync-info-item">?? 上次同步: 2小时前</span>
+                            <span class="sync-info-item">?? 12个仓库</span>
+                        </div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge connected">● 已连接</span>
+                        <button class="connect-btn disconnect" onclick="disconnect('github')">断开</button>
+                    </div>
+                </div>
+                
+                <div class="platform-item connected">
+                    <div class="platform-icon" style="background:#FC6D26;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">GitLab</div>
+                        <div class="platform-desc">企业级DevOps平台，支持CI/CD流水线</div>
+                        <div class="sync-info">
+                            <span class="sync-info-item">?? @enterprise-dev</span>
+                            <span class="sync-info-item">?? 上次同步: 5小时前</span>
+                            <span class="sync-info-item">?? 8个仓库</span>
+                        </div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge connected">● 已连接</span>
+                        <button class="connect-btn disconnect" onclick="disconnect('gitlab')">断开</button>
+                    </div>
+                </div>
+                
+                <div class="platform-item">
+                    <div class="platform-icon" style="background:#C71D23;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">Gitee</div>
+                        <div class="platform-desc">国产代码托管平台，国内访问速度快</div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge disconnected">○ 未连接</span>
+                        <button class="connect-btn connect" onclick="connect('gitee')">连接</button>
+                    </div>
+                </div>
+                
+                <div class="platform-item">
+                    <div class="platform-icon" style="background:#2684FF;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">Bitbucket</div>
+                        <div class="platform-desc">Atlassian旗下的代码托管平台，支持Mercurial</div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge disconnected">○ 未连接</span>
+                        <button class="connect-btn connect" onclick="connect('bitbucket')">连接</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="platform-section">
+            <div class="section-header">
+                <h2 class="section-title">?? 包管理平台</h2>
+                <span class="connected-count">1/3 已连接</span>
+            </div>
+            <div class="platform-list">
+                <div class="platform-item connected">
+                    <div class="platform-icon" style="background:#CB3837;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">NPM</div>
+                        <div class="platform-desc">Node.js包管理平台，全球最大的JavaScript软件注册表</div>
+                        <div class="sync-info">
+                            <span class="sync-info-item">?? @kaelis-pkg</span>
+                            <span class="sync-info-item">?? 上次同步: 1天前</span>
+                            <span class="sync-info-item">?? 24个包</span>
+                        </div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge connected">● 已连接</span>
+                        <button class="connect-btn disconnect" onclick="disconnect('npm')">断开</button>
+                    </div>
+                </div>
+                
+                <div class="platform-item">
+                    <div class="platform-icon" style="background:#2C8EBB;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">PyPI</div>
+                        <div class="platform-desc">Python包索引，Python社区的主要包仓库</div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge disconnected">○ 未连接</span>
+                        <button class="connect-btn connect" onclick="connect('pypi')">连接</button>
+                    </div>
+                </div>
+                
+                <div class="platform-item">
+                    <div class="platform-icon" style="background:#00ADD8;">??</div>
+                    <div class="platform-info">
+                        <div class="platform-name">Go Modules</div>
+                        <div class="platform-desc">Go语言模块代理，Go包管理解决方案</div>
+                    </div>
+                    <div class="platform-status">
+                        <span class="status-badge disconnected">○ 未连接</span>
+                        <button class="connect-btn connect" onclick="connect('gomodules')">连接</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="oauth-modal" id="oauthModal">
+        <div class="oauth-card">
+            <div class="oauth-icon" id="oauthIcon" style="background:#24292E;">??</div>
+            <h3 class="oauth-title" id="oauthTitle">连接 GitHub</h3>
+            <p class="oauth-desc" id="oauthDesc">授权 Kaelis 访问您的 GitHub 账户，以便导入仓库和插件</p>
+            <div class="oauth-permissions">
+                <div class="permission-title">?? 需要以下权限:</div>
+                <div class="permission-item">? 读取公开仓库</div>
+                <div class="permission-item">? 读取用户基本信息</div>
+                <div class="permission-item">? 读取组织信息</div>
+            </div>
+            <div class="oauth-actions">
+                <button class="oauth-btn cancel" onclick="closeModal()">取消</button>
+                <button class="oauth-btn authorize" onclick="authorize()">授权连接</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentPlatform = '';
+        
+        const platformInfo = {
+            github: { name: 'GitHub', icon: '??', color: '#24292E' },
+            gitlab: { name: 'GitLab', icon: '??', color: '#FC6D26' },
+            gitee: { name: 'Gitee', icon: '??', color: '#C71D23' },
+            bitbucket: { name: 'Bitbucket', icon: '??', color: '#2684FF' },
+            npm: { name: 'NPM', icon: '??', color: '#CB3837' },
+            pypi: { name: 'PyPI', icon: '??', color: '#2C8EBB' },
+            gomodules: { name: 'Go Modules', icon: '??', color: '#00ADD8' }
+        };
+        
+        function connect(platform) {
+            currentPlatform = platform;
+            const info = platformInfo[platform];
+            document.getElementById('oauthIcon').textContent = info.icon;
+            document.getElementById('oauthIcon').style.background = info.color;
+            document.getElementById('oauthTitle').textContent = `连接 ${info.name}`;
+            document.getElementById('oauthDesc').textContent = `授权 Kaelis 访问您的 ${info.name} 账户，以便导入仓库和插件`;
+            document.getElementById('oauthModal').classList.add('show');
+        }
+        
+        function disconnect(platform) {
+            if (confirm(`确定要断开与 ${platformInfo[platform].name} 的连接吗?`)) {
+                showToast(`已断开与 ${platformInfo[platform].name} 的连接`, 'success');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('oauthModal').classList.remove('show');
+        }
+        
+        function authorize() {
+            closeModal();
+            showToast(`正在连接 ${platformInfo[currentPlatform].name}...`, 'success');
+            setTimeout(() => {
+                showToast(`${platformInfo[currentPlatform].name} 连接成功!`, 'success');
+            }, 2000);
+        }
+        
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

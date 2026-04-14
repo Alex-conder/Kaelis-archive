@@ -1,0 +1,46 @@
+<!-- 统一导航组件 -->
+<nav class="nav-main">
+    <div class="nav-container">
+        <a href="{{basePath}}dashboard.html" class="nav-brand text-gradient">
+            <span class="nav-logo">🚀</span>
+            <span class="nav-name">Kaelis</span>
+        </a>
+        
+        <div class="nav-links">
+            {{#each navItems}}
+            <a href="{{../basePath}}{{href}}" class="nav-link {{#if active}}active{{/if}}" data-page="{{id}}">
+                {{label}}
+            </a>
+            {{/each}}
+        </div>
+        
+        <div class="nav-actions">
+            <button class="btn btn-ghost btn-sm nav-search" data-tooltip="搜索">🔍</button>
+            <button class="btn btn-ghost btn-sm nav-notifications" data-tooltip="通知">
+                🔔
+                {{#if notificationCount}}
+                <span class="badge badge-primary">{{notificationCount}}</span>
+                {{/if}}
+            </button>
+            <div class="nav-user">
+                <button class="btn btn-ghost btn-sm nav-user-btn" data-tooltip="用户菜单">
+                    <span class="user-avatar">{{userAvatar}}</span>
+                </button>
+            </div>
+        </div>
+        
+        <button class="nav-mobile-toggle" aria-label="菜单">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+    
+    <div class="nav-mobile-menu">
+        {{#each navItems}}
+        <a href="{{../basePath}}{{href}}" class="nav-mobile-link {{#if active}}active{{/if}}">
+            {{label}}
+        </a>
+        {{/each}}
+    </div>
+</nav>

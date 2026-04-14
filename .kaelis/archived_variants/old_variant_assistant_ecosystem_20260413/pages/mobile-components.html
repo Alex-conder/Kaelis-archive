@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>移动端响应式组件 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 移动端容器 */
+        .mobile-container { max-width: 100%; margin: 0 auto; }
+        
+        /* 顶部导航栏 */
+        .mobile-header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            background: rgba(23,23,23,0.95); 
+            backdrop-filter: blur(20px);
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .header-left, .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-btn { 
+            width: 40px; 
+            height: 40px; 
+            border: none; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 10px; 
+            color: white; 
+            font-size: 18px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .header-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
+        .header-title { font-size: 17px; font-weight: 600; }
+        
+        /* 搜索栏 */
+        .search-bar { 
+            padding: 12px 16px; 
+            background: rgba(23,23,23,0.95);
+        }
+        .search-input-wrapper { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 12px;
+        }
+        .search-icon { font-size: 18px; color: #6B7280; }
+        .search-input { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            font-size: 16px;
+            outline: none;
+        }
+        .search-input::placeholder { color: #6B7280; }
+        
+        /* 内容区域 */
+        .content { padding: 16px; }
+        .section-title { 
+            font-size: 13px; 
+            color: #6B7280; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+        .section-title:first-child { margin-top: 0; }
+        
+        /* 卡片列表 */
+        .card-list { display: flex; flex-direction: column; gap: 12px; }
+        .card-item { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s;
+        }
+        .card-item:active { transform: scale(0.98); background: rgba(255,255,255,0.05); }
+        .card-icon { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 12px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            flex-shrink: 0;
+        }
+        .card-content { flex: 1; }
+        .card-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .card-desc { font-size: 13px; color: #6B7280; }
+        .card-arrow { font-size: 20px; color: #6B7280; }
+        
+        /* 横向滚动卡片 */
+        .horizontal-scroll { 
+            display: flex; 
+            gap: 12px; 
+            overflow-x: auto; 
+            padding: 4px 16px;
+            margin: 0 -16px;
+            scrollbar-width: none;
+        }
+        .horizontal-scroll::-webkit-scrollbar { display: none; }
+        .scroll-card { 
+            min-width: 140px; 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 20px;
+            text-align: center;
+        }
+        .scroll-card-icon { font-size: 32px; margin-bottom: 12px; }
+        .scroll-card-title { font-size: 14px; font-weight: 500; }
+        
+        /* 网格布局 */
+        .grid-layout { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 16px;
+        }
+        .grid-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 16px 8px;
+        }
+        .grid-icon { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 16px; 
+            background: rgba(136,72,249,0.15); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 28px; 
+        }
+        .grid-label { font-size: 12px; color: #A1A1AA; }
+        
+        /* 列表项 */
+        .list-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px; 
+            background: rgba(23,23,23,0.8); 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .list-item:first-child { border-radius: 16px 16px 0 0; }
+        .list-item:last-child { border-radius: 0 0 16px 16px; border-bottom: none; }
+        .list-avatar { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 16px; 
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .list-content { flex: 1; }
+        .list-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .list-subtitle { font-size: 13px; color: #6B7280; }
+        .list-meta { text-align: right; }
+        .list-time { font-size: 12px; color: #6B7280; }
+        .list-badge { 
+            display: inline-block; 
+            min-width: 20px; 
+            height: 20px; 
+            padding: 0 6px; 
+            background: #EF4444; 
+            border-radius: 10px; 
+            font-size: 11px; 
+            font-weight: 600;
+            line-height: 20px;
+            text-align: center;
+            margin-top: 4px;
+        }
+        
+        /* 底部导航 */
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: rgba(23,23,23,0.98); 
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            padding: 8px 24px; 
+            color: #6B7280; 
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; }
+        
+        /* 浮动操作按钮 */
+        .fab { 
+            position: fixed; 
+            bottom: 90px; 
+            right: 20px; 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            color: white; 
+            font-size: 24px; 
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(136,72,249,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99;
+            transition: all 0.2s;
+        }
+        .fab:active { transform: scale(0.95); }
+        
+        /* 下拉刷新指示器 */
+        .pull-refresh { 
+            display: flex; 
+            justify-content: center; 
+            padding: 20px; 
+            color: #6B7280; 
+            font-size: 13px;
+        }
+        .refresh-spinner { 
+            width: 20px; 
+            height: 20px; 
+            border: 2px solid rgba(136,72,249,0.2); 
+            border-top-color: var(--primary); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* 骨架屏 */
+        .skeleton { 
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); 
+            background-size: 200% 100%; 
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-card { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px; 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+        .skeleton-avatar { width: 48px; height: 48px; border-radius: 12px; }
+        .skeleton-text { height: 16px; flex: 1; }
+        .skeleton-text.short { width: 60%; margin-top: 8px; }
+        
+        /* 操作表 */
+        .action-sheet-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 200;
+        }
+        .action-sheet-overlay.show { display: block; }
+        .action-sheet { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: #1a1a1a; 
+            border-radius: 24px 24px 0 0; 
+            padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+            z-index: 201;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+        .action-sheet.show { transform: translateY(0); }
+        .action-sheet-handle { 
+            width: 40px; 
+            height: 4px; 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 2px; 
+            margin: 0 auto 20px;
+        }
+        .action-sheet-title { 
+            text-align: center; 
+            font-size: 13px; 
+            color: #6B7280; 
+            margin-bottom: 16px;
+        }
+        .action-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px; 
+            border-radius: 12px; 
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .action-item:active { background: rgba(255,255,255,0.05); }
+        .action-item.danger { color: #EF4444; }
+        .action-divider { height: 8px; }
+        .action-cancel { 
+            background: rgba(255,255,255,0.1); 
+            text-align: center; 
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        /* Toast */
+        .toast { 
+            position: fixed; 
+            bottom: 100px; 
+            left: 50%; 
+            transform: translateX(-50%) translateY(100px); 
+            background: rgba(50,50,50,0.95); 
+            padding: 12px 24px; 
+            border-radius: 24px; 
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+        .toast.show { 
+            transform: translateX(-50%) translateY(0); 
+            opacity: 1;
+        }
+        
+        /* 演示控制 */
+        .demo-controls { 
+            position: fixed; 
+            top: 80px; 
+            right: 16px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px;
+            z-index: 50;
+        }
+        .demo-btn { 
+            padding: 10px 16px; 
+            background: rgba(136,72,249,0.9); 
+            border: none; 
+            border-radius: 20px; 
+            color: white; 
+            font-size: 12px; 
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        .demo-btn:active { transform: scale(0.95); }
+        
+        /* 响应式断点演示 */
+        .breakpoint-indicator { 
+            position: fixed; 
+            top: 80px; 
+            left: 16px; 
+            padding: 8px 12px; 
+            background: rgba(0,0,0,0.8); 
+            border-radius: 8px; 
+            font-size: 12px; 
+            color: var(--primary);
+            z-index: 50;
+        }
+        @media (min-width: 768px) { .breakpoint-indicator::after { content: 'Tablet'; } }
+        @media (min-width: 1024px) { .breakpoint-indicator::after { content: 'Desktop'; } }
+        @media (max-width: 767px) { .breakpoint-indicator::after { content: 'Mobile'; } }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- 顶部导航 -->
+        <header class="mobile-header">
+            <div class="header-left">
+                <button class="header-btn">?</button>
+            </div>
+            <span class="header-title">移动端组件</span>
+            <div class="header-right">
+                <button class="header-btn">??</button>
+                <button class="header-btn">??</button>
+            </div>
+        </header>
+        
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">??</span>
+                <input type="text" class="search-input" placeholder="搜索...">
+            </div>
+        </div>
+        
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 下拉刷新 -->
+            <div class="pull-refresh">
+                <div class="refresh-spinner"></div>
+                <span>下拉刷新</span>
+            </div>
+            
+            <!-- 横向滚动卡片 -->
+            <div class="section-title">快捷入口</div>
+            <div class="horizontal-scroll">
+                <div class="scroll-card">
+                    <div class="scroll-card-icon">??</div>
+                    <div class="scroll-card-title">数据</div>
+                </div>
+                <div class="scroll-card">
+                    <div class="scroll-card-icon">??</div>
+                    <div class="scroll-card-title">文件</div>
+                </div>
+                <div class="scroll-card">
+                    <div class="scroll-card-icon">??</div>
+                    <div class="scroll-card-title">团队</div>
+                </div>
+                <div class="scroll-card">
+                    <div class="scroll-card-icon">??</div>
+                    <div class="scroll-card-title">设置</div>
+                </div>
+                <div class="scroll-card">
+                    <div class="scroll-card-icon">??</div>
+                    <div class="scroll-card-title">报表</div>
+                </div>
+            </div>
+            
+            <!-- 网格布局 -->
+            <div class="section-title">功能菜单</div>
+            <div class="grid-layout">
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">首页</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">邮件</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">日历</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">云盘</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">笔记</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">提醒</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">?</div>
+                    <span class="grid-label">收藏</span>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-icon">??</div>
+                    <span class="grid-label">设置</span>
+                </div>
+            </div>
+            
+            <!-- 卡片列表 -->
+            <div class="section-title">最近项目</div>
+            <div class="card-list">
+                <div class="card-item" onclick="showToast('打开项目')">
+                    <div class="card-icon">??</div>
+                    <div class="card-content">
+                        <div class="card-title">Kaelis 移动端</div>
+                        <div class="card-desc">最后编辑: 2小时前</div>
+                    </div>
+                    <span class="card-arrow">?</span>
+                </div>
+                <div class="card-item" onclick="showToast('打开项目')">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #22C55E 0%, #10B981 100%);">??</div>
+                    <div class="card-content">
+                        <div class="card-title">App 设计系统</div>
+                        <div class="card-desc">最后编辑: 昨天</div>
+                    </div>
+                    <span class="card-arrow">?</span>
+                </div>
+                <div class="card-item" onclick="showToast('打开项目')">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);">??</div>
+                    <div class="card-content">
+                        <div class="card-title">UI 组件库</div>
+                        <div class="card-desc">最后编辑: 3天前</div>
+                    </div>
+                    <span class="card-arrow">?</span>
+                </div>
+            </div>
+            
+            <!-- 列表项 -->
+            <div class="section-title">消息通知</div>
+            <div class="card-list">
+                <div class="list-item" onclick="showActionSheet()">
+                    <div class="list-avatar">张</div>
+                    <div class="list-content">
+                        <div class="list-title">张经理</div>
+                        <div class="list-subtitle">项目进度更新：已完成 80%</div>
+                    </div>
+                    <div class="list-meta">
+                        <div class="list-time">10:30</div>
+                        <span class="list-badge">2</span>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="list-avatar" style="background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);">李</div>
+                    <div class="list-content">
+                        <div class="list-title">李明</div>
+                        <div class="list-subtitle">代码审查请求</div>
+                    </div>
+                    <div class="list-meta">
+                        <div class="list-time">昨天</div>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="list-avatar" style="background: linear-gradient(135deg, #22C55E 0%, #10B981 100%);">系</div>
+                    <div class="list-content">
+                        <div class="list-title">系统通知</div>
+                        <div class="list-subtitle">您的订阅即将到期</div>
+                    </div>
+                    <div class="list-meta">
+                        <div class="list-time">2天前</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 骨架屏示例 -->
+            <div class="section-title">加载中</div>
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <div class="nav-item active">
+                <span class="nav-icon">??</span>
+                <span>首页</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">??</span>
+                <span>数据</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">??</span>
+                <span>文件</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">??</span>
+                <span>我的</span>
+            </div>
+        </nav>
+        
+        <!-- 浮动按钮 -->
+        <button class="fab" onclick="showActionSheet()">+</button>
+        
+        <!-- 操作表 -->
+        <div class="action-sheet-overlay" id="actionSheetOverlay" onclick="hideActionSheet()"></div>
+        <div class="action-sheet" id="actionSheet">
+            <div class="action-sheet-handle"></div>
+            <div class="action-sheet-title">选择操作</div>
+            <div class="action-item" onclick="showToast('创建项目')">
+                <span>??</span>
+                <span>新建项目</span>
+            </div>
+            <div class="action-item" onclick="showToast('上传文件')">
+                <span>??</span>
+                <span>上传文件</span>
+            </div>
+            <div class="action-item" onclick="showToast('扫描文档')">
+                <span>??</span>
+                <span>扫描文档</span>
+            </div>
+            <div class="action-divider"></div>
+            <div class="action-item danger" onclick="showToast('删除')">
+                <span>???</span>
+                <span>删除</span>
+            </div>
+            <div class="action-divider"></div>
+            <div class="action-item action-cancel" onclick="hideActionSheet()">取消</div>
+        </div>
+        
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+        
+        <!-- 断点指示器 -->
+        <div class="breakpoint-indicator">当前设备: </div>
+        
+        <!-- 演示控制 -->
+        <div class="demo-controls">
+            <button class="demo-btn" onclick="showActionSheet()">显示操作表</button>
+            <button class="demo-btn" onclick="showToast('Hello Mobile!')">显示 Toast</button>
+        </div>
+    </div>
+
+    <script>
+        // 底部导航切换
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // 显示操作表
+        function showActionSheet() {
+            document.getElementById('actionSheetOverlay').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('actionSheet').classList.add('show');
+            }, 10);
+        }
+        
+        // 隐藏操作表
+        function hideActionSheet() {
+            document.getElementById('actionSheet').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('actionSheetOverlay').classList.remove('show');
+            }, 300);
+        }
+        
+        // 显示 Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            hideActionSheet();
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
+        // 触摸反馈
+        document.querySelectorAll('.card-item, .list-item, .grid-item').forEach(item => {
+            item.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            item.addEventListener('touchend', function() {
+                this.style.transform = '';
+            });
+        });
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据加密与安全审计 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 24px;
+        }
+        
+        .card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 32px;
+        }
+        
+        .card-title { 
+            font-size: 18px; 
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-title .icon { font-size: 24px; }
+        
+        /* 加密状态 */
+        .encryption-status { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 20px;
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .status-icon { 
+            width: 56px; 
+            height: 56px; 
+            background: #22C55E; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 28px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(34,197,94,0); }
+        }
+        .status-text h3 { font-size: 18px; margin-bottom: 4px; }
+        .status-text p { font-size: 14px; color: #6B7280; }
+        
+        /* 加密算法 */
+        .algo-list { }
+        .algo-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .algo-info h4 { font-size: 15px; margin-bottom: 4px; }
+        .algo-info p { font-size: 13px; color: #6B7280; }
+        .algo-status { 
+            padding: 6px 12px; 
+            background: rgba(34,197,94,0.2); 
+            border-radius: 20px; 
+            font-size: 12px; 
+            color: #22C55E;
+        }
+        
+        /* 密钥管理 */
+        .key-item { 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .key-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .key-name { font-size: 15px; font-weight: 500; }
+        .key-actions { display: flex; gap: 8px; }
+        .key-btn { 
+            padding: 6px 12px; 
+            background: rgba(255,255,255,0.1); 
+            border: none; 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .key-value { 
+            font-family: monospace; 
+            font-size: 13px; 
+            color: #6B7280;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            word-break: break-all;
+        }
+        
+        /* 审计日志 */
+        .audit-filters { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 20px;
+        }
+        .audit-filter { 
+            padding: 10px 20px; 
+            background: rgba(255,255,255,0.05); 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .audit-filter.active, .audit-filter:hover { 
+            background: rgba(136,72,249,0.3);
+        }
+        
+        .audit-list { }
+        .audit-item { 
+            display: flex; 
+            align-items: flex-start; 
+            gap: 16px; 
+            padding: 16px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .audit-item:last-child { border-bottom: none; }
+        .audit-level { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+        .audit-level.info { background: var(--secondary); }
+        .audit-level.warning { background: #F59E0B; }
+        .audit-level.critical { background: #EF4444; }
+        .audit-content { flex: 1; }
+        .audit-title { font-size: 15px; margin-bottom: 4px; }
+        .audit-meta { 
+            display: flex; 
+            gap: 16px; 
+            font-size: 13px; 
+            color: #6B7280;
+        }
+        .audit-time { font-size: 13px; color: #6B7280; }
+        
+        /* 合规检查 */
+        .compliance-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px;
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .compliance-check { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .compliance-check.pass { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .compliance-check.fail { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .compliance-check.warn { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .compliance-info { flex: 1; }
+        .compliance-info h4 { font-size: 15px; margin-bottom: 4px; }
+        .compliance-info p { font-size: 13px; color: #6B7280; }
+        .compliance-score { 
+            font-size: 24px; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 数据流可视化 */
+        .data-flow { 
+            height: 200px; 
+            background: rgba(0,0,0,0.3); 
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .flow-line { 
+            position: absolute; 
+            height: 2px; 
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: flow 3s linear infinite;
+        }
+        .flow-line:nth-child(1) { top: 20%; width: 100%; animation-delay: 0s; }
+        .flow-line:nth-child(2) { top: 50%; width: 80%; left: 10%; animation-delay: 1s; }
+        .flow-line:nth-child(3) { top: 80%; width: 60%; left: 20%; animation-delay: 2s; }
+        @keyframes flow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+        .flow-nodes { 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .flow-node { 
+            width: 60px; 
+            height: 60px; 
+            background: rgba(136,72,249,0.2); 
+            border: 2px solid var(--primary); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+            position: relative;
+        }
+        .flow-node::after {
+            content: '';
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: nodePulse 2s infinite;
+        }
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0; }
+        }
+        
+        /* 威胁检测 */
+        .threat-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px;
+            background: rgba(239,68,68,0.05); 
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .threat-icon { 
+            width: 48px; 
+            height: 48px; 
+            background: rgba(239,68,68,0.2); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+        }
+        .threat-info { flex: 1; }
+        .threat-info h4 { font-size: 15px; margin-bottom: 4px; color: #EF4444; }
+        .threat-info p { font-size: 13px; color: #6B7280; }
+        .threat-actions { display: flex; gap: 8px; }
+        .threat-btn { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .threat-btn.resolve { background: #22C55E; color: white; }
+        .threat-btn.ignore { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* 统计 */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 16px;
+        }
+        .stat-box { 
+            padding: 20px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-value { 
+            font-size: 32px; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 13px; color: #6B7280; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 数据加密与安全审计</h1>
+        <p>端到端加密与实时安全监控</p>
+    </div>
+    
+    <div class="container">
+        <div class="grid">
+            <!-- 加密状态 -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">??</span>
+                    <span>加密状态</span>
+                </div>
+                <div class="encryption-status">
+                    <div class="status-icon">?</div>
+                    <div class="status-text">
+                        <h3>全面加密已启用</h3>
+                        <p>AES-256-GCM 端到端加密</p>
+                    </div>
+                </div>
+                <div class="algo-list">
+                    <div class="algo-item">
+                        <div class="algo-info">
+                            <h4>数据传输加密</h4>
+                            <p>TLS 1.3 协议</p>
+                        </div>
+                        <span class="algo-status">已启用</span>
+                    </div>
+                    <div class="algo-item">
+                        <div class="algo-info">
+                            <h4>数据存储加密</h4>
+                            <p>AES-256-GCM</p>
+                        </div>
+                        <span class="algo-status">已启用</span>
+                    </div>
+                    <div class="algo-item">
+                        <div class="algo-info">
+                            <h4>密钥交换</h4>
+                            <p>ECDH P-384</p>
+                        </div>
+                        <span class="algo-status">已启用</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 密钥管理 -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">???</span>
+                    <span>密钥管理</span>
+                </div>
+                <div class="key-item">
+                    <div class="key-header">
+                        <span class="key-name">主加密密钥</span>
+                        <div class="key-actions">
+                            <button class="key-btn">轮换</button>
+                            <button class="key-btn">查看</button>
+                        </div>
+                    </div>
+                    <div class="key-value">????????????????????????????????</div>
+                </div>
+                <div class="key-item">
+                    <div class="key-header">
+                        <span class="key-name">API 密钥</span>
+                        <div class="key-actions">
+                            <button class="key-btn">复制</button>
+                            <button class="key-btn">撤销</button>
+                        </div>
+                    </div>
+                    <div class="key-value">sk_live_51H7...8x2L</div>
+                </div>
+                <div class="key-item">
+                    <div class="key-header">
+                        <span class="key-name">JWT 签名密钥</span>
+                        <div class="key-actions">
+                            <button class="key-btn">轮换</button>
+                        </div>
+                    </div>
+                    <div class="key-value">????????????????????????????????</div>
+                </div>
+            </div>
+            
+            <!-- 安全统计 -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">??</span>
+                    <span>安全统计</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value">99.9%</div>
+                        <div class="stat-label">安全评分</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">活跃威胁</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">1.2M</div>
+                        <div class="stat-label">加密请求</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">7天</div>
+                        <div class="stat-label">密钥年龄</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 合规检查 -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">?</span>
+                    <span>合规检查</span>
+                </div>
+                <div class="compliance-item">
+                    <div class="compliance-check pass">?</div>
+                    <div class="compliance-info">
+                        <h4>GDPR 合规</h4>
+                        <p>欧盟数据保护条例</p>
+                    </div>
+                    <div class="compliance-score">100%</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="compliance-check pass">?</div>
+                    <div class="compliance-info">
+                        <h4>SOC 2 Type II</h4>
+                        <p>服务组织控制报告</p>
+                    </div>
+                    <div class="compliance-score">98%</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="compliance-check warn">!</div>
+                    <div class="compliance-info">
+                        <h4>ISO 27001</h4>
+                        <p>信息安全管理体系</p>
+                    </div>
+                    <div class="compliance-score">85%</div>
+                </div>
+                <div class="compliance-item">
+                    <div class="compliance-check pass">?</div>
+                    <div class="compliance-info">
+                        <h4>HIPAA</h4>
+                        <p>健康保险流通与责任法案</p>
+                    </div>
+                    <div class="compliance-score">100%</div>
+                </div>
+            </div>
+            
+            <!-- 数据流可视化 -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">??</span>
+                    <span>实时数据流</span>
+                </div>
+                <div class="data-flow">
+                    <div class="flow-line"></div>
+                    <div class="flow-line"></div>
+                    <div class="flow-line"></div>
+                    <div class="flow-nodes">
+                        <div class="flow-node">??</div>
+                        <div class="flow-node">??</div>
+                        <div class="flow-node">??</div>
+                    </div>
+                </div>
+                <p style="text-align: center; color: #6B7280; margin-top: 16px;">端到端加密数据传输中...</p>
+            </div>
+            
+            <!-- 威胁检测 -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">???</span>
+                    <span>威胁检测</span>
+                </div>
+                <div class="threat-item">
+                    <div class="threat-icon">??</div>
+                    <div class="threat-info">
+                        <h4>异常登录尝试</h4>
+                        <p>IP: 192.168.1.100 · 3分钟前</p>
+                    </div>
+                    <div class="threat-actions">
+                        <button class="threat-btn resolve">处理</button>
+                        <button class="threat-btn ignore">忽略</button>
+                    </div>
+                </div>
+                <div class="threat-item">
+                    <div class="threat-icon">??</div>
+                    <div class="threat-info">
+                        <h4>暴力破解阻止</h4>
+                        <p>已自动封锁 IP · 1小时前</p>
+                    </div>
+                    <div class="threat-actions">
+                        <button class="threat-btn resolve">解封</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 审计日志 -->
+        <div class="card" style="margin-top: 24px;">
+            <div class="card-title">
+                <span class="icon">??</span>
+                <span>审计日志</span>
+            </div>
+            <div class="audit-filters">
+                <button class="audit-filter active">全部</button>
+                <button class="audit-filter">登录</button>
+                <button class="audit-filter">数据访问</button>
+                <button class="audit-filter">配置变更</button>
+                <button class="audit-filter">安全事件</button>
+            </div>
+            <div class="audit-list">
+                <div class="audit-item">
+                    <div class="audit-level info"></div>
+                    <div class="audit-content">
+                        <div class="audit-title">用户登录成功</div>
+                        <div class="audit-meta">用户: admin · IP: 192.168.1.50</div>
+                    </div>
+                    <div class="audit-time">2分钟前</div>
+                </div>
+                <div class="audit-item">
+                    <div class="audit-level warning"></div>
+                    <div class="audit-content">
+                        <div class="audit-title">API 密钥已轮换</div>
+                        <div class="audit-meta">操作者: system · 影响: 3 个服务</div>
+                    </div>
+                    <div class="audit-time">1小时前</div>
+                </div>
+                <div class="audit-item">
+                    <div class="audit-level critical"></div>
+                    <div class="audit-content">
+                        <div class="audit-title">多次登录失败</div>
+                        <div class="audit-meta">用户: unknown · IP: 10.0.0.15 · 已阻止</div>
+                    </div>
+                    <div class="audit-time">3小时前</div>
+                </div>
+                <div class="audit-item">
+                    <div class="audit-level info"></div>
+                    <div class="audit-content">
+                        <div class="audit-title">数据库备份完成</div>
+                        <div class="audit-meta">大小: 2.4GB · 位置: 加密存储</div>
+                    </div>
+                    <div class="audit-time">昨天 02:00</div>
+                </div>
+                <div class="audit-item">
+                    <div class="audit-level info"></div>
+                    <div class="audit-content">
+                        <div class="audit-title">安全策略更新</div>
+                        <div class="audit-meta">密码复杂度要求已提升</div>
+                    </div>
+                    <div class="audit-time">昨天 14:30</div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

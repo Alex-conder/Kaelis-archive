@@ -1,0 +1,45 @@
+# Kaelis Authentication Contract
+# 定义认证模式、降级策略与离线支持
+
+version: "1.0"
+
+auth:
+  modes:
+    - id: online
+      provider: supabase
+      required: false
+      priority: 1
+    - id: offline
+      provider: local_anonymous
+      fallback: true
+      priority: 2
+
+  offline_user:
+    id: "local_anonymous"
+    storage: "indexeddb"
+    capabilities:
+      - workflow_local
+      - kg_extract
+      - settings_local
+    restrictions:
+      - cloud_sync_disabled
+      - team_sharing_disabled
+      - multi_device_disabled
+
+  session:
+    online:
+      jwt_enabled: true
+      refresh_enabled: true
+    offline:
+      jwt_enabled: false
+      session_storage: "localStorage"
+      key: "kaelis_offline_session"
+
+  migration:
+    offline_to_online:
+      enabled: true
+      trigger: "user_login_after_offline"
+      actions:
+        - prompt_user
+        - merge_local_workflows
+        - preserve_local_settings

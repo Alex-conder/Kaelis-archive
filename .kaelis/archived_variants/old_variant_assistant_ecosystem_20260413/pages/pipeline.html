@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD流水线 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .pipeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .pipeline-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-pipeline-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .pipeline-list { display: flex; flex-direction: column; gap: 16px; }
+        .pipeline-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .pipeline-info { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .pipeline-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .pipeline-details h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .pipeline-details p { font-size: 13px; color: #64748b; }
+        .pipeline-status { padding: 6px 14px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: auto; }
+        .pipeline-status.running { background: #dbeafe; color: #2563eb; }
+        .pipeline-stages { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+        .stage { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #f8fafc; border-radius: 10px; font-size: 13px; }
+        .stage.completed { background: #dcfce7; color: #16a34a; }
+        .stage.running { background: #dbeafe; color: #2563eb; }
+        .stage-arrow { color: #cbd5e1; }
+        .pipeline-meta { display: flex; gap: 24px; font-size: 13px; color: #64748b; }
+        .pipeline-meta span { display: flex; align-items: center; gap: 6px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">CI/CD流水线</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="pipeline-header">
+            <h1>流水线列表</h1>
+            <button class="new-pipeline-btn">+ 新建流水线</button>
+        </div>
+        <div class="pipeline-list">
+            <div class="pipeline-card">
+                <div class="pipeline-info">
+                    <div class="pipeline-icon">??</div>
+                    <div class="pipeline-details"><h3>Production Deployment</h3><p>main 分支自动部署</p></div>
+                    <span class="pipeline-status">? 成功</span>
+                </div>
+                <div class="pipeline-stages">
+                    <span class="stage completed">? Build</span>
+                    <span class="stage-arrow">→</span>
+                    <span class="stage completed">? Test</span>
+                    <span class="stage-arrow">→</span>
+                    <span class="stage completed">? Security Scan</span>
+                    <span class="stage-arrow">→</span>
+                    <span class="stage completed">? Deploy</span>
+                </div>
+                <div class="pipeline-meta"><span>?? 8分32秒</span><span>?? Alex</span><span>?? 12:30</span></div>
+            </div>
+            <div class="pipeline-card">
+                <div class="pipeline-info">
+                    <div class="pipeline-icon">??</div>
+                    <div class="pipeline-details"><h3>Staging Build</h3><p>develop 分支构建</p></div>
+                    <span class="pipeline-status running">? 运行中</span>
+                </div>
+                <div class="pipeline-stages">
+                    <span class="stage completed">? Build</span>
+                    <span class="stage-arrow">→</span>
+                    <span class="stage running">? Test</span>
+                    <span class="stage-arrow">→</span>
+                    <span class="stage">Security Scan</span>
+                    <span class="stage-arrow">→</span>
+                    <span class="stage">Deploy</span>
+                </div>
+                <div class="pipeline-meta"><span>?? 3分15秒</span><span>?? Sarah</span><span>?? 13:45</span></div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard,batch"></script>
+
+</body>
+</html>
+

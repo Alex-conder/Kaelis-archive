@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kaelis-api-alerts
+  namespace: kaelis
+  generated_at: '2026-04-13T01:39:17.490354'
+spec:
+  groups:
+  - name: kaelis-api-slo
+    rules:
+    - alert: healthCheck_HighErrorRate
+      expr: "(\n                    sum(rate(http_requests_total{handler=\"/api/health\"\
+        ,status=~\"5..\"}[5m]))\n                    /\n                    sum(rate(http_requests_total{handler=\"\
+        /api/health\"}[5m]))\n                ) > 0.0009999999999999432"
+      for: 5m
+      labels:
+        severity: critical
+        service: kaelis-api
+        endpoint: /api/health
+      annotations:
+        summary: healthCheck error rate is too high
+        description: Error rate for /api/health is above 0.1%
+    - alert: healthCheck_HighLatency
+      expr: "histogram_quantile(0.95,\n                    sum(rate(http_request_duration_seconds_bucket{handler=\"\
+        /api/health\"}[5m])) by (le)\n                ) > 0.1"
+      for: 5m
+      labels:
+        severity: warning
+        service: kaelis-api
+        endpoint: /api/health
+      annotations:
+        summary: healthCheck P95 latency is too high
+        description: P95 latency for /api/health is above 100ms
+    - alert: kgExtract_HighErrorRate
+      expr: "(\n                    sum(rate(http_requests_total{handler=\"/api/kg/extract\"\
+        ,status=~\"5..\"}[5m]))\n                    /\n                    sum(rate(http_requests_total{handler=\"\
+        /api/kg/extract\"}[5m]))\n                ) > 0.005"
+      for: 5m
+      labels:
+        severity: critical
+        service: kaelis-api
+        endpoint: /api/kg/extract
+      annotations:
+        summary: kgExtract error rate is too high
+        description: Error rate for /api/kg/extract is above 0.5%
+    - alert: kgExtract_HighLatency
+      expr: "histogram_quantile(0.95,\n                    sum(rate(http_request_duration_seconds_bucket{handler=\"\
+        /api/kg/extract\"}[5m])) by (le)\n                ) > 3.0"
+      for: 5m
+      labels:
+        severity: warning
+        service: kaelis-api
+        endpoint: /api/kg/extract
+      annotations:
+        summary: kgExtract P95 latency is too high
+        description: P95 latency for /api/kg/extract is above 3000ms

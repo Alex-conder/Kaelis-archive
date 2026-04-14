@@ -1,0 +1,81 @@
+<!-- 仪表盘内容 -->
+<div class="dashboard-header">
+    <h1 class="dashboard-title">{{greeting}}, {{username}}! 👋</h1>
+    <p class="dashboard-date">{{date}}</p>
+</div>
+
+<div class="dashboard-grid">
+    <!-- 系统状态卡片 -->
+    <div class="card card-status">
+        <div class="card-header">
+            <h3 class="card-title">系统状态</h3>
+            <a href="status.html" class="link">查看详情 →</a>
+        </div>
+        <div class="status-list">
+            <div class="status-item">
+                <span class="status-dot status-ok"></span>
+                <div class="status-info">
+                    <h4>运行正常</h4>
+                    <p>Gateway</p>
+                </div>
+            </div>
+            <div class="status-item">
+                <span class="status-dot status-ok"></span>
+                <div class="status-info">
+                    <h4>所有服务</h4>
+                    <p>AI Services</p>
+                </div>
+            </div>
+            <div class="status-item">
+                <span class="status-dot status-ok"></span>
+                <div class="status-info">
+                    <h4>安全合规</h4>
+                    <p>Security</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="quick-actions">
+        <h2 class="section-title">快速操作</h2>
+        <div class="actions-grid">
+            <a href="chat.html" class="action-card card card-hover">
+                <div class="action-icon">💬</div>
+                <span class="action-label">对话</span>
+            </a>
+            <a href="plugins.html" class="action-card card card-hover">
+                <div class="action-icon">🔌</div>
+                <span class="action-label">插件</span>
+            </a>
+            <a href="monitoring.html" class="action-card card card-hover">
+                <div class="action-icon">📊</div>
+                <span class="action-label">监控</span>
+            </a>
+            <a href="settings.html" class="action-card card card-hover">
+                <div class="action-icon">⚙️</div>
+                <span class="action-label">设置</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 实时指标 -->
+    <div class="card card-metrics">
+        <div class="card-header">
+            <h3 class="card-title">实时指标</h3>
+            <div class="time-filter">
+                <button class="btn btn-sm active">24H</button>
+                <button class="btn btn-sm">7D</button>
+                <button class="btn btn-sm">30D</button>
+            </div>
+        </div>
+        <div class="metrics-grid">
+            {{#each stats}}
+            <div class="metric-item">
+                <div class="metric-value">{{value}}</div>
+                <div class="metric-label">{{label}}</div>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+</div>

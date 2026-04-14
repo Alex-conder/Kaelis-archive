@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>插件详情 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .back-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+        .plugin-hero { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .plugin-header { display: flex; gap: 24px; margin-bottom: 24px; }
+        .plugin-icon-large { width: 100px; height: 100px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 48px; flex-shrink: 0; }
+        .plugin-info h1 { font-size: 28px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .plugin-info p { font-size: 15px; color: #64748b; margin-bottom: 16px; }
+        .plugin-meta { display: flex; gap: 20px; font-size: 14px; color: #64748b; }
+        .plugin-meta span { display: flex; align-items: center; gap: 6px; }
+        .install-section { display: flex; gap: 12px; }
+        .install-btn { flex: 1; padding: 14px 28px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .secondary-btn { padding: 14px 24px; background: #f1f5f9; color: #374151; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 12px 24px; font-size: 15px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .content-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .content-card h2 { font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
+        .content-card p { font-size: 15px; color: #374151; line-height: 1.7; margin-bottom: 12px; }
+        .feature-list { list-style: none; }
+        .feature-list li { padding: 12px 0; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px; font-size: 15px; color: #374151; }
+        .feature-list li::before { content: '?'; width: 24px; height: 24px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="back-btn">←</button><span class="logo">插件详情</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="plugin-hero">
+            <div class="plugin-header">
+                <div class="plugin-icon-large">??</div>
+                <div class="plugin-info">
+                    <h1>AI Plugin Orchestrator</h1>
+                    <p>智能插件编排系统，支持多模型AI协同工作</p>
+                    <div class="plugin-meta">
+                        <span>? 5.0</span>
+                        <span>?? 8.2k 安装</span>
+                        <span>?? v2.1.0</span>
+                        <span>?? Kaelis Team</span>
+                    </div>
+                </div>
+            </div>
+            <div class="install-section">
+                <button class="install-btn">立即安装</button>
+                <button class="secondary-btn">文档</button>
+                <button class="secondary-btn">GitHub</button>
+            </div>
+        </div>
+        <div class="tabs">
+            <div class="tab active">概述</div>
+            <div class="tab">功能</div>
+            <div class="tab">文档</div>
+            <div class="tab">评价</div>
+        </div>
+        <div class="content-card">
+            <h2>关于此插件</h2>
+            <p>AI Plugin Orchestrator 是一个强大的插件编排系统，能够智能调度和管理多个AI模型，实现高效的协同工作。</p>
+            <p>支持 DeepSeek、Claude、GPT-4、Kimi 等多种主流AI模型，并提供统一的API接口。</p>
+            <h2 style="margin-top: 24px;">主要功能</h2>
+            <ul class="feature-list">
+                <li>多模型智能路由</li>
+                <li>自动负载均衡</li>
+                <li>流式响应支持</li>
+                <li>上下文记忆管理</li>
+                <li>成本优化策略</li>
+            </ul>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

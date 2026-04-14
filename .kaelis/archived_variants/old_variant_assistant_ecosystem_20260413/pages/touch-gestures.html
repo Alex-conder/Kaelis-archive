@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>触摸手势交互 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 顶部导航 */
+        .mobile-header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            background: rgba(23,23,23,0.95); 
+            backdrop-filter: blur(20px);
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .back-btn { 
+            width: 40px; 
+            height: 40px; 
+            border: none; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 10px; 
+            color: white; 
+            font-size: 20px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-title { font-size: 17px; font-weight: 600; flex: 1; }
+        
+        /* 演示区域 */
+        .demo-container { padding: 20px; }
+        
+        .section-title { 
+            font-size: 13px; 
+            color: #6B7280; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+        .section-title:first-child { margin-top: 0; }
+        
+        /* 手势演示卡片 */
+        .gesture-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 24px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gesture-area { 
+            height: 200px; 
+            background: linear-gradient(135deg, rgba(136,72,249,0.2) 0%, rgba(59,130,246,0.2) 100%); 
+            border-radius: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 48px;
+            position: relative;
+            touch-action: none;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        
+        .gesture-area.swiping { transform: scale(0.98); }
+        .gesture-area.tapping { transform: scale(0.95); }
+        
+        .gesture-label { 
+            text-align: center; 
+            margin-top: 16px; 
+            font-size: 14px; 
+            color: #A1A1AA;
+        }
+        
+        /* 触摸点指示器 */
+        .touch-point { 
+            position: absolute; 
+            width: 60px; 
+            height: 60px; 
+            border: 3px solid var(--primary); 
+            border-radius: 50%; 
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow: 0 0 20px rgba(136,72,249,0.5);
+        }
+        .touch-point::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        /* 滑块演示 */
+        .slider-demo { 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .slider-track { 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px; 
+            position: relative;
+            touch-action: none;
+        }
+        .slider-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 3px; 
+            width: 50%;
+            transition: width 0.1s;
+        }
+        .slider-thumb { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            width: 28px; 
+            height: 28px; 
+            background: white; 
+            border-radius: 50%; 
+            transform: translate(-50%, -50%); 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            cursor: grab;
+            transition: transform 0.1s;
+        }
+        .slider-thumb:active { 
+            transform: translate(-50%, -50%) scale(1.2); 
+            cursor: grabbing;
+        }
+        .slider-value { 
+            text-align: center; 
+            margin-top: 16px; 
+            font-size: 24px; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 轮播图 */
+        .carousel-container { 
+            position: relative; 
+            overflow: hidden; 
+            border-radius: 16px;
+            touch-action: pan-y;
+        }
+        .carousel-track { 
+            display: flex; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .carousel-slide { 
+            min-width: 100%; 
+            height: 180px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 64px;
+        }
+        .carousel-slide:nth-child(1) { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
+        .carousel-slide:nth-child(2) { background: linear-gradient(135deg, #22C55E 0%, #10B981 100%); }
+        .carousel-slide:nth-child(3) { background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%); }
+        .carousel-slide:nth-child(4) { background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%); }
+        
+        .carousel-dots { 
+            display: flex; 
+            justify-content: center; 
+            gap: 8px; 
+            margin-top: 16px;
+        }
+        .carousel-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+        .carousel-dot.active { 
+            width: 24px; 
+            border-radius: 4px; 
+            background: var(--primary);
+        }
+        
+        /* 下拉刷新演示 */
+        .refresh-demo { 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px; 
+            padding: 0;
+            overflow: hidden;
+        }
+        .refresh-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            padding: 20px;
+            color: #6B7280;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .refresh-header.pulling { color: var(--primary); }
+        .refresh-spinner { 
+            width: 20px; 
+            height: 20px; 
+            border: 2px solid rgba(136,72,249,0.2); 
+            border-top-color: var(--primary); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .refresh-spinner.show { opacity: 1; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .refresh-content { 
+            padding: 20px; 
+            background: rgba(255,255,255,0.02);
+        }
+        .refresh-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .refresh-item:last-child { border-bottom: none; }
+        .refresh-icon { font-size: 24px; }
+        .refresh-text { flex: 1; font-size: 14px; }
+        .refresh-time { font-size: 12px; color: #6B7280; }
+        
+        /* 列表项滑动 */
+        .swipe-list { background: rgba(23,23,23,0.8); border-radius: 16px; overflow: hidden; }
+        .swipe-item { 
+            position: relative; 
+            overflow: hidden;
+        }
+        .swipe-actions { 
+            position: absolute; 
+            top: 0; 
+            right: 0; 
+            bottom: 0; 
+            display: flex;
+        }
+        .swipe-action { 
+            width: 80px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px;
+            color: white;
+        }
+        .swipe-action.edit { background: var(--secondary); }
+        .swipe-action.delete { background: #EF4444; }
+        .swipe-content { 
+            position: relative; 
+            background: rgba(23,23,23,0.8); 
+            padding: 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            transition: transform 0.3s;
+            touch-action: pan-y;
+        }
+        .swipe-avatar { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 16px; 
+            font-weight: 600;
+        }
+        .swipe-info { flex: 1; }
+        .swipe-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .swipe-subtitle { font-size: 13px; color: #6B7280; }
+        
+        /* 缩放图片 */
+        .pinch-demo { 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px; 
+            padding: 20px;
+            overflow: hidden;
+        }
+        .pinch-container { 
+            height: 250px; 
+            background: linear-gradient(135deg, rgba(136,72,249,0.1) 0%, rgba(59,130,246,0.1) 100%); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden;
+            touch-action: none;
+        }
+        .pinch-image { 
+            width: 150px; 
+            height: 150px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 64px;
+            transition: transform 0.1s;
+            transform-origin: center;
+        }
+        .pinch-hint { 
+            text-align: center; 
+            margin-top: 16px; 
+            font-size: 13px; 
+            color: #6B7280;
+        }
+        
+        /* 手势日志 */
+        .gesture-log { 
+            background: rgba(0,0,0,0.5); 
+            border-radius: 12px; 
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry { 
+            padding: 4px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #A1A1AA;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #6B7280; margin-right: 8px; }
+        .log-event { color: var(--primary); }
+        .log-detail { color: #22C55E; }
+        
+        /* 底部安全区域 */
+        .safe-area-bottom { height: calc(20px + env(safe-area-inset-bottom)); }
+    </style>
+</head>
+<body>
+    <header class="mobile-header">
+        <button class="back-btn" onclick="history.back()">?</button>
+        <span class="header-title">触摸手势交互</span>
+    </header>
+    
+    <div class="demo-container">
+        <!-- 基础手势 -->
+        <div class="section-title">基础手势</div>
+        <div class="gesture-card">
+            <div class="gesture-area" id="gestureArea">
+                ??
+                <div class="touch-point" id="touchPoint" style="display: none;"></div>
+            </div>
+            <div class="gesture-label">点击、长按、滑动试试</div>
+        </div>
+        
+        <!-- 滑块 -->
+        <div class="section-title">滑块控制</div>
+        <div class="slider-demo">
+            <div class="slider-track" id="sliderTrack">
+                <div class="slider-fill" id="sliderFill"></div>
+                <div class="slider-thumb" id="sliderThumb"></div>
+            </div>
+            <div class="slider-value" id="sliderValue">50%</div>
+        </div>
+        
+        <!-- 轮播图 -->
+        <div class="section-title">轮播滑动</div>
+        <div class="gesture-card" style="padding: 16px;">
+            <div class="carousel-container" id="carousel">
+                <div class="carousel-track" id="carouselTrack">
+                    <div class="carousel-slide">??</div>
+                    <div class="carousel-slide">??</div>
+                    <div class="carousel-slide">??</div>
+                    <div class="carousel-slide">?</div>
+                </div>
+            </div>
+            <div class="carousel-dots" id="carouselDots">
+                <div class="carousel-dot active"></div>
+                <div class="carousel-dot"></div>
+                <div class="carousel-dot"></div>
+                <div class="carousel-dot"></div>
+            </div>
+        </div>
+        
+        <!-- 下拉刷新 -->
+        <div class="section-title">下拉刷新</div>
+        <div class="refresh-demo" id="refreshDemo">
+            <div class="refresh-header" id="refreshHeader">
+                <div class="refresh-spinner" id="refreshSpinner"></div>
+                <span id="refreshText">下拉刷新</span>
+            </div>
+            <div class="refresh-content">
+                <div class="refresh-item">
+                    <span class="refresh-icon">??</span>
+                    <span class="refresh-text">新邮件通知</span>
+                    <span class="refresh-time">刚刚</span>
+                </div>
+                <div class="refresh-item">
+                    <span class="refresh-icon">??</span>
+                    <span class="refresh-text">用户登录提醒</span>
+                    <span class="refresh-time">5分钟前</span>
+                </div>
+                <div class="refresh-item">
+                    <span class="refresh-icon">??</span>
+                    <span class="refresh-text">系统更新完成</span>
+                    <span class="refresh-time">1小时前</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 列表滑动 -->
+        <div class="section-title">列表滑动操作</div>
+        <div class="swipe-list">
+            <div class="swipe-item">
+                <div class="swipe-actions">
+                    <div class="swipe-action edit">??</div>
+                    <div class="swipe-action delete">???</div>
+                </div>
+                <div class="swipe-content">
+                    <div class="swipe-avatar">张</div>
+                    <div class="swipe-info">
+                        <div class="swipe-title">张三</div>
+                        <div class="swipe-subtitle">产品经理</div>
+                    </div>
+                </div>
+            </div>
+            <div class="swipe-item">
+                <div class="swipe-actions">
+                    <div class="swipe-action edit">??</div>
+                    <div class="swipe-action delete">???</div>
+                </div>
+                <div class="swipe-content">
+                    <div class="swipe-avatar" style="background: linear-gradient(135deg, #22C55E 0%, #10B981 100%);">李</div>
+                    <div class="swipe-info">
+                        <div class="swipe-title">李四</div>
+                        <div class="swipe-subtitle">设计师</div>
+                    </div>
+                </div>
+            </div>
+            <div class="swipe-item">
+                <div class="swipe-actions">
+                    <div class="swipe-action edit">??</div>
+                    <div class="swipe-action delete">???</div>
+                </div>
+                <div class="swipe-content">
+                    <div class="swipe-avatar" style="background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);">王</div>
+                    <div class="swipe-info">
+                        <div class="swipe-title">王五</div>
+                        <div class="swipe-subtitle">开发工程师</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 缩放演示 -->
+        <div class="section-title">双指缩放</div>
+        <div class="pinch-demo">
+            <div class="pinch-container" id="pinchContainer">
+                <div class="pinch-image" id="pinchImage">???</div>
+            </div>
+            <div class="pinch-hint">双指捏合缩放图片</div>
+        </div>
+        
+        <!-- 手势日志 -->
+        <div class="section-title">手势日志</div>
+        <div class="gesture-log" id="gestureLog">
+            <div class="log-entry"><span class="log-time">--:--:--</span>等待手势输入...</div>
+        </div>
+        
+        <div class="safe-area-bottom"></div>
+    </div>
+
+    <script>
+        // 日志功能
+        function log(event, detail = '') {
+            const log = document.getElementById('gestureLog');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${time}</span><span class="log-event">${event}</span> <span class="log-detail">${detail}</span>`;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 20) log.removeChild(log.lastChild);
+        }
+        
+        // 基础手势区域
+        const gestureArea = document.getElementById('gestureArea');
+        const touchPoint = document.getElementById('touchPoint');
+        let longPressTimer;
+        
+        gestureArea.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            gestureArea.classList.add('tapping');
+            const touch = e.touches[0];
+            const rect = gestureArea.getBoundingClientRect();
+            touchPoint.style.display = 'block';
+            touchPoint.style.left = (touch.clientX - rect.left) + 'px';
+            touchPoint.style.top = (touch.clientY - rect.top) + 'px';
+            
+            longPressTimer = setTimeout(() => {
+                log('长按', `x: ${Math.round(touch.clientX)}, y: ${Math.round(touch.clientY)}`);
+                gestureArea.style.transform = 'scale(0.95)';
+            }, 500);
+        });
+        
+        gestureArea.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            clearTimeout(longPressTimer);
+            const touch = e.touches[0];
+            const rect = gestureArea.getBoundingClientRect();
+            touchPoint.style.left = (touch.clientX - rect.left) + 'px';
+            touchPoint.style.top = (touch.clientY - rect.top) + 'px';
+        });
+        
+        gestureArea.addEventListener('touchend', (e) => {
+            clearTimeout(longPressTimer);
+            gestureArea.classList.remove('tapping');
+            gestureArea.style.transform = '';
+            touchPoint.style.display = 'none';
+            log('触摸结束');
+        });
+        
+        gestureArea.addEventListener('click', () => log('点击'));
+        gestureArea.addEventListener('dblclick', () => log('双击'));
+        
+        // 滑块
+        const sliderTrack = document.getElementById('sliderTrack');
+        const sliderThumb = document.getElementById('sliderThumb');
+        const sliderFill = document.getElementById('sliderFill');
+        const sliderValue = document.getElementById('sliderValue');
+        let isDragging = false;
+        
+        function updateSlider(clientX) {
+            const rect = sliderTrack.getBoundingClientRect();
+            let percent = (clientX - rect.left) / rect.width;
+            percent = Math.max(0, Math.min(1, percent));
+            sliderFill.style.width = (percent * 100) + '%';
+            sliderThumb.style.left = (percent * 100) + '%';
+            sliderValue.textContent = Math.round(percent * 100) + '%';
+        }
+        
+        sliderThumb.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            sliderThumb.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            log('滑块拖动开始');
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                updateSlider(e.touches[0].clientX);
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', () => {
+            if (isDragging) {
+                isDragging = false;
+                sliderThumb.style.transform = 'translate(-50%, -50%)';
+                log('滑块拖动结束', sliderValue.textContent);
+            }
+        });
+        
+        sliderTrack.addEventListener('click', (e) => {
+            updateSlider(e.clientX);
+            log('滑块点击', sliderValue.textContent);
+        });
+        
+        // 轮播图
+        const carousel = document.getElementById('carousel');
+        const carouselTrack = document.getElementById('carouselTrack');
+        const carouselDots = document.querySelectorAll('.carousel-dot');
+        let currentSlide = 0;
+        let startX = 0;
+        let currentX = 0;
+        
+        function goToSlide(index) {
+            currentSlide = index;
+            carouselTrack.style.transform = `translateX(-${index * 100}%)`;
+            carouselDots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+        
+        carousel.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            carouselTrack.style.transition = 'none';
+        });
+        
+        carousel.addEventListener('touchmove', (e) => {
+            const diff = e.touches[0].clientX - startX;
+            carouselTrack.style.transform = `translateX(calc(-${currentSlide * 100}% + ${diff}px))`;
+        });
+        
+        carousel.addEventListener('touchend', (e) => {
+            const diff = e.changedTouches[0].clientX - startX;
+            carouselTrack.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            if (Math.abs(diff) > 50) {
+                if (diff > 0 && currentSlide > 0) {
+                    goToSlide(currentSlide - 1);
+                    log('轮播滑动', '上一张');
+                } else if (diff < 0 && currentSlide < 3) {
+                    goToSlide(currentSlide + 1);
+                    log('轮播滑动', '下一张');
+                } else {
+                    goToSlide(currentSlide);
+                }
+            } else {
+                goToSlide(currentSlide);
+            }
+        });
+        
+        // 下拉刷新
+        const refreshDemo = document.getElementById('refreshDemo');
+        const refreshHeader = document.getElementById('refreshHeader');
+        const refreshText = document.getElementById('refreshText');
+        const refreshSpinner = document.getElementById('refreshSpinner');
+        let refreshStartY = 0;
+        let isRefreshing = false;
+        
+        refreshDemo.addEventListener('touchstart', (e) => {
+            if (refreshDemo.scrollTop === 0) {
+                refreshStartY = e.touches[0].clientY;
+            }
+        });
+        
+        refreshDemo.addEventListener('touchmove', (e) => {
+            if (refreshStartY > 0 && !isRefreshing) {
+                const diff = e.touches[0].clientY - refreshStartY;
+                if (diff > 0 && diff < 150) {
+                    refreshHeader.style.transform = `translateY(${diff * 0.5}px)`;
+                    if (diff > 80) {
+                        refreshHeader.classList.add('pulling');
+                        refreshText.textContent = '释放刷新';
+                    } else {
+                        refreshHeader.classList.remove('pulling');
+                        refreshText.textContent = '下拉刷新';
+                    }
+                }
+            }
+        });
+        
+        refreshDemo.addEventListener('touchend', (e) => {
+            const diff = e.changedTouches[0].clientY - refreshStartY;
+            if (diff > 80 && !isRefreshing) {
+                isRefreshing = true;
+                refreshSpinner.classList.add('show');
+                refreshText.textContent = '刷新中...';
+                log('下拉刷新', '开始');
+                
+                setTimeout(() => {
+                    isRefreshing = false;
+                    refreshSpinner.classList.remove('show');
+                    refreshHeader.style.transform = '';
+                    refreshHeader.classList.remove('pulling');
+                    refreshText.textContent = '下拉刷新';
+                    log('下拉刷新', '完成');
+                }, 2000);
+            } else {
+                refreshHeader.style.transform = '';
+            }
+            refreshStartY = 0;
+        });
+        
+        // 列表滑动
+        document.querySelectorAll('.swipe-content').forEach(item => {
+            let startX = 0;
+            let currentTranslate = 0;
+            
+            item.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                item.style.transition = 'none';
+                // 关闭其他打开的项
+                document.querySelectorAll('.swipe-content').forEach(other => {
+                    if (other !== item) other.style.transform = '';
+                });
+            });
+            
+            item.addEventListener('touchmove', (e) => {
+                const diff = e.touches[0].clientX - startX;
+                if (diff < 0 && diff > -160) {
+                    currentTranslate = diff;
+                    item.style.transform = `translateX(${diff}px)`;
+                }
+            });
+            
+            item.addEventListener('touchend', (e) => {
+                item.style.transition = 'transform 0.3s';
+                if (currentTranslate < -80) {
+                    item.style.transform = 'translateX(-160px)';
+                    log('列表滑动', '显示操作');
+                } else {
+                    item.style.transform = '';
+                }
+                currentTranslate = 0;
+            });
+            
+            item.addEventListener('click', () => {
+                if (item.style.transform === 'translateX(-160px)') {
+                    item.style.transform = '';
+                }
+            });
+        });
+        
+        // 双指缩放
+        const pinchContainer = document.getElementById('pinchContainer');
+        const pinchImage = document.getElementById('pinchImage');
+        let initialDistance = 0;
+        let currentScale = 1;
+        
+        function getDistance(touches) {
+            return Math.hypot(
+                touches[0].clientX - touches[1].clientX,
+                touches[0].clientY - touches[1].clientY
+            );
+        }
+        
+        pinchContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialDistance = getDistance(e.touches);
+                log('双指缩放', '开始');
+            }
+        });
+        
+        pinchContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const distance = getDistance(e.touches);
+                const scale = (distance / initialDistance) * currentScale;
+                const clampedScale = Math.max(0.5, Math.min(3, scale));
+                pinchImage.style.transform = `scale(${clampedScale})`;
+            }
+        });
+        
+        pinchContainer.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                const transform = pinchImage.style.transform;
+                const match = transform.match(/scale\(([\d.]+)\)/);
+                if (match) {
+                    currentScale = parseFloat(match[1]);
+                }
+                log('双指缩放', `最终比例: ${currentScale.toFixed(2)}x`);
+            }
+        });
+        
+        // 双击缩放
+        let lastTap = 0;
+        pinchContainer.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTap < 300) {
+                if (currentScale !== 1) {
+                    currentScale = 1;
+                    pinchImage.style.transform = 'scale(1)';
+                    log('双击', '重置缩放');
+                } else {
+                    currentScale = 2;
+                    pinchImage.style.transform = 'scale(2)';
+                    log('双击', '放大2倍');
+                }
+            }
+            lastTap = currentTime;
+        });
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

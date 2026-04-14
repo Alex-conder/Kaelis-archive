@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色权限 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-role-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .role-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .role-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .role-icon { width: 56px; height: 56px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .role-info h3 { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .role-info p { font-size: 13px; color: #64748b; }
+        .role-badge { padding: 6px 14px; background: #dbeafe; color: #2563eb; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: auto; }
+        .permissions-list { margin-bottom: 20px; }
+        .permission-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .permission-item:last-child { border-bottom: none; }
+        .permission-check { width: 20px; height: 20px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin-right: 12px; }
+        .permission-name { font-size: 14px; color: #374151; flex: 1; }
+        .permission-toggle { width: 44px; height: 24px; background: #e2e8f0; border-radius: 12px; position: relative; cursor: pointer; }
+        .permission-toggle.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
+        .permission-toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: all 0.2s; }
+        .permission-toggle.active::after { left: 22px; }
+        .role-actions { display: flex; gap: 8px; }
+        .role-btn { flex: 1; padding: 10px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .role-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">角色权限</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <h1>角色管理</h1>
+            <button class="new-role-btn">+ 新建角色</button>
+        </div>
+        <div class="roles-grid">
+            <div class="role-card">
+                <div class="role-header">
+                    <div class="role-icon">??</div>
+                    <div class="role-info"><h3>超级管理员</h3><p>3 位成员</p></div>
+                    <span class="role-badge">系统</span>
+                </div>
+                <div class="permissions-list">
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">所有权限</span><div class="permission-toggle active"></div></div>
+                </div>
+                <div class="role-actions"><button class="role-btn">编辑</button><button class="role-btn primary">分配</button></div>
+            </div>
+            <div class="role-card">
+                <div class="role-header">
+                    <div class="role-icon">??</div>
+                    <div class="role-info"><h3>开发者</h3><p>8 位成员</p></div>
+                    <span class="role-badge">自定义</span>
+                </div>
+                <div class="permissions-list">
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">插件管理</span><div class="permission-toggle active"></div></div>
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">API 访问</span><div class="permission-toggle active"></div></div>
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">查看监控</span><div class="permission-toggle active"></div></div>
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">部署代码</span><div class="permission-toggle active"></div></div>
+                </div>
+                <div class="role-actions"><button class="role-btn">编辑</button><button class="role-btn primary">分配</button></div>
+            </div>
+            <div class="role-card">
+                <div class="role-header">
+                    <div class="role-icon">???</div>
+                    <div class="role-info"><h3>观察员</h3><p>5 位成员</p></div>
+                    <span class="role-badge">自定义</span>
+                </div>
+                <div class="permissions-list">
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">查看监控</span><div class="permission-toggle active"></div></div>
+                    <div class="permission-item"><div class="permission-check">?</div><span class="permission-name">查看日志</span><div class="permission-toggle active"></div></div>
+                    <div class="permission-item"><div class="permission-check" style="background:#e2e8f0;"></div><span class="permission-name">修改配置</span><div class="permission-toggle"></div></div>
+                </div>
+                <div class="role-actions"><button class="role-btn">编辑</button><button class="role-btn primary">分配</button></div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能分析 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .profiler-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .profiler-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .start-profile-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .metric-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .metric-card h3 { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+        .metric-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .metric-change { font-size: 13px; margin-top: 4px; }
+        .metric-change.good { color: #22c55e; }
+        .metric-change.bad { color: #ef4444; }
+        .flame-graph { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .graph-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .graph-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .flame-container { height: 200px; background: #f8fafc; border-radius: 12px; position: relative; overflow: hidden; }
+        .flame-bar { position: absolute; height: 30px; border-radius: 4px; display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: white; font-weight: 500; }
+        .slow-queries { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .query-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
+        .query-item:last-child { border-bottom: none; }
+        .query-time { width: 80px; font-size: 16px; font-weight: 700; color: #ef4444; }
+        .query-sql { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #374151; background: #f8fafc; padding: 10px; border-radius: 8px; }
+        .query-count { font-size: 13px; color: #64748b; margin-left: 16px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">性能分析</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="profiler-header">
+            <h1>性能分析器</h1>
+            <button class="start-profile-btn">? 开始分析</button>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric-card"><h3>平均响应时间</h3><div class="metric-value">45ms</div><div class="metric-change good">↓ 12% 较上周</div></div>
+            <div class="metric-card"><h3>P99 延迟</h3><div class="metric-value">180ms</div><div class="metric-change good">↓ 8% 较上周</div></div>
+            <div class="metric-card"><h3>内存使用</h3><div class="metric-value">4.2GB</div><div class="metric-change bad">↑ 5% 较上周</div></div>
+            <div class="metric-card"><h3>CPU 使用</h3><div class="metric-value">32%</div><div class="metric-change good">↓ 3% 较上周</div></div>
+        </div>
+        <div class="flame-graph">
+            <div class="graph-header"><h2 class="graph-title">CPU 火焰图</h2><span style="font-size:13px;color:#64748b;">最近 5 分钟</span></div>
+            <div class="flame-container">
+                <div class="flame-bar" style="top:10px;left:0;width:100%;background:var(--primary);">gateway.handleRequest 45%</div>
+                <div class="flame-bar" style="top:45px;left:0;width:60%;background:var(--secondary);">ai-service.generate 28%</div>
+                <div class="flame-bar" style="top:45px;left:60%;width:25%;background:var(--primary);">cache.get 12%</div>
+                <div class="flame-bar" style="top:80px;left:0;width:35%;background:#a855f7;">db.query 18%</div>
+                <div class="flame-bar" style="top:80px;left:35%;width:20%;background:#c084fc;">vector.search 10%</div>
+            </div>
+        </div>
+        <div class="slow-queries">
+            <h2 class="section-title">慢查询 TOP 5</h2>
+            <div class="query-item">
+                <span class="query-time">450ms</span>
+                <code class="query-sql">SELECT * FROM vectors WHERE embedding &lt;-> $1 &lt; 0.3</code>
+                <span class="query-count">1,234 次</span>
+            </div>
+            <div class="query-item">
+                <span class="query-time">320ms</span>
+                <code class="query-sql">UPDATE plugin_stats SET calls = calls + 1 WHERE id = $1</code>
+                <span class="query-count">45.2K 次</span>
+            </div>
+            <div class="query-item">
+                <span class="query-time">280ms</span>
+                <code class="query-sql">SELECT * FROM audit_logs WHERE created_at > $1 ORDER BY id DESC</code>
+                <span class="query-count">892 次</span>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard,performance"></script>
+
+</body>
+</html>
+

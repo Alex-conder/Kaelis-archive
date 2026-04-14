@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook管理中心 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #A1A1AA; }
+        
+        /* 统计卡片 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+        .stat-value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 14px; color: #A1A1AA; }
+        
+        /* Webhook列表 */
+        .webhook-section { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+        .section-actions { display: flex; gap: 12px; }
+        .btn { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        
+        .webhook-list { display: flex; flex-direction: column; gap: 12px; }
+        .webhook-item { display: flex; align-items: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; }
+        .webhook-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(136,72,249,0.3); }
+        .webhook-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 16px; }
+        .webhook-info { flex: 1; }
+        .webhook-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .webhook-url { font-size: 13px; color: #6B7280; font-family: monospace; }
+        .webhook-events { display: flex; gap: 8px; margin-top: 8px; }
+        .event-tag { padding: 4px 10px; background: rgba(136,72,249,0.2); color: #BD95FF; border-radius: 20px; font-size: 11px; }
+        .webhook-status { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 16px; }
+        .webhook-status.active { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .webhook-status.inactive { background: rgba(107,114,128,0.2); color: #6B7280; }
+        .webhook-actions { display: flex; gap: 8px; }
+        .action-icon { width: 36px; height: 36px; border: none; background: rgba(255,255,255,0.1); border-radius: 8px; color: white; cursor: pointer; font-size: 14px; }
+        .action-icon:hover { background: var(--primary); }
+        
+        /* 事件类型 */
+        .event-section { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); }
+        .event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+        .event-card { padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: all 0.3s; }
+        .event-card:hover { border-color: rgba(136,72,249,0.3); }
+        .event-card.selected { border-color: var(--primary); background: rgba(136,72,249,0.1); }
+        .event-icon { font-size: 32px; margin-bottom: 12px; }
+        .event-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .event-desc { font-size: 12px; color: #6B7280; }
+        
+        /* 日志面板 */
+        .log-panel { background: rgba(0,0,0,0.5); border-radius: 12px; padding: 20px; margin-top: 24px; max-height: 300px; overflow-y: auto; }
+        .log-item { font-family: monospace; font-size: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .log-time { color: #6B7280; margin-right: 12px; }
+        .log-event { padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-right: 12px; }
+        .log-event.success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .log-event.error { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .log-payload { color: #A1A1AA; }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .event-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? Webhook管理中心</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="createWebhook()">? 新建Webhook</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Webhook管理中心</h1>
+            <p class="page-subtitle">管理事件订阅、推送通知和第三方集成</p>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">??</div>
+                <div class="stat-value">8</div>
+                <div class="stat-label">活跃Webhook</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">??</div>
+                <div class="stat-value">2.4K</div>
+                <div class="stat-label">今日推送</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">?</div>
+                <div class="stat-value">99.2%</div>
+                <div class="stat-label">成功率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">??</div>
+                <div class="stat-value">145ms</div>
+                <div class="stat-label">平均延迟</div>
+            </div>
+        </div>
+        
+        <!-- Webhook列表 -->
+        <div class="webhook-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 我的Webhooks
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="testAll()">?? 测试全部</button>
+                    <button class="btn btn-primary" onclick="createWebhook()">? 新建</button>
+                </div>
+            </div>
+            
+            <div class="webhook-list">
+                <div class="webhook-item">
+                    <div class="webhook-icon" style="background:#24292E;">??</div>
+                    <div class="webhook-info">
+                        <div class="webhook-name">GitHub 代码推送通知</div>
+                        <div class="webhook-url">https://api.kaelis.ai/webhooks/github</div>
+                        <div class="webhook-events">
+                            <span class="event-tag">push</span>
+                            <span class="event-tag">pull_request</span>
+                            <span class="event-tag">release</span>
+                        </div>
+                    </div>
+                    <span class="webhook-status active">● 活跃</span>
+                    <div class="webhook-actions">
+                        <button class="action-icon" onclick="testWebhook()">??</button>
+                        <button class="action-icon" onclick="editWebhook()">??</button>
+                        <button class="action-icon" onclick="deleteWebhook()">???</button>
+                    </div>
+                </div>
+                
+                <div class="webhook-item">
+                    <div class="webhook-icon" style="background:#4A154B;">??</div>
+                    <div class="webhook-info">
+                        <div class="webhook-name">Slack 告警通知</div>
+                        <div class="webhook-url">https://hooks.slack.com/services/T000/B000/XXXX</div>
+                        <div class="webhook-events">
+                            <span class="event-tag">alert</span>
+                            <span class="event-tag">error</span>
+                        </div>
+                    </div>
+                    <span class="webhook-status active">● 活跃</span>
+                    <div class="webhook-actions">
+                        <button class="action-icon" onclick="testWebhook()">??</button>
+                        <button class="action-icon" onclick="editWebhook()">??</button>
+                        <button class="action-icon" onclick="deleteWebhook()">???</button>
+                    </div>
+                </div>
+                
+                <div class="webhook-item">
+                    <div class="webhook-icon" style="background:#0088CC;">??</div>
+                    <div class="webhook-info">
+                        <div class="webhook-name">Telegram 机器人</div>
+                        <div class="webhook-url">https://api.telegram.org/botXXX/webhook</div>
+                        <div class="webhook-events">
+                            <span class="event-tag">message</span>
+                            <span class="event-tag">notification</span>
+                        </div>
+                    </div>
+                    <span class="webhook-status active">● 活跃</span>
+                    <div class="webhook-actions">
+                        <button class="action-icon" onclick="testWebhook()">??</button>
+                        <button class="action-icon" onclick="editWebhook()">??</button>
+                        <button class="action-icon" onclick="deleteWebhook()">???</button>
+                    </div>
+                </div>
+                
+                <div class="webhook-item">
+                    <div class="webhook-icon" style="background:#6B7280;">??</div>
+                    <div class="webhook-info">
+                        <div class="webhook-name">自定义API端点</div>
+                        <div class="webhook-url">https://my-app.com/api/webhooks</div>
+                        <div class="webhook-events">
+                            <span class="event-tag">all</span>
+                        </div>
+                    </div>
+                    <span class="webhook-status inactive">○ 暂停</span>
+                    <div class="webhook-actions">
+                        <button class="action-icon" onclick="testWebhook()">??</button>
+                        <button class="action-icon" onclick="editWebhook()">??</button>
+                        <button class="action-icon" onclick="deleteWebhook()">???</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 事件类型 -->
+        <div class="event-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 可订阅事件
+                </h2>
+            </div>
+            
+            <div class="event-grid">
+                <div class="event-card selected">
+                    <div class="event-icon">??</div>
+                    <div class="event-name">代码推送</div>
+                    <div class="event-desc">Git 仓库代码推送事件</div>
+                </div>
+                <div class="event-card selected">
+                    <div class="event-icon">??</div>
+                    <div class="event-name">合并请求</div>
+                    <div class="event-desc">PR 创建、更新、合并</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-icon">???</div>
+                    <div class="event-name">版本发布</div>
+                    <div class="event-desc">新版本标签创建</div>
+                </div>
+                <div class="event-card selected">
+                    <div class="event-icon">??</div>
+                    <div class="event-name">系统告警</div>
+                    <div class="event-desc">监控告警触发</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-icon">??</div>
+                    <div class="event-name">用户事件</div>
+                    <div class="event-desc">用户注册、登录</div>
+                </div>
+                <div class="event-card">
+                    <div class="event-icon">??</div>
+                    <div class="event-name">插件事件</div>
+                    <div class="event-desc">插件安装、更新</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 推送日志 -->
+        <div class="webhook-section" style="margin-top:24px;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 推送日志
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="clearLogs()">??? 清空</button>
+                </div>
+            </div>
+            
+            <div class="log-panel">
+                <div class="log-item">
+                    <span class="log-time">2026-03-17 10:23:45</span>
+                    <span class="log-event success">SUCCESS</span>
+                    <span class="log-payload">GitHub push event delivered (145ms)</span>
+                </div>
+                <div class="log-item">
+                    <span class="log-time">2026-03-17 10:23:42</span>
+                    <span class="log-event success">SUCCESS</span>
+                    <span class="log-payload">Slack alert sent (89ms)</span>
+                </div>
+                <div class="log-item">
+                    <span class="log-time">2026-03-17 10:23:38</span>
+                    <span class="log-event error">ERROR</span>
+                    <span class="log-payload">Custom API timeout (5000ms)</span>
+                </div>
+                <div class="log-item">
+                    <span class="log-time">2026-03-17 10:23:35</span>
+                    <span class="log-event success">SUCCESS</span>
+                    <span class="log-payload">Telegram message sent (234ms)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createWebhook() {
+            alert('创建新的Webhook');
+        }
+        
+        function testAll() {
+            alert('测试所有Webhook');
+        }
+        
+        function testWebhook() {
+            alert('测试Webhook');
+        }
+        
+        function editWebhook() {
+            alert('编辑Webhook');
+        }
+        
+        function deleteWebhook() {
+            if (confirm('确定要删除这个Webhook吗?')) {
+                alert('Webhook已删除');
+            }
+        }
+        
+        function clearLogs() {
+            if (confirm('确定要清空日志吗?')) {
+                alert('日志已清空');
+            }
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

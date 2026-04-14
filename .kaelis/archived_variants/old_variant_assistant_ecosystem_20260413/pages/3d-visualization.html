@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D可视化与地图 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 24px;
+        }
+        
+        .card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 24px;
+        }
+        
+        .card-title { 
+            font-size: 16px; 
+            margin-bottom: 20px;
+            color: #A1A1AA;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* 3D立方体 */
+        .cube-container { 
+            perspective: 1000px; 
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cube { 
+            width: 150px; 
+            height: 150px; 
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotateCube 10s infinite linear;
+        }
+        @keyframes rotateCube {
+            0% { transform: rotateX(0) rotateY(0); }
+            100% { transform: rotateX(360deg) rotateY(360deg); }
+        }
+        .cube-face { 
+            position: absolute; 
+            width: 150px; 
+            height: 150px; 
+            border: 2px solid var(--primary);
+            background: rgba(136,72,249,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            backface-visibility: visible;
+        }
+        .cube-face.front { transform: translateZ(75px); }
+        .cube-face.back { transform: rotateY(180deg) translateZ(75px); }
+        .cube-face.right { transform: rotateY(90deg) translateZ(75px); }
+        .cube-face.left { transform: rotateY(-90deg) translateZ(75px); }
+        .cube-face.top { transform: rotateX(90deg) translateZ(75px); }
+        .cube-face.bottom { transform: rotateX(-90deg) translateZ(75px); }
+        
+        /* 3D柱状图 */
+        .bar3d-container { 
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 40px 20px;
+            perspective: 1000px;
+        }
+        .bar3d { 
+            width: 60px; 
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.3s;
+        }
+        .bar3d:hover { transform: translateZ(20px); }
+        .bar3d-side { 
+            position: absolute; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        .bar3d-front { 
+            width: 60px; 
+            bottom: 0;
+            transform: translateZ(30px);
+            opacity: 0.9;
+        }
+        .bar3d-right { 
+            width: 60px; 
+            right: -30px;
+            bottom: 0;
+            transform: rotateY(90deg);
+            transform-origin: right;
+            opacity: 0.7;
+        }
+        .bar3d-top { 
+            width: 60px; 
+            height: 60px;
+            transform: rotateX(90deg) translateZ(30px);
+            transform-origin: bottom;
+            opacity: 0.8;
+        }
+        
+        /* 地球仪 */
+        .globe-container { 
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .globe { 
+            width: 200px; 
+            height: 200px; 
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(136,72,249,0.8), transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(59,130,246,0.8), transparent 50%),
+                linear-gradient(135deg, #1a1a3e 0%, #0f0f23 100%);
+            position: relative;
+            animation: rotateGlobe 20s infinite linear;
+            box-shadow: 
+                inset -20px -20px 50px rgba(0,0,0,0.5),
+                0 0 50px rgba(136,72,249,0.3);
+        }
+        @keyframes rotateGlobe {
+            0% { background-position: 0 0, 0 0, 0 0; }
+            100% { background-position: 200px 0, -200px 0, 0 0; }
+        }
+        .globe-grid { 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: 
+                repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(136,72,249,0.2) 20px),
+                repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(136,72,249,0.2) 20px);
+            animation: rotateGrid 20s infinite linear;
+        }
+        @keyframes rotateGrid {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .globe-point { 
+            position: absolute; 
+            width: 8px; 
+            height: 8px; 
+            background: #22C55E; 
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22C55E;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+        }
+        
+        /* 地图样式 */
+        .map-container { 
+            height: 400px;
+            background: linear-gradient(180deg, #0a1628 0%, #1a2744 100%);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .map-world { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 80%;
+        }
+        .map-continent { 
+            fill: rgba(136,72,249,0.3);
+            stroke: var(--primary);
+            stroke-width: 1;
+            transition: all 0.3s;
+        }
+        .map-continent:hover { fill: rgba(136,72,249,0.5); }
+        
+        /* 热点 */
+        .heatmap-container { 
+            height: 300px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .heatmap-grid { 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+        }
+        .heatmap-cell { 
+            border: 1px solid rgba(255,255,255,0.02);
+            transition: all 0.5s;
+        }
+        .heatmap-cell.active { 
+            background: radial-gradient(circle, rgba(136,72,249,0.8) 0%, transparent 70%);
+        }
+        
+        /* 网络拓扑 */
+        .network-container { 
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+        .network-node { 
+            position: absolute; 
+            width: 40px; 
+            height: 40px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            animation: nodeFloat 3s ease-in-out infinite;
+        }
+        @keyframes nodeFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .network-line { 
+            position: absolute; 
+            height: 2px; 
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transform-origin: left center;
+            animation: dataFlow 2s linear infinite;
+        }
+        @keyframes dataFlow {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        /* 粒子效果 */
+        .particles-container { 
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, rgba(136,72,249,0.1) 0%, transparent 70%);
+        }
+        .particle { 
+            position: absolute; 
+            width: 4px; 
+            height: 4px; 
+            background: var(--primary); 
+            border-radius: 50%;
+            animation: particleFloat 10s infinite linear;
+        }
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+        }
+        
+        /* 数据流 */
+        .datastream-container { 
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stream-line { 
+            position: absolute; 
+            height: 1px; 
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: streamFlow 3s linear infinite;
+        }
+        @keyframes streamFlow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* 统计 */
+        .location-stats { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .location-stat { 
+            text-align: center; 
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+        }
+        .location-stat-value { 
+            font-size: 24px; 
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .location-stat-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 3D可视化与地图</h1>
+        <p>立体数据展示与地理信息可视化</p>
+    </div>
+    
+    <div class="container">
+        <div class="grid">
+            <!-- 3D立方体 -->
+            <div class="card">
+                <div class="card-title">3D数据立方体</div>
+                <div class="cube-container">
+                    <div class="cube">
+                        <div class="cube-face front">??</div>
+                        <div class="cube-face back">??</div>
+                        <div class="cube-face right">??</div>
+                        <div class="cube-face left">??</div>
+                        <div class="cube-face top">??</div>
+                        <div class="cube-face bottom">???</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 3D柱状图 -->
+            <div class="card">
+                <div class="card-title">3D柱状图</div>
+                <div class="bar3d-container">
+                    <div class="bar3d" style="height: 60%;">
+                        <div class="bar3d-side bar3d-front" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-right" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-top"></div>
+                    </div>
+                    <div class="bar3d" style="height: 80%;">
+                        <div class="bar3d-side bar3d-front" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-right" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-top"></div>
+                    </div>
+                    <div class="bar3d" style="height: 45%;">
+                        <div class="bar3d-side bar3d-front" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-right" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-top"></div>
+                    </div>
+                    <div class="bar3d" style="height: 90%;">
+                        <div class="bar3d-side bar3d-front" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-right" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-top"></div>
+                    </div>
+                    <div class="bar3d" style="height: 70%;">
+                        <div class="bar3d-side bar3d-front" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-right" style="height: 100%;"></div>
+                        <div class="bar3d-side bar3d-top"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 地球仪 -->
+            <div class="card">
+                <div class="card-title">
+                    全球访问分布
+                    <span style="font-size: 12px; color: #22C55E;">● 12 个活跃节点</span>
+                </div>
+                <div class="globe-container">
+                    <div class="globe">
+                        <div class="globe-grid"></div>
+                    </div>
+                    <div class="globe-point" style="top: 30%; left: 60%;"></div>
+                    <div class="globe-point" style="top: 50%; left: 30%;"></div>
+                    <div class="globe-point" style="top: 40%; left: 70%;"></div>
+                    <div class="globe-point" style="top: 60%; left: 50%;"></div>
+                </div>
+                <div class="location-stats">
+                    <div class="location-stat">
+                        <div class="location-stat-value">5</div>
+                        <div class="location-stat-label">亚洲节点</div>
+                    </div>
+                    <div class="location-stat">
+                        <div class="location-stat-value">4</div>
+                        <div class="location-stat-label">欧洲节点</div>
+                    </div>
+                    <div class="location-stat">
+                        <div class="location-stat-value">3</div>
+                        <div class="location-stat-label">美洲节点</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 世界地图 -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-title">全球数据中心分布</div>
+                <div class="map-container">
+                    <svg class="map-world" viewBox="0 0 1000 500">
+                        <!-- 简化的大陆轮廓 -->
+                        <path class="map-continent" d="M150,120 Q200,100 250,130 T350,150 Q400,180 380,220 T300,280 Q250,300 200,280 T150,220 Q120,180 150,120Z"/>
+                        <path class="map-continent" d="M450,100 Q550,80 650,100 T750,150 Q780,200 750,250 T650,300 Q550,320 480,280 T420,200 Q400,150 450,100Z"/>
+                        <path class="map-continent" d="M200,320 Q300,300 400,330 T500,380 Q520,420 480,450 T380,480 Q300,490 220,460 T150,400 Q140,360 200,320Z"/>
+                        <path class="map-continent" d="M550,320 Q650,300 750,330 T850,380 Q880,420 840,450 T720,480 Q620,490 560,450 T520,380 Q510,340 550,320Z"/>
+                        <path class="map-continent" d="M780,150 Q850,140 900,160 T950,200 Q960,240 920,260 T850,270 Q800,280 770,250 T750,200 Q760,170 780,150Z"/>
+                        
+                        <!-- 数据中心标记 -->
+                        <circle cx="250" cy="180" r="8" fill="#22C55E">
+                            <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="550" cy="150" r="8" fill="#22C55E">
+                            <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="850" cy="200" r="8" fill="#22C55E">
+                            <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="350" cy="380" r="8" fill="#F59E0B">
+                            <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="700" cy="380" r="8" fill="#22C55E">
+                            <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        
+                        <!-- 连接线 -->
+                        <line x1="250" y1="180" x2="550" y2="150" stroke="var(--primary)" stroke-width="1" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" values="0;10" dur="1s" repeatCount="indefinite"/>
+                        </line>
+                        <line x1="550" y1="150" x2="850" y2="200" stroke="var(--primary)" stroke-width="1" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" values="0;10" dur="1s" repeatCount="indefinite"/>
+                        </line>
+                        <line x1="550" y1="150" x2="700" y2="380" stroke="var(--primary)" stroke-width="1" stroke-dasharray="5,5">
+                            <animate attributeName="stroke-dashoffset" values="0;10" dur="1s" repeatCount="indefinite"/>
+                        </line>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- 热力图 -->
+            <div class="card">
+                <div class="card-title">用户活跃度热力图</div>
+                <div class="heatmap-container" id="heatmap">
+                    <div class="heatmap-grid"></div>
+                </div>
+            </div>
+            
+            <!-- 网络拓扑 -->
+            <div class="card">
+                <div class="card-title">网络拓扑图</div>
+                <div class="network-container" id="network">
+                    <div class="network-node" style="top: 50%; left: 50%; animation-delay: 0s;">??</div>
+                    <div class="network-node" style="top: 20%; left: 20%; animation-delay: 0.5s;">??</div>
+                    <div class="network-node" style="top: 20%; left: 80%; animation-delay: 1s;">??</div>
+                    <div class="network-node" style="top: 80%; left: 20%; animation-delay: 1.5s;">???</div>
+                    <div class="network-node" style="top: 80%; left: 80%; animation-delay: 2s;">??</div>
+                </div>
+            </div>
+            
+            <!-- 粒子效果 -->
+            <div class="card">
+                <div class="card-title">粒子数据流</div>
+                <div class="particles-container" id="particles"></div>
+            </div>
+            
+            <!-- 数据流 -->
+            <div class="card">
+                <div class="card-title">实时数据流</div>
+                <div class="datastream-container" id="datastream"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 生成热力图
+        const heatmapGrid = document.querySelector('.heatmap-grid');
+        for (let i = 0; i < 200; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            heatmapGrid.appendChild(cell);
+        }
+        
+        // 随机激活热力图单元
+        setInterval(() => {
+            const cells = document.querySelectorAll('.heatmap-cell');
+            cells.forEach(cell => cell.classList.remove('active'));
+            for (let i = 0; i < 30; i++) {
+                const randomCell = cells[Math.floor(Math.random() * cells.length)];
+                randomCell.classList.add('active');
+            }
+        }, 1000);
+        
+        // 生成粒子
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 10 + 's';
+            particle.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            particlesContainer.appendChild(particle);
+        }
+        
+        // 生成数据流
+        const datastreamContainer = document.getElementById('datastream');
+        for (let i = 0; i < 20; i++) {
+            const line = document.createElement('div');
+            line.className = 'stream-line';
+            line.style.top = Math.random() * 100 + '%';
+            line.style.width = Math.random() * 200 + 100 + 'px';
+            line.style.left = -200 + 'px';
+            line.style.animationDelay = Math.random() * 3 + 's';
+            line.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            datastreamContainer.appendChild(line);
+        }
+        
+        // 添加网络连接线
+        const networkContainer = document.getElementById('network');
+        const nodes = networkContainer.querySelectorAll('.network-node');
+        const centerNode = nodes[0];
+        
+        for (let i = 1; i < nodes.length; i++) {
+            const line = document.createElement('div');
+            line.className = 'network-line';
+            
+            const centerRect = centerNode.getBoundingClientRect();
+            const nodeRect = nodes[i].getBoundingClientRect();
+            const containerRect = networkContainer.getBoundingClientRect();
+            
+            const x1 = centerRect.left - containerRect.left + centerRect.width / 2;
+            const y1 = centerRect.top - containerRect.top + centerRect.height / 2;
+            const x2 = nodeRect.left - containerRect.left + nodeRect.width / 2;
+            const y2 = nodeRect.top - containerRect.top + nodeRect.height / 2;
+            
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            line.style.width = length + 'px';
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.animationDelay = (i * 0.5) + 's';
+            
+            networkContainer.appendChild(line);
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

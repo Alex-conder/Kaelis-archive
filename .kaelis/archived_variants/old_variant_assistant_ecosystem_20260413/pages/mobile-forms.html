@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>移动端表单组件 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 顶部导航 */
+        .mobile-header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            background: rgba(23,23,23,0.95); 
+            backdrop-filter: blur(20px);
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .back-btn { 
+            width: 40px; 
+            height: 40px; 
+            border: none; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 10px; 
+            color: white; 
+            font-size: 20px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-title { font-size: 17px; font-weight: 600; flex: 1; }
+        .header-action { 
+            padding: 8px 16px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px; 
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* 内容区域 */
+        .content { padding: 20px; }
+        
+        .section-title { 
+            font-size: 13px; 
+            color: #6B7280; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+        .section-title:first-child { margin-top: 0; }
+        
+        /* ========== 基础输入框 ========== */
+        .form-group { margin-bottom: 20px; }
+        .form-label { 
+            display: block; 
+            font-size: 14px; 
+            font-weight: 500; 
+            margin-bottom: 8px; 
+            color: #A1A1AA;
+        }
+        .form-input { 
+            width: 100%; 
+            padding: 14px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+        }
+        .form-input:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            background: rgba(136,72,249,0.05);
+        }
+        .form-input::placeholder { color: #6B7280; }
+        .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* 输入框带图标 */
+        .input-with-icon { position: relative; }
+        .input-icon { 
+            position: absolute; 
+            left: 16px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            font-size: 20px; 
+            color: #6B7280;
+        }
+        .input-with-icon .form-input { padding-left: 48px; }
+        
+        /* 输入框带操作 */
+        .input-with-action { position: relative; }
+        .input-action { 
+            position: absolute; 
+            right: 8px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            padding: 8px 12px; 
+            background: rgba(136,72,249,0.2); 
+            border: none; 
+            border-radius: 8px; 
+            color: var(--primary); 
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .input-with-action .form-input { padding-right: 80px; }
+        
+        /* 清除按钮 */
+        .input-clear { 
+            position: absolute; 
+            right: 16px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            width: 20px; 
+            height: 20px; 
+            background: rgba(255,255,255,0.2); 
+            border: none; 
+            border-radius: 50%; 
+            color: white; 
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+        .form-input:not(:placeholder-shown) ~ .input-clear { display: flex; }
+        
+        /* ========== 文本域 ========== */
+        .form-textarea { 
+            width: 100%; 
+            min-height: 120px; 
+            padding: 14px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .form-textarea:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            background: rgba(136,72,249,0.05);
+        }
+        .char-count { 
+            text-align: right; 
+            font-size: 12px; 
+            color: #6B7280; 
+            margin-top: 8px;
+        }
+        
+        /* ========== 选择器 ========== */
+        .form-select { 
+            width: 100%; 
+            padding: 14px 40px 14px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        .form-select:focus { 
+            outline: none; 
+            border-color: var(--primary);
+        }
+        .form-select option { background: #1a1a1a; color: white; }
+        
+        /* ========== 单选/复选 ========== */
+        .radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 12px; }
+        .radio-item, .checkbox-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .radio-item:active, .checkbox-item:active { background: rgba(255,255,255,0.08); }
+        .radio-item input, .checkbox-item input { display: none; }
+        .radio-circle, .checkbox-square { 
+            width: 22px; 
+            height: 22px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .radio-circle { border-radius: 50%; }
+        .checkbox-square { border-radius: 6px; }
+        .radio-item input:checked ~ .radio-circle { 
+            border-color: var(--primary); 
+            background: var(--primary);
+        }
+        .radio-item input:checked ~ .radio-circle::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+        }
+        .checkbox-item input:checked ~ .checkbox-square { 
+            border-color: var(--primary); 
+            background: var(--primary);
+        }
+        .checkbox-item input:checked ~ .checkbox-square::after {
+            content: '?';
+            color: white;
+            font-size: 14px;
+        }
+        .radio-text, .checkbox-text { font-size: 15px; }
+        .radio-desc, .checkbox-desc { 
+            font-size: 13px; 
+            color: #6B7280; 
+            margin-top: 2px;
+        }
+        
+        /* 卡片式单选 */
+        .card-radio-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .card-radio { 
+            padding: 20px; 
+            background: rgba(255,255,255,0.03); 
+            border: 2px solid transparent; 
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .card-radio:active { transform: scale(0.98); }
+        .card-radio input { display: none; }
+        .card-radio input:checked + .card-radio-content { color: var(--primary); }
+        .card-radio:has(input:checked) { 
+            border-color: var(--primary); 
+            background: rgba(136,72,249,0.1);
+        }
+        .card-radio-icon { font-size: 32px; margin-bottom: 8px; }
+        .card-radio-title { font-size: 14px; font-weight: 600; }
+        
+        /* ========== 开关 ========== */
+        .switch-group { display: flex; flex-direction: column; gap: 16px; }
+        .switch-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .switch-item:last-child { border-bottom: none; }
+        .switch-info h4 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .switch-info p { font-size: 13px; color: #6B7280; }
+        .switch-toggle { 
+            width: 52px; 
+            height: 32px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 16px; 
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .switch-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 28px;
+            height: 28px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .switch-toggle.active { background: var(--primary); }
+        .switch-toggle.active::after { left: 22px; }
+        .switch-toggle input { display: none; }
+        
+        /* ========== 滑块 ========== */
+        .slider-container { padding: 20px 0; }
+        .slider-labels { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 12px; 
+            color: #6B7280; 
+            margin-bottom: 12px;
+        }
+        .slider-track { 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px; 
+            position: relative;
+        }
+        .slider-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 3px; 
+            width: 50%;
+        }
+        .slider-thumb { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            width: 24px; 
+            height: 24px; 
+            background: white; 
+            border-radius: 50%; 
+            transform: translate(-50%, -50%); 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .slider-value { 
+            text-align: center; 
+            margin-top: 12px; 
+            font-size: 18px; 
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* ========== 步进器 ========== */
+        .stepper { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px;
+        }
+        .stepper-btn { 
+            width: 40px; 
+            height: 40px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            background: transparent; 
+            border-radius: 10px; 
+            color: white; 
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .stepper-btn:active { background: rgba(255,255,255,0.1); }
+        .stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .stepper-value { 
+            min-width: 60px; 
+            text-align: center; 
+            font-size: 18px; 
+            font-weight: 600;
+        }
+        
+        /* ========== 日期/时间选择 ========== */
+        .datetime-group { display: flex; gap: 12px; }
+        .datetime-item { flex: 1; }
+        
+        /* ========== 文件上传 ========== */
+        .upload-zone { 
+            border: 2px dashed rgba(255,255,255,0.2); 
+            border-radius: 16px; 
+            padding: 40px; 
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-zone:active { border-color: var(--primary); background: rgba(136,72,249,0.05); }
+        .upload-icon { font-size: 48px; margin-bottom: 12px; }
+        .upload-text { font-size: 15px; margin-bottom: 8px; }
+        .upload-hint { font-size: 13px; color: #6B7280; }
+        .upload-input { display: none; }
+        
+        /* 已上传文件 */
+        .uploaded-files { margin-top: 16px; }
+        .uploaded-file { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .file-icon { font-size: 24px; }
+        .file-info { flex: 1; }
+        .file-name { font-size: 14px; margin-bottom: 2px; }
+        .file-size { font-size: 12px; color: #6B7280; }
+        .file-remove { 
+            width: 28px; 
+            height: 28px; 
+            border: none; 
+            background: rgba(239,68,68,0.2); 
+            border-radius: 6px; 
+            color: #EF4444; 
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        /* ========== 标签输入 ========== */
+        .tag-input { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            padding: 12px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px;
+            min-height: 52px;
+        }
+        .tag { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            padding: 6px 12px; 
+            background: rgba(136,72,249,0.2); 
+            border-radius: 20px; 
+            font-size: 13px;
+        }
+        .tag-remove { 
+            width: 16px; 
+            height: 16px; 
+            border: none; 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 50%; 
+            color: white; 
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .tag-input-field { 
+            flex: 1; 
+            min-width: 100px; 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            font-size: 15px;
+            outline: none;
+        }
+        
+        /* ========== 搜索建议 ========== */
+        .search-suggestions { 
+            position: absolute; 
+            top: 100%; 
+            left: 0; 
+            right: 0; 
+            background: rgba(23,23,23,0.98); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            margin-top: 8px;
+            overflow: hidden;
+            z-index: 10;
+            display: none;
+        }
+        .search-suggestions.show { display: block; }
+        .suggestion-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 14px 16px; 
+            cursor: pointer;
+        }
+        .suggestion-item:active { background: rgba(255,255,255,0.05); }
+        .suggestion-icon { font-size: 18px; color: #6B7280; }
+        .suggestion-text { font-size: 15px; }
+        
+        /* ========== 表单验证状态 ========== */
+        .form-group.error .form-input { border-color: #EF4444; }
+        .form-group.success .form-input { border-color: #22C55E; }
+        .form-error { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            margin-top: 8px; 
+            font-size: 13px; 
+            color: #EF4444;
+        }
+        .form-success { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            margin-top: 8px; 
+            font-size: 13px; 
+            color: #22C55E;
+        }
+        
+        /* 底部按钮 */
+        .form-actions { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: rgba(23,23,23,0.98); 
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+        .btn { 
+            flex: 1; 
+            padding: 16px; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-primary:active { opacity: 0.9; transform: scale(0.98); }
+        .btn-secondary { 
+            background: rgba(255,255,255,0.1); 
+            color: white;
+        }
+        .btn-secondary:active { background: rgba(255,255,255,0.15); }
+        
+        .content-with-actions { padding-bottom: 100px; }
+    </style>
+</head>
+<body>
+    <header class="mobile-header">
+        <button class="back-btn" onclick="history.back()">?</button>
+        <span class="header-title">表单组件</span>
+        <button class="header-action">保存</button>
+    </header>
+    
+    <div class="content content-with-actions">
+        <!-- 基础输入 -->
+        <div class="section-title">基础输入</div>
+        <div class="form-group">
+            <label class="form-label">用户名</label>
+            <input type="text" class="form-input" placeholder="请输入用户名">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">邮箱</label>
+            <div class="input-with-icon">
+                <span class="input-icon">??</span>
+                <input type="email" class="form-input" placeholder="example@email.com">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">验证码</label>
+            <div class="input-with-action">
+                <input type="text" class="form-input" placeholder="输入验证码">
+                <button class="input-action">获取验证码</button>
+            </div>
+        </div>
+        
+        <!-- 文本域 -->
+        <div class="section-title">文本域</div>
+        <div class="form-group">
+            <label class="form-label">个人简介</label>
+            <textarea class="form-textarea" placeholder="介绍一下你自己..." maxlength="200" id="bioTextarea"></textarea>
+            <div class="char-count"><span id="charCount">0</span>/200</div>
+        </div>
+        
+        <!-- 选择器 -->
+        <div class="section-title">选择器</div>
+        <div class="form-group">
+            <label class="form-label">国家/地区</label>
+            <select class="form-select">
+                <option value="">请选择</option>
+                <option value="cn">???? 中国</option>
+                <option value="us">???? 美国</option>
+                <option value="jp">???? 日本</option>
+                <option value="uk">???? 英国</option>
+                <option value="de">???? 德国</option>
+            </select>
+        </div>
+        
+        <!-- 单选 -->
+        <div class="section-title">单选</div>
+        <div class="radio-group">
+            <label class="radio-item">
+                <input type="radio" name="gender" value="male" checked>
+                <span class="radio-circle"></span>
+                <div>
+                    <div class="radio-text">男</div>
+                </div>
+            </label>
+            <label class="radio-item">
+                <input type="radio" name="gender" value="female">
+                <span class="radio-circle"></span>
+                <div>
+                    <div class="radio-text">女</div>
+                </div>
+            </label>
+        </div>
+        
+        <!-- 卡片式单选 -->
+        <div class="section-title">卡片式选择</div>
+        <div class="card-radio-group">
+            <label class="card-radio">
+                <input type="radio" name="plan" value="free" checked>
+                <div class="card-radio-content">
+                    <div class="card-radio-icon">??</div>
+                    <div class="card-radio-title">免费版</div>
+                </div>
+            </label>
+            <label class="card-radio">
+                <input type="radio" name="plan" value="pro">
+                <div class="card-radio-content">
+                    <div class="card-radio-icon">?</div>
+                    <div class="card-radio-title">专业版</div>
+                </div>
+            </label>
+            <label class="card-radio">
+                <input type="radio" name="plan" value="team">
+                <div class="card-radio-content">
+                    <div class="card-radio-icon">??</div>
+                    <div class="card-radio-title">团队版</div>
+                </div>
+            </label>
+            <label class="card-radio">
+                <input type="radio" name="plan" value="enterprise">
+                <div class="card-radio-content">
+                    <div class="card-radio-icon">??</div>
+                    <div class="card-radio-title">企业版</div>
+                </div>
+            </label>
+        </div>
+        
+        <!-- 复选 -->
+        <div class="section-title">复选</div>
+        <div class="checkbox-group">
+            <label class="checkbox-item">
+                <input type="checkbox" checked>
+                <span class="checkbox-square"></span>
+                <div>
+                    <div class="checkbox-text">邮件通知</div>
+                    <div class="checkbox-desc">接收每日摘要邮件</div>
+                </div>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox">
+                <span class="checkbox-square"></span>
+                <div>
+                    <div class="checkbox-text">推送通知</div>
+                    <div class="checkbox-desc">接收实时推送消息</div>
+                </div>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox">
+                <span class="checkbox-square"></span>
+                <div>
+                    <div class="checkbox-text">短信通知</div>
+                    <div class="checkbox-desc">接收重要短信提醒</div>
+                </div>
+            </label>
+        </div>
+        
+        <!-- 开关 -->
+        <div class="section-title">开关</div>
+        <div class="switch-group">
+            <div class="switch-item">
+                <div class="switch-info">
+                    <h4>深色模式</h4>
+                    <p>自动跟随系统设置</p>
+                </div>
+                <label class="switch-toggle active" onclick="toggleSwitch(this)">
+                    <input type="checkbox" checked>
+                </label>
+            </div>
+            <div class="switch-item">
+                <div class="switch-info">
+                    <h4>自动保存</h4>
+                    <p>编辑时自动保存草稿</p>
+                </div>
+                <label class="switch-toggle" onclick="toggleSwitch(this)">
+                    <input type="checkbox">
+                </label>
+            </div>
+            <div class="switch-item">
+                <div class="switch-info">
+                    <h4>仅WiFi下载</h4>
+                    <p>节省移动数据流量</p>
+                </div>
+                <label class="switch-toggle active" onclick="toggleSwitch(this)">
+                    <input type="checkbox" checked>
+                </label>
+            </div>
+        </div>
+        
+        <!-- 滑块 -->
+        <div class="section-title">滑块</div>
+        <div class="slider-container">
+            <div class="slider-labels">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+            </div>
+            <div class="slider-track">
+                <div class="slider-fill"></div>
+                <div class="slider-thumb"></div>
+            </div>
+            <div class="slider-value">50%</div>
+        </div>
+        
+        <!-- 步进器 -->
+        <div class="section-title">步进器</div>
+        <div class="form-group">
+            <label class="form-label">购买数量</label>
+            <div class="stepper">
+                <button class="stepper-btn" onclick="changeStepper(-1)">?</button>
+                <span class="stepper-value" id="stepperValue">1</span>
+                <button class="stepper-btn" onclick="changeStepper(1)">+</button>
+            </div>
+        </div>
+        
+        <!-- 日期时间 -->
+        <div class="section-title">日期时间</div>
+        <div class="datetime-group">
+            <div class="datetime-item">
+                <label class="form-label">日期</label>
+                <input type="date" class="form-input">
+            </div>
+            <div class="datetime-item">
+                <label class="form-label">时间</label>
+                <input type="time" class="form-input">
+            </div>
+        </div>
+        
+        <!-- 文件上传 -->
+        <div class="section-title">文件上传</div>
+        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">??</div>
+            <div class="upload-text">点击或拖拽上传文件</div>
+            <div class="upload-hint">支持 PDF, DOC, JPG 等格式</div>
+            <input type="file" class="upload-input" id="fileInput" multiple onchange="handleFileSelect(event)">
+        </div>
+        <div class="uploaded-files" id="uploadedFiles"></div>
+        
+        <!-- 标签输入 -->
+        <div class="section-title">标签输入</div>
+        <div class="tag-input" id="tagInput">
+            <span class="tag">移动端<span class="tag-remove" onclick="removeTag(this)">×</span></span>
+            <span class="tag">UI设计<span class="tag-remove" onclick="removeTag(this)">×</span></span>
+            <input type="text" class="tag-input-field" placeholder="添加标签..." onkeydown="handleTagInput(event)">
+        </div>
+        
+        <!-- 搜索建议 -->
+        <div class="section-title">搜索建议</div>
+        <div class="form-group" style="position: relative;">
+            <div class="input-with-icon">
+                <span class="input-icon">??</span>
+                <input type="text" class="form-input" placeholder="搜索城市..." id="searchInput" onfocus="showSuggestions()" onblur="hideSuggestions()">
+            </div>
+            <div class="search-suggestions" id="suggestions">
+                <div class="suggestion-item">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text">北京 Beijing</span>
+                </div>
+                <div class="suggestion-item">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text">上海 Shanghai</span>
+                </div>
+                <div class="suggestion-item">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text">广州 Guangzhou</span>
+                </div>
+                <div class="suggestion-item">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text">深圳 Shenzhen</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 验证状态 -->
+        <div class="section-title">表单验证</div>
+        <div class="form-group error">
+            <label class="form-label">密码</label>
+            <input type="password" class="form-input" placeholder="至少8位字符" value="123">
+            <div class="form-error">?? 密码长度不能少于8位</div>
+        </div>
+        <div class="form-group success">
+            <label class="form-label">确认密码</label>
+            <input type="password" class="form-input" placeholder="再次输入密码" value="password123">
+            <div class="form-success">? 密码匹配</div>
+        </div>
+    </div>
+    
+    <!-- 底部按钮 -->
+    <div class="form-actions">
+        <button class="btn btn-secondary">取消</button>
+        <button class="btn btn-primary" onclick="submitForm()">提交</button>
+    </div>
+
+    <script>
+        // 字符计数
+        document.getElementById('bioTextarea').addEventListener('input', function() {
+            document.getElementById('charCount').textContent = this.value.length;
+        });
+        
+        // 开关切换
+        function toggleSwitch(element) {
+            element.classList.toggle('active');
+            const input = element.querySelector('input');
+            input.checked = !input.checked;
+        }
+        
+        // 步进器
+        let stepperCount = 1;
+        function changeStepper(delta) {
+            stepperCount = Math.max(1, Math.min(99, stepperCount + delta));
+            document.getElementById('stepperValue').textContent = stepperCount;
+        }
+        
+        // 文件上传
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            const container = document.getElementById('uploadedFiles');
+            
+            Array.from(files).forEach(file => {
+                const fileEl = document.createElement('div');
+                fileEl.className = 'uploaded-file';
+                fileEl.innerHTML = `
+                    <span class="file-icon">??</span>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+                    </div>
+                    <button class="file-remove" onclick="this.parentElement.remove()">×</button>
+                `;
+                container.appendChild(fileEl);
+            });
+        }
+        
+        // 标签输入
+        function handleTagInput(event) {
+            if (event.key === 'Enter' && event.target.value.trim()) {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.innerHTML = `${event.target.value.trim()}<span class="tag-remove" onclick="removeTag(this)">×</span>`;
+                event.target.parentElement.insertBefore(tag, event.target);
+                event.target.value = '';
+            }
+        }
+        
+        function removeTag(btn) {
+            btn.parentElement.remove();
+        }
+        
+        // 搜索建议
+        function showSuggestions() {
+            document.getElementById('suggestions').classList.add('show');
+        }
+        
+        function hideSuggestions() {
+            setTimeout(() => {
+                document.getElementById('suggestions').classList.remove('show');
+            }, 200);
+        }
+        
+        // 提交表单
+        function submitForm() {
+            alert('表单提交成功！');
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

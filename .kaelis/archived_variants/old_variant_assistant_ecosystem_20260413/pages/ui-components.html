@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI组件库 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        .page-desc { font-size: 16px; color: #6B7280; }
+        
+        /* 侧边栏 + 内容区 */
+        .layout { display: flex; gap: 40px; }
+        .sidebar { width: 240px; flex-shrink: 0; position: sticky; top: 100px; height: fit-content; }
+        .sidebar-title { font-size: 12px; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 4px; }
+        .sidebar-item { 
+            padding: 12px 16px; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #A1A1AA;
+        }
+        .sidebar-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar-item.active { background: rgba(136,72,249,0.15); color: var(--primary); }
+        
+        .content { flex: 1; }
+        
+        /* 组件区块 */
+        .component-section { margin-bottom: 60px; }
+        .section-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        
+        /* 按钮展示 */
+        .component-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+        .component-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px;
+        }
+        .card-title { font-size: 14px; color: #6B7280; margin-bottom: 16px; }
+        .card-content { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        
+        /* 按钮样式 */
+        .btn { 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .btn-ghost { background: transparent; color: #A1A1AA; }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .btn-success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-lg { padding: 14px 28px; font-size: 16px; }
+        
+        /* 输入框 */
+        .input { 
+            padding: 12px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            width: 100%;
+        }
+        .input:focus { outline: none; border-color: var(--primary); }
+        .input-group { display: flex; gap: 12px; }
+        
+        /* 标签 */
+        .tag { 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: 500;
+        }
+        .tag-primary { background: rgba(136,72,249,0.2); color: var(--primary); }
+        .tag-success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .tag-warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .tag-error { background: rgba(239,68,68,0.2); color: #EF4444; }
+        
+        /* 徽章 */
+        .badge { 
+            padding: 2px 8px; 
+            border-radius: 10px; 
+            font-size: 11px; 
+            font-weight: 600;
+        }
+        .badge-new { background: #EF4444; color: white; }
+        .badge-beta { background: #F59E0B; color: white; }
+        
+        /* 开关 */
+        .toggle { 
+            width: 48px; 
+            height: 26px; 
+            background: #374151; 
+            border-radius: 13px; 
+            position: relative; 
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+        .toggle.active { background: var(--primary); }
+        .toggle::after { 
+            content: ''; 
+            position: absolute; 
+            width: 22px; 
+            height: 22px; 
+            background: white; 
+            border-radius: 50%; 
+            top: 2px; 
+            left: 2px; 
+            transition: all 0.2s;
+        }
+        .toggle.active::after { left: 24px; }
+        
+        /* 单选/复选 */
+        .checkbox { 
+            width: 20px; 
+            height: 20px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            border-radius: 4px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .checkbox.checked { background: var(--primary); border-color: var(--primary); }
+        .radio { 
+            width: 20px; 
+            height: 20px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            border-radius: 50%; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .radio.checked { border-color: var(--primary); }
+        .radio.checked::after { content: ''; width: 10px; height: 10px; background: var(--primary); border-radius: 50%; }
+        
+        /* 滑块 */
+        .slider { 
+            width: 200px; 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px; 
+            position: relative;
+        }
+        .slider-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 3px; 
+            width: 60%;
+        }
+        .slider-thumb { 
+            position: absolute; 
+            width: 18px; 
+            height: 18px; 
+            background: white; 
+            border-radius: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%); 
+            left: 60%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        /* 进度条 */
+        .progress { 
+            width: 100%; 
+            height: 8px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 4px; 
+            overflow: hidden;
+        }
+        .progress-bar { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 4px; 
+        }
+        .progress-bar.success { background: #22C55E; }
+        .progress-bar.warning { background: #F59E0B; }
+        .progress-bar.error { background: #EF4444; }
+        
+        /* 提示 */
+        .alert { 
+            padding: 16px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+        }
+        .alert-info { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); }
+        .alert-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); }
+        .alert-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+        .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+        
+        /* 代码块 */
+        .code-block { 
+            background: #1a1a1a; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            padding: 16px; 
+            font-family: 'Fira Code', monospace; 
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .code-block .comment { color: #6B7280; }
+        .code-block .keyword { color: #C084FC; }
+        .code-block .string { color: #22C55E; }
+        
+        @media (max-width: 1024px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; position: static; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? UI组件库</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">UI组件库</h1>
+            <p class="page-desc">Kaelis 设计系统的核心组件，统一视觉风格，提升开发效率</p>
+        </div>
+        
+        <div class="layout">
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <div class="sidebar-title">组件分类</div>
+                <nav class="sidebar-menu">
+                    <div class="sidebar-item active" onclick="scrollToSection('buttons')">?? 按钮 Button</div>
+                    <div class="sidebar-item" onclick="scrollToSection('inputs')">?? 输入框 Input</div>
+                    <div class="sidebar-item" onclick="scrollToSection('tags')">??? 标签 Tag</div>
+                    <div class="sidebar-item" onclick="scrollToSection('toggles')">?? 开关 Toggle</div>
+                    <div class="sidebar-item" onclick="scrollToSection('selections')">?? 选择 Selection</div>
+                    <div class="sidebar-item" onclick="scrollToSection('sliders')">??? 滑块 Slider</div>
+                    <div class="sidebar-item" onclick="scrollToSection('progress')">?? 进度 Progress</div>
+                    <div class="sidebar-item" onclick="scrollToSection('alerts')">?? 提示 Alert</div>
+                </nav>
+            </aside>
+            
+            <!-- 内容区 -->
+            <main class="content">
+                <!-- 按钮 -->
+                <section class="component-section" id="buttons">
+                    <h2 class="section-title">?? 按钮 Button</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">按钮类型</div>
+                            <div class="card-content">
+                                <button class="btn btn-primary">主要按钮</button>
+                                <button class="btn btn-secondary">次要按钮</button>
+                                <button class="btn btn-outline">边框按钮</button>
+                                <button class="btn btn-ghost">幽灵按钮</button>
+                            </div>
+                        </div>
+                        <div class="component-card">
+                            <div class="card-title">按钮尺寸</div>
+                            <div class="card-content">
+                                <button class="btn btn-primary btn-sm">小按钮</button>
+                                <button class="btn btn-primary">默认</button>
+                                <button class="btn btn-primary btn-lg">大按钮</button>
+                            </div>
+                        </div>
+                        <div class="component-card">
+                            <div class="card-title">状态按钮</div>
+                            <div class="card-content">
+                                <button class="btn btn-success">? 成功</button>
+                                <button class="btn btn-danger">? 危险</button>
+                                <button class="btn btn-primary" disabled>禁用</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 输入框 -->
+                <section class="component-section" id="inputs">
+                    <h2 class="section-title">?? 输入框 Input</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">基础输入框</div>
+                            <div class="card-content">
+                                <input type="text" class="input" placeholder="请输入内容...">
+                            </div>
+                        </div>
+                        <div class="component-card">
+                            <div class="card-title">输入框组</div>
+                            <div class="card-content">
+                                <div class="input-group">
+                                    <input type="text" class="input" placeholder="搜索...">
+                                    <button class="btn btn-primary">搜索</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 标签 -->
+                <section class="component-section" id="tags">
+                    <h2 class="section-title">??? 标签 Tag</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">标签类型</div>
+                            <div class="card-content">
+                                <span class="tag tag-primary">主要</span>
+                                <span class="tag tag-success">成功</span>
+                                <span class="tag tag-warning">警告</span>
+                                <span class="tag tag-error">错误</span>
+                            </div>
+                        </div>
+                        <div class="component-card">
+                            <div class="card-title">徽章</div>
+                            <div class="card-content">
+                                <span class="badge badge-new">NEW</span>
+                                <span class="badge badge-beta">BETA</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 开关 -->
+                <section class="component-section" id="toggles">
+                    <h2 class="section-title">?? 开关 Toggle</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">开关状态</div>
+                            <div class="card-content">
+                                <div class="toggle" onclick="toggleSwitch(this)"></div>
+                                <div class="toggle active" onclick="toggleSwitch(this)"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 选择 -->
+                <section class="component-section" id="selections">
+                    <h2 class="section-title">?? 选择 Selection</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">复选框</div>
+                            <div class="card-content">
+                                <div class="checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checkbox checked" onclick="toggleCheck(this)">?</div>
+                            </div>
+                        </div>
+                        <div class="component-card">
+                            <div class="card-title">单选框</div>
+                            <div class="card-content">
+                                <div class="radio" onclick="toggleRadio(this)"></div>
+                                <div class="radio checked" onclick="toggleRadio(this)"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 滑块 -->
+                <section class="component-section" id="sliders">
+                    <h2 class="section-title">??? 滑块 Slider</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">基础滑块</div>
+                            <div class="card-content">
+                                <div class="slider">
+                                    <div class="slider-fill"></div>
+                                    <div class="slider-thumb"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 进度条 -->
+                <section class="component-section" id="progress">
+                    <h2 class="section-title">?? 进度 Progress</h2>
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <div class="card-title">进度条类型</div>
+                            <div class="card-content" style="flex-direction: column; gap: 16px;">
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: 75%"></div>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar success" style="width: 100%"></div>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar warning" style="width: 50%"></div>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar error" style="width: 25%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 提示 -->
+                <section class="component-section" id="alerts">
+                    <h2 class="section-title">?? 提示 Alert</h2>
+                    <div class="component-grid">
+                        <div class="component-card" style="grid-column: 1 / -1;">
+                            <div class="card-title">提示类型</div>
+                            <div class="card-content" style="flex-direction: column; gap: 12px;">
+                                <div class="alert alert-info">
+                                    <span>??</span>
+                                    <span>这是一条信息提示，用于展示一般性的信息。</span>
+                                </div>
+                                <div class="alert alert-success">
+                                    <span>?</span>
+                                    <span>操作成功！您的更改已保存。</span>
+                                </div>
+                                <div class="alert alert-warning">
+                                    <span>??</span>
+                                    <span>注意：此操作可能需要较长时间。</span>
+                                </div>
+                                <div class="alert alert-error">
+                                    <span>?</span>
+                                    <span>操作失败，请检查网络连接后重试。</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 代码示例 -->
+                <section class="component-section">
+                    <h2 class="section-title">?? 使用示例</h2>
+                    <div class="code-block">
+<span class="comment">// 按钮组件</span>
+&lt;<span class="keyword">button</span> <span class="string">class</span>=<span class="string">"btn btn-primary"</span>&gt;主要按钮&lt;/<span class="keyword">button</span>&gt;
+
+<span class="comment">// 输入框组件</span>
+&lt;<span class="keyword">input</span> <span class="string">type</span>=<span class="string">"text"</span> <span class="string">class</span>=<span class="string">"input"</span> <span class="string">placeholder</span>=<span class="string">"请输入..."</span>&gt;
+
+<span class="comment">// 标签组件</span>
+&lt;<span class="keyword">span</span> <span class="string">class</span>=<span class="string">"tag tag-primary"</span>&gt;主要标签&lt;/<span class="keyword">span</span>&gt;
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function scrollToSection(id) {
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function toggleSwitch(el) {
+            el.classList.toggle('active');
+        }
+        
+        function toggleCheck(el) {
+            el.classList.toggle('checked');
+            el.textContent = el.classList.contains('checked') ? '?' : '';
+        }
+        
+        function toggleRadio(el) {
+            document.querySelectorAll('.radio').forEach(r => r.classList.remove('checked'));
+            el.classList.add('checked');
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

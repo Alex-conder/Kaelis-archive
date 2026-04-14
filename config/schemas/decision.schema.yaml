@@ -1,0 +1,327 @@
+# Kaelis 决策契约 Schema (Decision Contract Schema)
+# 将架构决策从自由文本提升为机器可读的约束契约
+
+$id: "https://kaelis.dev/schemas/decision.schema.yaml"
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: "Kaelis Architecture Decision Contract"
+description: |
+  架构决策不是自由文本，而是对系统状态变更的声明式契约。
+  包含：决策类型、影响范围、约束条件、有效期。
+
+type: object
+required:
+  - id
+  - type
+  - status
+  - created_at
+  - scope
+
+properties:
+  # ============================================================================
+  # 基础元数据
+  # ============================================================================
+  id:
+    type: string
+    pattern: "^DEC-[0-9]{8}-[0-9]{3}$"
+    description: "决策唯一标识符，格式: DEC-YYYYMMDD-NNN"
+    examples:
+      - "DEC-20260413-001"
+
+  type:
+    type: string
+    enum:
+      - architecture_pattern    # 架构模式（如 CQRS、微服务拆分）
+      - technology_choice       # 技术选型（如数据库、框架）
+      - api_design             # API 设计决策
+      - dependency_management  # 依赖管理策略
+      - security_policy        # 安全策略
+      - performance_optimization # 性能优化策略
+      - data_model             # 数据模型设计
+    description: "决策类型，决定校验规则"
+
+  status:
+    type: string
+    enum:
+      - proposed    # 提议中
+      - active      # 已激活（约束生效）
+      - deprecated  # 已废弃
+      - superseded  # 被取代
+    description: "决策状态"
+
+  title:
+    type: string
+    minLength: 5
+    maxLength: 100
+    description: "决策标题"
+
+  description:
+    type: string
+    description: "决策详细描述"
+
+  # ============================================================================
+  # 生命周期
+  # ============================================================================
+  created_at:
+    type: string
+    format: date-time
+    description: "创建时间"
+
+  review_after:
+    type: string
+    format: date-time
+    description: "需要重新评估的时间点"
+
+  superseded_by:
+    type: string
+    pattern: "^DEC-[0-9]{8}-[0-9]{3}$"
+    description: "取代此决策的新决策 ID"
+
+  # ============================================================================
+  # 影响范围（机器可读）
+  # ============================================================================
+  scope:
+    type: object
+    required:
+      - files
+    properties:
+      files:
+        type: array
+        items:
+          type: string
+          pattern: "^[a-zA-Z0-9_/.-]+\\.(py|ts|tsx|yaml|json)$"
+        description: "受影响的文件列表"
+        examples:
+          - ["api/routes/kg.py", "api/services/kg_command.py"]
+
+      directories:
+        type: array
+        items:
+          type: string
+        description: "受影响的目录"
+
+      services:
+        type: array
+        items:
+          type: string
+        description: "受影响的服务"
+        examples:
+          - ["knowledge-graph", "intent-engine"]
+
+      modules:
+        type: array
+        items:
+          type: string
+        description: "受影响的模块"
+
+  # ============================================================================
+  # 约束条件（核心：可被自动校验）
+  # ============================================================================
+  constraints:
+    type: array
+    description: "决策施加的约束条件，可被 kaelis converge verify 自动校验"
+    items:
+      type: object
+      required:
+        - rule
+        - check
+      properties:
+        id:
+          type: string
+          description: "约束唯一标识"
+
+        rule:
+          type: string
+          minLength: 5
+          description: "约束规则描述（人类可读）"
+          examples:
+            - "KG 模块的写操作必须通过 Command 服务"
+            - "所有 API 路由必须在 OpenAPI 中定义"
+
+        check:
+          type: object
+          description: "约束校验配置（机器可读）"
+          oneOf:
+            # AST 模式校验
+            - properties:
+                type:
+                  const: "ast_pattern"
+                pattern:
+                  type: string
+                  description: "AST 搜索模式"
+                target_files:
+                  type: array
+                  items:
+                    type: string
+              required: [type, pattern]
+
+            # 文件存在性校验
+            - properties:
+                type:
+                  const: "file_exists"
+                path:
+                  type: string
+              required: [type, path]
+
+            # OpenAPI 一致性校验
+            - properties:
+                type:
+                  const: "openapi_consistency"
+                endpoint:
+                  type: string
+                method:
+                  type: string
+                  enum: [GET, POST, PUT, DELETE, PATCH]
+              required: [type, endpoint, method]
+
+            # 正则表达式校验
+            - properties:
+                type:
+                  const: "regex_match"
+                pattern:
+                  type: string
+                target_files:
+                  type: array
+                  items:
+                    type: string
+              required: [type, pattern]
+
+            # 禁止模式
+            - properties:
+                type:
+                  const: "forbidden_pattern"
+                pattern:
+                  type: string
+                  description: "禁止出现的代码模式"
+                message:
+                  type: string
+              required: [type, pattern, message]
+
+        severity:
+          type: string
+          enum: [error, warning]
+          default: error
+          description: "违反约束的严重程度"
+
+        auto_fix:
+          type: string
+          description: "自动修复命令（可选）"
+
+  # ============================================================================
+  # 决策理由
+  # ============================================================================
+  rationale:
+    type: string
+    description: "为何做出此决策"
+
+  alternatives:
+    type: array
+    items:
+      type: object
+      properties:
+        option:
+          type: string
+        pros:
+          type: string
+        cons:
+          type: string
+
+  # ============================================================================
+  # 关联知识
+  # ============================================================================
+  linked_knowledge:
+    type: object
+    properties:
+      faults:
+        type: array
+        items:
+          type: string
+          pattern: "^FAULT-[0-9]{8}-[0-9]{3}$"
+        description: "关联的故障记录"
+
+      previous_decisions:
+        type: array
+        items:
+          type: string
+          pattern: "^DEC-[0-9]{8}-[0-9]{3}$"
+        description: "相关的先前决策"
+
+      adrs:
+        type: array
+        items:
+          type: string
+        description: "关联的传统 ADR"
+
+  # ============================================================================
+  # 元数据
+  # ============================================================================
+  metadata:
+    type: object
+    properties:
+      author:
+        type: string
+      stakeholders:
+        type: array
+        items:
+          type: string
+      tags:
+        type: array
+        items:
+          type: string
+
+# ============================================================================
+# 决策类型特定的校验规则
+# ============================================================================
+allOf:
+  # 架构模式决策必须包含 constraints
+  - if:
+      properties:
+        type:
+          const: "architecture_pattern"
+    then:
+      required: [constraints]
+
+  # API 设计决策必须包含 OpenAPI 一致性校验
+  - if:
+      properties:
+        type:
+          const: "api_design"
+    then:
+      properties:
+        constraints:
+          contains:
+            properties:
+              check:
+                properties:
+                  type:
+                    const: "openapi_consistency"
+
+examples:
+  - id: "DEC-20260413-001"
+    type: "architecture_pattern"
+    title: "引入 CQRS 模式到 KG 模块"
+    status: "active"
+    created_at: "2026-04-13T10:00:00Z"
+    review_after: "2026-07-13T10:00:00Z"
+    scope:
+      files:
+        - "api/routes/kg.py"
+        - "api/services/kg_command.py"
+        - "api/services/kg_query.py"
+      services:
+        - "knowledge-graph"
+    constraints:
+      - id: "C1"
+        rule: "KG 模块的写操作必须通过 Command 服务"
+        check:
+          type: "ast_pattern"
+          pattern: "class.*Command"
+          target_files: ["api/services/kg_command.py"]
+        severity: error
+      - id: "C2"
+        rule: "禁止直接操作 Neo4j 连接"
+        check:
+          type: "forbidden_pattern"
+          pattern: "driver\\.session"
+          message: "请使用 KGCommandService 或 KGQueryService"
+        severity: error
+    rationale: "将读写分离以支持后续的读写分离部署"

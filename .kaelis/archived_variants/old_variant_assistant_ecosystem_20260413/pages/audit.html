@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审计日志 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .export-btn { padding: 10px 20px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .audit-filters { display: flex; gap: 12px; margin-bottom: 24px; }
+        .audit-filters select, .audit-filters input { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; }
+        .audit-table { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+        .table-header { display: grid; grid-template-columns: 160px 120px 100px 1fr 120px 100px; padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #64748b; }
+        .audit-row { display: grid; grid-template-columns: 160px 120px 100px 1fr 120px 100px; padding: 16px 24px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .audit-row:last-child { border-bottom: none; }
+        .audit-time { font-size: 13px; color: #64748b; font-family: monospace; }
+        .audit-user { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .user-avatar { width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; }
+        .audit-action { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .audit-action.create { background: #dcfce7; color: #16a34a; }
+        .audit-action.update { background: #dbeafe; color: #2563eb; }
+        .audit-action.delete { background: #fee2e2; color: #dc2626; }
+        .audit-action.login { background: #fef3c7; color: #d97706; }
+        .audit-resource { font-size: 14px; color: #1e293b; }
+        .audit-ip { font-size: 13px; color: #64748b; font-family: monospace; }
+        .audit-status { padding: 4px 10px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .blockchain-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: #f3e8ff; color: #9333ea; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">审计日志</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <h1>审计日志 <span class="blockchain-badge">?? 区块链验证</span></h1>
+            <button class="export-btn">?? 导出日志</button>
+        </div>
+        <div class="audit-filters">
+            <select><option>所有操作</option><option>创建</option><option>更新</option><option>删除</option><option>登录</option></select>
+            <select><option>所有用户</option><option>Alex Chen</option><option>Sarah Liu</option></select>
+            <select><option>所有资源</option><option>插件</option><option>API密钥</option><option>设置</option></select>
+            <input type="date" value="2026-03-17">
+            <input type="text" placeholder="搜索日志..." style="flex:1;">
+        </div>
+        <div class="audit-table">
+            <div class="table-header">
+                <div>时间</div>
+                <div>用户</div>
+                <div>操作</div>
+                <div>资源</div>
+                <div>IP地址</div>
+                <div>状态</div>
+            </div>
+            <div class="audit-row">
+                <div class="audit-time">2026-03-17 14:32:15</div>
+                <div class="audit-user"><div class="user-avatar">AC</div>Alex Chen</div>
+                <div><span class="audit-action update">更新</span></div>
+                <div class="audit-resource">插件配置: universal-metrics</div>
+                <div class="audit-ip">192.168.1.105</div>
+                <div><span class="audit-status">成功</span></div>
+            </div>
+            <div class="audit-row">
+                <div class="audit-time">2026-03-17 14:28:42</div>
+                <div class="audit-user"><div class="user-avatar">SL</div>Sarah Liu</div>
+                <div><span class="audit-action create">创建</span></div>
+                <div class="audit-resource">API密钥: 生产环境</div>
+                <div class="audit-ip">192.168.1.108</div>
+                <div><span class="audit-status">成功</span></div>
+            </div>
+            <div class="audit-row">
+                <div class="audit-time">2026-03-17 14:15:33</div>
+                <div class="audit-user"><div class="user-avatar">AC</div>Alex Chen</div>
+                <div><span class="audit-action login">登录</span></div>
+                <div class="audit-resource">Web控制台</div>
+                <div class="audit-ip">192.168.1.105</div>
+                <div><span class="audit-status">成功</span></div>
+            </div>
+            <div class="audit-row">
+                <div class="audit-time">2026-03-17 13:58:21</div>
+                <div class="audit-user"><div class="user-avatar">MW</div>Mike Wang</div>
+                <div><span class="audit-action delete">删除</span></div>
+                <div class="audit-resource">Webhook: Slack通知</div>
+                <div class="audit-ip">192.168.1.112</div>
+                <div><span class="audit-status">成功</span></div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

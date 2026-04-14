@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全局搜索 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+        
+        /* 搜索框 */
+        .search-section { margin-bottom: 32px; }
+        .search-box { 
+            position: relative; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 16px; 
+            padding: 4px;
+        }
+        .search-input { 
+            width: 100%; 
+            padding: 20px 60px 20px 24px; 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            font-size: 18px; 
+            outline: none;
+        }
+        .search-input::placeholder { color: #6B7280; }
+        .search-btn { 
+            position: absolute; 
+            right: 8px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            padding: 12px 24px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 12px; 
+            color: white; 
+            font-weight: 600; 
+            cursor: pointer;
+        }
+        
+        /* 快捷筛选 */
+        .quick-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+        .filter-chip { 
+            padding: 8px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            font-size: 13px; 
+            color: #A1A1AA; 
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+        .filter-chip:hover, .filter-chip.active { 
+            background: rgba(136,72,249,0.2); 
+            border-color: var(--primary); 
+            color: var(--primary); 
+        }
+        
+        /* 搜索结果分类 */
+        .search-categories { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; }
+        .category-tab { 
+            padding: 10px 20px; 
+            background: transparent; 
+            border: none; 
+            color: #A1A1AA; 
+            font-size: 14px; 
+            cursor: pointer; 
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .category-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .category-tab:hover:not(.active) { color: white; }
+        
+        /* 搜索结果 */
+        .search-results { display: flex; flex-direction: column; gap: 16px; }
+        .result-item { 
+            display: flex; 
+            align-items: flex-start; 
+            padding: 20px; 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .result-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(136,72,249,0.3); }
+        .result-icon { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            margin-right: 16px;
+            background: rgba(136,72,249,0.15);
+        }
+        .result-content { flex: 1; }
+        .result-title { 
+            font-size: 16px; 
+            font-weight: 600; 
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .result-highlight { background: rgba(136,72,249,0.3); padding: 0 4px; border-radius: 4px; }
+        .result-desc { font-size: 14px; color: #A1A1AA; line-height: 1.5; margin-bottom: 8px; }
+        .result-meta { display: flex; gap: 16px; font-size: 12px; color: #6B7280; }
+        .result-type { 
+            padding: 2px 8px; 
+            background: rgba(136,72,249,0.2); 
+            border-radius: 4px; 
+            color: var(--primary); 
+            font-size: 11px; 
+        }
+        
+        /* 搜索建议 */
+        .search-suggestions { 
+            background: rgba(23,23,23,0.95); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            padding: 16px; 
+            margin-top: 8px;
+            display: none;
+        }
+        .search-suggestions.show { display: block; }
+        .suggestion-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 8px;
+        }
+        .suggestion-item:hover { background: rgba(255,255,255,0.05); }
+        .suggestion-icon { font-size: 18px; }
+        .suggestion-text { flex: 1; font-size: 14px; }
+        .suggestion-match { color: var(--primary); }
+        
+        /* 热门搜索 */
+        .hot-searches { margin-top: 40px; }
+        .section-title { font-size: 14px; color: #6B7280; margin-bottom: 16px; }
+        .hot-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .hot-item { 
+            padding: 10px 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 8px; 
+            font-size: 13px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hot-item:hover { background: rgba(255,255,255,0.08); }
+        .hot-rank { 
+            width: 20px; 
+            height: 20px; 
+            border-radius: 4px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            font-weight: 700;
+        }
+        .hot-rank.top { background: #EF4444; }
+        .hot-rank.mid { background: #F59E0B; }
+        .hot-rank.normal { background: #6B7280; }
+        
+        /* 搜索历史 */
+        .search-history { margin-top: 32px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .clear-history { font-size: 13px; color: #6B7280; cursor: pointer; }
+        .clear-history:hover { color: #EF4444; }
+        .history-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .history-item { 
+            padding: 8px 14px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 20px; 
+            font-size: 13px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .history-item:hover { background: rgba(255,255,255,0.1); }
+        
+        @media (max-width: 768px) {
+            .search-categories { overflow-x: auto; }
+            .result-item { flex-direction: column; }
+            .result-icon { margin-bottom: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 全局搜索</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <!-- 搜索框 -->
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="搜索文档、API、插件、用户..." id="searchInput" oninput="handleSearch(this.value)">
+                <button class="search-btn">搜索</button>
+            </div>
+            
+            <!-- 搜索建议 -->
+            <div class="search-suggestions" id="suggestions">
+                <div class="suggestion-item" onclick="selectSuggestion('用户管理')">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text"><span class="suggestion-match">用户</span>管理文档</span>
+                </div>
+                <div class="suggestion-item" onclick="selectSuggestion('API 配置')">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text"><span class="suggestion-match">API</span> 配置指南</span>
+                </div>
+                <div class="suggestion-item" onclick="selectSuggestion('数据分析')">
+                    <span class="suggestion-icon">??</span>
+                    <span class="suggestion-text"><span class="suggestion-match">数据</span>分析仪表盘</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快捷筛选 -->
+        <div class="quick-filters">
+            <span class="filter-chip active">全部</span>
+            <span class="filter-chip">?? 文档</span>
+            <span class="filter-chip">?? API</span>
+            <span class="filter-chip">?? 插件</span>
+            <span class="filter-chip">?? 用户</span>
+            <span class="filter-chip">?? 报表</span>
+            <span class="filter-chip">?? 设置</span>
+        </div>
+        
+        <!-- 分类标签 -->
+        <div class="search-categories">
+            <button class="category-tab active">全部结果 (24)</button>
+            <button class="category-tab">文档 (8)</button>
+            <button class="category-tab">API (6)</button>
+            <button class="category-tab">插件 (4)</button>
+            <button class="category-tab">用户 (3)</button>
+            <button class="category-tab">其他 (3)</button>
+        </div>
+        
+        <!-- 搜索结果 -->
+        <div class="search-results">
+            <div class="result-item" onclick="openResult()">
+                <div class="result-icon">??</div>
+                <div class="result-content">
+                    <div class="result-title">
+                        <span class="result-highlight">用户</span>管理操作手册
+                        <span class="result-type">文档</span>
+                    </div>
+                    <div class="result-desc">详细介绍如何进行用户增删改查操作，包括批量导入、权限分配、角色管理等高级功能...</div>
+                    <div class="result-meta">
+                        <span>?? 产品文档 / 用户指南</span>
+                        <span>?? 张经理</span>
+                        <span>?? 2026-01-15</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-item" onclick="openResult()">
+                <div class="result-icon">??</div>
+                <div class="result-content">
+                    <div class="result-title">
+                        GitHub <span class="result-highlight">API</span> 集成配置
+                        <span class="result-type">API</span>
+                    </div>
+                    <div class="result-desc">配置 GitHub OAuth 应用，实现代码仓库同步、Issue 追踪、Pull Request 管理等功能...</div>
+                    <div class="result-meta">
+                        <span>?? api-integration.html</span>
+                        <span>? 最后调用: 2分钟前</span>
+                        <span>? 状态正常</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-item" onclick="openResult()">
+                <div class="result-icon">??</div>
+                <div class="result-content">
+                    <div class="result-title">
+                        AI 助手 Pro <span class="result-highlight">插件</span>
+                        <span class="result-type">插件</span>
+                    </div>
+                    <div class="result-desc">智能 AI 对话助手，支持多模型切换、上下文记忆、代码生成等功能...</div>
+                    <div class="result-meta">
+                        <span>? 4.8 (256 评价)</span>
+                        <span>?? 12.5k 下载</span>
+                        <span>??? AI, 生产力</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-item" onclick="openResult()">
+                <div class="result-icon">??</div>
+                <div class="result-content">
+                    <div class="result-title">
+                        <span class="result-highlight">李</span>明 (liming@example.com)
+                        <span class="result-type">用户</span>
+                    </div>
+                    <div class="result-desc">产品经理 | 最后登录: 2026-01-20 14:30 | 角色: 管理员</div>
+                    <div class="result-meta">
+                        <span>?? liming@example.com</span>
+                        <span>?? 138****8888</span>
+                        <span>? 已激活</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-item" onclick="openResult()">
+                <div class="result-icon">??</div>
+                <div class="result-content">
+                    <div class="result-title">
+                        <span class="result-highlight">数据</span>分析仪表盘
+                        <span class="result-type">报表</span>
+                    </div>
+                    <div class="result-desc">实时展示用户活跃度、API 调用量、系统性能等关键指标...</div>
+                    <div class="result-meta">
+                        <span>?? 最后更新: 实时</span>
+                        <span>??? 256 次查看</span>
+                        <span>?? 已收藏</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 搜索历史 -->
+        <div class="search-history">
+            <div class="history-header">
+                <span class="section-title">?? 搜索历史</span>
+                <span class="clear-history" onclick="clearHistory()">清空历史</span>
+            </div>
+            <div class="history-list">
+                <span class="history-item">?? 用户权限</span>
+                <span class="history-item">?? API 配置</span>
+                <span class="history-item">?? 数据分析</span>
+                <span class="history-item">?? 插件安装</span>
+                <span class="history-item">?? 系统设置</span>
+            </div>
+        </div>
+        
+        <!-- 热门搜索 -->
+        <div class="hot-searches">
+            <div class="section-title">?? 热门搜索</div>
+            <div class="hot-list">
+                <span class="hot-item"><span class="hot-rank top">1</span>API 文档</span>
+                <span class="hot-item"><span class="hot-rank top">2</span>用户管理</span>
+                <span class="hot-item"><span class="hot-rank mid">3</span>插件市场</span>
+                <span class="hot-item"><span class="hot-rank mid">4</span>数据分析</span>
+                <span class="hot-item"><span class="hot-rank normal">5</span>系统设置</span>
+                <span class="hot-item"><span class="hot-rank normal">6</span>Webhook</span>
+                <span class="hot-item"><span class="hot-rank normal">7</span>角色权限</span>
+                <span class="hot-item"><span class="hot-rank normal">8</span>备份恢复</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleSearch(value) {
+            const suggestions = document.getElementById('suggestions');
+            if (value.length > 0) {
+                suggestions.classList.add('show');
+            } else {
+                suggestions.classList.remove('show');
+            }
+        }
+        
+        function selectSuggestion(text) {
+            document.getElementById('searchInput').value = text;
+            document.getElementById('suggestions').classList.remove('show');
+        }
+        
+        function openResult() {
+            alert('打开搜索结果详情');
+        }
+        
+        function clearHistory() {
+            if (confirm('确定要清空搜索历史吗？')) {
+                document.querySelector('.history-list').innerHTML = '<span style="color: #6B7280; font-size: 13px;">暂无搜索历史</span>';
+            }
+        }
+        
+        // 点击外部关闭建议
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-section')) {
+                document.getElementById('suggestions').classList.remove('show');
+            }
+        });
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

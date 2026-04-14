@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>论文管理与引用 - Kaelis Research</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css">
+    <link rel="stylesheet" href="../assets/styles/components.css">
+    <link rel="stylesheet" href="../assets/styles/animations.css">
+    <style>
+        body { position: relative; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            left: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-purple) 0%, transparent 70%);
+            filter: blur(64px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container { position: relative; z-index: 1; }
+        .search-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 32px; margin-bottom: 24px; }
+        .search-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; text-align: center; color: var(--text-primary); }
+        .search-box { display: flex; gap: 12px; max-width: 800px; margin: 0 auto; }
+        .search-input { flex: 1; padding: 16px 24px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 16px; background: var(--bg-input); color: var(--text-primary); transition: all 0.3s; }
+        .search-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--glow-purple); }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-btn { padding: 16px 32px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .search-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .search-filters { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+        .filter-chip { padding: 8px 16px; background: var(--bg-input); border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+        .filter-chip:hover, .filter-chip.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; }
+        .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+        .sidebar { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; height: fit-content; }
+        .sidebar-title { font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
+        .library-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .library-item:hover, .library-item.active { background: var(--bg-input); }
+        .library-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .library-icon.blue { background: var(--info-bg); }
+        .library-icon.green { background: var(--success-bg); }
+        .library-icon.purple { background: rgba(136, 72, 249, 0.15); }
+        .library-icon.orange { background: rgba(249, 115, 22, 0.15); }
+        .library-info { flex: 1; }
+        .library-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .library-count { font-size: 12px; color: var(--text-muted); }
+        .view-options { display: flex; gap: 8px; }
+        .view-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; font-size: 14px; color: var(--text-secondary); transition: all 0.2s; }
+        .view-btn:hover, .view-btn.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .papers-list { display: flex; flex-direction: column; gap: 16px; }
+        .paper-card { display: flex; gap: 20px; padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-card); transition: all 0.3s; }
+        .paper-card:hover { border-color: var(--border-color-hover); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .paper-checkbox { width: 20px; height: 20px; margin-top: 4px; accent-color: var(--primary-color); }
+        .paper-content { flex: 1; }
+        .paper-title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; line-height: 1.4; }
+        .paper-title:hover { color: var(--accent-purple-light); cursor: pointer; }
+        .paper-authors { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+        .paper-meta { display: flex; gap: 16px; font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+        .paper-abstract { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .paper-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .paper-tag { padding: 4px 10px; background: var(--bg-input); border-radius: 6px; font-size: 12px; color: var(--text-secondary); }
+        .paper-actions { display: flex; flex-direction: column; gap: 8px; }
+        .paper-action { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: var(--text-secondary); }
+        .paper-action:hover { background: var(--bg-card-hover); border-color: var(--primary-color); color: var(--text-primary); }
+        .citation-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--success-bg); color: var(--success); border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .stats-bar { display: flex; gap: 24px; padding: 16px 20px; background: var(--bg-input); border-radius: 10px; margin-bottom: 20px; }
+        .stat-item { display: flex; align-items: center; gap: 8px; }
+        .stat-value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .stat-label { font-size: 13px; color: var(--text-secondary); }
+        .import-section { background: linear-gradient(135deg, rgba(136,72,249,0.1) 0%, rgba(59,130,246,0.1) 100%); border-radius: 12px; padding: 20px; margin-top: 20px; border: 1px solid var(--border-color); }
+        .import-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+        .import-options { display: flex; gap: 12px; }
+        .import-btn { padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+        .import-btn:hover { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="animate-fade-in">
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <div class="logo-icon float-animate">
+                    <img src="../assets/images/logo-precise.svg" alt="Kaelis" style="width: 40px; height: 40px;">
+                </div>
+                <div class="logo-text">Kaelis</div>
+            </div>
+        </div>
+        <div class="nav-center">
+            <a href="dashboard.html" class="nav-item">仪表盘</a>
+            <a href="chat.html" class="nav-item">对话</a>
+            <a href="research-data.html" class="nav-item">科研数据</a>
+            <a href="experiment-design.html" class="nav-item">实验设计</a>
+            <a href="paper-management.html" class="nav-item nav-item-animate active">论文管理</a>
+            <a href="peer-review.html" class="nav-item">科研协作</a>
+            <a href="data-visualization.html" class="nav-item">数据可视化</a>
+            <a href="research-resources.html" class="nav-item">资源库</a>
+        </div>
+        <div class="nav-right">
+            <button class="notification-btn btn-hover">??</button>
+            <div class="user-avatar">张</div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>?? 论文管理与引用系统</h1>
+                <p>管理您的学术文献库和引用</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-hover">?? 导出库</button>
+                <button class="btn btn-primary btn-hover ripple">+ 添加论文</button>
+            </div>
+        </div>
+            <div class="search-title">?? 搜索学术论文</div>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="输入论文标题、作者、DOI或关键词...">
+                <button class="search-btn btn-hover ripple">搜索</button>
+            </div>
+            <div class="search-filters">
+                <span class="filter-chip active">全部</span>
+                <span class="filter-chip">标题</span>
+                <span class="filter-chip">作者</span>
+                <span class="filter-chip">期刊</span>
+                <span class="filter-chip">年份</span>
+                <span class="filter-chip">DOI</span>
+            </div>
+        </div>
+        <div class="main-layout">
+            <div class="sidebar card-hover scroll-animate">
+                <div class="sidebar-title">我的图书馆</div>
+                <div class="library-item active btn-hover">
+                    <div class="library-icon blue">??</div>
+                    <div class="library-info">
+                        <div class="library-name">全部论文</div>
+                        <div class="library-count">1,247 篇</div>
+                    </div>
+                </div>
+                <div class="library-item btn-hover">
+                    <div class="library-icon green">?</div>
+                    <div class="library-info">
+                        <div class="library-name">收藏夹</div>
+                        <div class="library-count">156 篇</div>
+                    </div>
+                </div>
+                <div class="library-item btn-hover">
+                    <div class="library-icon purple">??</div>
+                    <div class="library-info">
+                        <div class="library-name">待读列表</div>
+                        <div class="library-count">89 篇</div>
+                    </div>
+                </div>
+                <div class="library-item btn-hover">
+                    <div class="library-icon orange">??</div>
+                    <div class="library-info">
+                        <div class="library-name">我的发表</div>
+                        <div class="library-count">23 篇</div>
+                    </div>
+                </div>
+                <div class="import-section">
+                    <div class="import-title">?? 导入论文</div>
+                    <div class="import-options">
+                        <button class="import-btn btn-hover">BibTeX</button>
+                        <button class="import-btn btn-hover">RIS</button>
+                        <button class="import-btn btn-hover">EndNote</button>
+                        <button class="import-btn btn-hover">PDF</button>
+                    </div>
+                </div>
+            </div>
+            <div class="content">
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-value">1,247</span>
+                        <span class="stat-label">总论文数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">8,932</span>
+                        <span class="stat-label">总引用数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">156</span>
+                        <span class="stat-label">h-index</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">23</span>
+                        <span class="stat-label">我的发表</span>
+                    </div>
+                </div>
+                <div class="toolbar">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="checkbox" style="width: 18px; height: 18px;">
+                        <span style="font-size: 14px; color: var(--text-secondary);">全选</span>
+                        <span style="color: var(--border-color);">|</span>
+                        <button style="padding: 8px 16px; background: var(--bg-input); border: none; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-secondary);">批量操作 ▼</button>
+                    </div>
+                    <div class="view-options">
+                        <button class="view-btn active">列表</button>
+                        <button class="view-btn">卡片</button>
+                        <button class="view-btn">引用</button>
+                    </div>
+                </div>
+                <div class="papers-list">
+                    <div class="paper-card">
+                        <input type="checkbox" class="paper-checkbox">
+                        <div class="paper-content">
+                            <div class="paper-title">Attention Is All You Need:  Transformer架构的革命性突破</div>
+                            <div class="paper-authors">Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, ?ukasz Kaiser, Illia Polosukhin</div>
+                            <div class="paper-meta">
+                                <span>?? NeurIPS 2017</span>
+                                <span>?? 被引 89,432 次</span>
+                                <span>?? 2017-06-12</span>
+                                <span>?? arXiv:1706.03762</span>
+                            </div>
+                            <div class="paper-abstract">我们提出了一种新的简单网络架构Transformer，完全基于注意力机制，摒弃了递归和卷积。实验表明，该模型在质量上更优，同时更易于并行化，训练时间显著减少...</div>
+                            <div class="paper-tags">
+                                <span class="paper-tag">Transformer</span>
+                                <span class="paper-tag">注意力机制</span>
+                                <span class="paper-tag">NLP</span>
+                                <span class="paper-tag">深度学习</span>
+                                <span class="citation-badge">? 高被引</span>
+                            </div>
+                        </div>
+                        <div class="paper-actions">
+                            <button class="paper-action" title="查看">??</button>
+                            <button class="paper-action" title="下载">?</button>
+                            <button class="paper-action" title="引用">??</button>
+                            <button class="paper-action" title="收藏">?</button>
+                        </div>
+                    </div>
+                    <div class="paper-card">
+                        <input type="checkbox" class="paper-checkbox">
+                        <div class="paper-content">
+                            <div class="paper-title">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</div>
+                            <div class="paper-authors">Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova</div>
+                            <div class="paper-meta">
+                                <span>?? NAACL 2019</span>
+                                <span>?? 被引 67,891 次</span>
+                                <span>?? 2018-10-11</span>
+                                <span>?? arXiv:1810.04805</span>
+                            </div>
+                            <div class="paper-abstract">我们介绍了一种新的语言表示模型BERT，它通过在所有层中同时考虑左右上下文，从未标记文本中深度双向预训练 Transformer。BERT在11项NLP任务上取得最新成果...</div>
+                            <div class="paper-tags">
+                                <span class="paper-tag">BERT</span>
+                                <span class="paper-tag">预训练</span>
+                                <span class="paper-tag">语言模型</span>
+                                <span class="paper-tag">NLP</span>
+                                <span class="citation-badge">? 高被引</span>
+                            </div>
+                        </div>
+                        <div class="paper-actions">
+                            <button class="paper-action" title="查看">??</button>
+                            <button class="paper-action" title="下载">?</button>
+                            <button class="paper-action" title="引用">??</button>
+                            <button class="paper-action" title="收藏">?</button>
+                        </div>
+                    </div>
+                    <div class="paper-card">
+                        <input type="checkbox" class="paper-checkbox">
+                        <div class="paper-content">
+                            <div class="paper-title">Highly accurate protein structure prediction with AlphaFold</div>
+                            <div class="paper-authors">John Jumper, Richard Evans, Alexander Pritzel, Tim Green, Michael Figurnov, Olaf Ronneberger, Kathryn Tunyasuvunakool, Russ Bates, Augustin ?ídek, Anna Potapenko, et al.</div>
+                            <div class="paper-meta">
+                                <span>?? Nature 2021</span>
+                                <span>?? 被引 15,234 次</span>
+                                <span>?? 2021-07-15</span>
+                                <span>?? DOI: 10.1038/s41586-021-03819-2</span>
+                            </div>
+                            <div class="paper-abstract">蛋白质结构预测是生物学中最重要的挑战之一。我们报告了AlphaFold2，它在CASP14评估中达到了原子级精度，被认为解决了蛋白质结构预测问题...</div>
+                            <div class="paper-tags">
+                                <span class="paper-tag">AlphaFold</span>
+                                <span class="paper-tag">蛋白质结构</span>
+                                <span class="paper-tag">生物信息</span>
+                                <span class="paper-tag">深度学习</span>
+                            </div>
+                        </div>
+                        <div class="paper-actions">
+                            <button class="paper-action" title="查看">??</button>
+                            <button class="paper-action" title="下载">?</button>
+                            <button class="paper-action" title="引用">??</button>
+                            <button class="paper-action" title="收藏">?</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="../assets/js/animations.js"></script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

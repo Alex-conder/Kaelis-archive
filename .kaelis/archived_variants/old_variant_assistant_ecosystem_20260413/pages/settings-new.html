@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        :root {
+            --primary-color: var(--primary);
+            --primary-light: #BD95FF;
+            --bg-dark: #0A0A0A;
+            --bg-card: rgba(23,23,23,0.8);
+            --text-primary: #ffffff;
+            --text-secondary: #A1A1AA;
+            --border-color: rgba(255,255,255,0.1);
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: var(--bg-dark); 
+            min-height: 100vh; 
+            color: var(--text-primary);
+        }
+        .top-nav { 
+            background: var(--bg-card); 
+            backdrop-filter: blur(10px); 
+            padding: 16px 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: var(--text-secondary); }
+        
+        /* 设置分类 */
+        .settings-section { 
+            background: var(--bg-card); 
+            border-radius: 16px; 
+            padding: 32px; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 24px; 
+        }
+        .section-title { 
+            font-size: 20px; 
+            font-weight: 600; 
+            margin-bottom: 24px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+        }
+        
+        /* 设置项 */
+        .setting-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px 0; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-info { flex: 1; }
+        .setting-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .setting-desc { font-size: 13px; color: var(--text-secondary); }
+        
+        /* 开关 */
+        .toggle { 
+            width: 52px; 
+            height: 28px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 14px; 
+            position: relative; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+        }
+        .toggle.active { background: var(--primary-color); }
+        .toggle::after { 
+            content: ''; 
+            position: absolute; 
+            width: 24px; 
+            height: 24px; 
+            background: white; 
+            border-radius: 50%; 
+            top: 2px; 
+            left: 2px; 
+            transition: all 0.3s; 
+        }
+        .toggle.active::after { left: 26px; }
+        
+        /* 主题选择 */
+        .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+        .theme-card { 
+            padding: 20px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px; 
+            border: 2px solid transparent; 
+            cursor: pointer; 
+            text-align: center; 
+            transition: all 0.3s; 
+        }
+        .theme-card:hover { border-color: rgba(136,72,249,0.3); }
+        .theme-card.active { border-color: var(--primary-color); background: rgba(136,72,249,0.1); }
+        .theme-preview { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 12px; 
+            margin: 0 auto 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 28px; 
+        }
+        .theme-name { font-size: 14px; font-weight: 600; }
+        
+        /* 语言选择 */
+        .language-list { display: flex; flex-direction: column; gap: 8px; }
+        .language-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 10px; 
+            cursor: pointer; 
+            border: 2px solid transparent; 
+            transition: all 0.2s; 
+        }
+        .language-item:hover { background: rgba(255,255,255,0.05); }
+        .language-item.active { border-color: var(--primary-color); background: rgba(136,72,249,0.1); }
+        .lang-flag { font-size: 24px; margin-right: 16px; }
+        .lang-info { flex: 1; }
+        .lang-name { font-size: 15px; font-weight: 600; }
+        .lang-native { font-size: 13px; color: var(--text-secondary); }
+        .lang-check { color: var(--primary-color); font-size: 20px; }
+        
+        /* 滑块 */
+        .slider-container { width: 200px; }
+        .slider { 
+            width: 100%; 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px; 
+            outline: none; 
+            -webkit-appearance: none; 
+        }
+        .slider::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            width: 18px; 
+            height: 18px; 
+            background: var(--primary-color); 
+            border-radius: 50%; 
+            cursor: pointer; 
+        }
+        .slider-value { 
+            text-align: center; 
+            margin-top: 8px; 
+            font-size: 14px; 
+            color: var(--text-secondary); 
+        }
+        
+        /* 按钮 */
+        .btn { 
+            padding: 10px 20px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            border: none; 
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary) 100%); 
+            color: white; 
+        }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+        
+        /* 危险区域 */
+        .danger-zone { 
+            background: rgba(239,68,68,0.05); 
+            border: 1px solid rgba(239,68,68,0.2); 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-top: 24px; 
+        }
+        .danger-title { 
+            font-size: 16px; 
+            font-weight: 600; 
+            color: #EF4444; 
+            margin-bottom: 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        
+        @media (max-width: 768px) {
+            .theme-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 系统设置</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">系统设置</h1>
+            <p class="page-subtitle">个性化您的 Kaelis 体验</p>
+        </div>
+        
+        <!-- 外观设置 -->
+        <div class="settings-section">
+            <h2 class="section-title">
+                <span>??</span> 外观设置
+            </h2>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">深色模式</div>
+                    <div class="setting-desc">使用深色主题保护眼睛</div>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+            
+            <div style="margin-top: 24px;">
+                <div class="setting-name" style="margin-bottom: 16px;">主题颜色</div>
+                <div class="theme-grid">
+                    <div class="theme-card active" onclick="selectTheme(this, 'purple')">
+                        <div class="theme-preview" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">??</div>
+                        <div class="theme-name">紫韵</div>
+                    </div>
+                    <div class="theme-card" onclick="selectTheme(this, 'blue')">
+                        <div class="theme-preview" style="background: linear-gradient(135deg, var(--secondary), #06B6D4);">??</div>
+                        <div class="theme-name">蔚蓝</div>
+                    </div>
+                    <div class="theme-card" onclick="selectTheme(this, 'green')">
+                        <div class="theme-preview" style="background: linear-gradient(135deg, #22C55E, #10B981);">??</div>
+                        <div class="theme-name">翠绿</div>
+                    </div>
+                    <div class="theme-card" onclick="selectTheme(this, 'orange')">
+                        <div class="theme-preview" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">??</div>
+                        <div class="theme-name">暖阳</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item" style="margin-top: 24px;">
+                <div class="setting-info">
+                    <div class="setting-name">界面缩放</div>
+                    <div class="setting-desc">调整界面元素大小</div>
+                </div>
+                <div class="slider-container">
+                    <input type="range" class="slider" min="80" max="120" value="100" oninput="updateSlider(this)">
+                    <div class="slider-value">100%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 语言设置 -->
+        <div class="settings-section">
+            <h2 class="section-title">
+                <span>??</span> 语言设置
+            </h2>
+            
+            <div class="language-list">
+                <div class="language-item active" onclick="selectLanguage(this)">
+                    <span class="lang-flag">????</span>
+                    <div class="lang-info">
+                        <div class="lang-name">简体中文</div>
+                        <div class="lang-native">Simplified Chinese</div>
+                    </div>
+                    <span class="lang-check">?</span>
+                </div>
+                <div class="language-item" onclick="selectLanguage(this)">
+                    <span class="lang-flag">????</span>
+                    <div class="lang-info">
+                        <div class="lang-name">English</div>
+                        <div class="lang-native">English</div>
+                    </div>
+                </div>
+                <div class="language-item" onclick="selectLanguage(this)">
+                    <span class="lang-flag">????</span>
+                    <div class="lang-info">
+                        <div class="lang-name">日本語</div>
+                        <div class="lang-native">Japanese</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 通知设置 -->
+        <div class="settings-section">
+            <h2 class="section-title">
+                <span>??</span> 通知设置
+            </h2>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">启用通知</div>
+                    <div class="setting-desc">接收系统和应用通知</div>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">声音提示</div>
+                    <div class="setting-desc">播放通知声音</div>
+                </div>
+                <div class="toggle" onclick="toggleSetting(this)"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">邮件通知</div>
+                    <div class="setting-desc">重要事件发送邮件提醒</div>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+        </div>
+        
+        <!-- 隐私设置 -->
+        <div class="settings-section">
+            <h2 class="section-title">
+                <span>??</span> 隐私设置
+            </h2>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">使用数据分析</div>
+                    <div class="setting-desc">允许收集匿名使用数据以改进产品</div>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">自动保存对话</div>
+                    <div class="setting-desc">自动保存AI对话历史</div>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+        </div>
+        
+        <!-- 危险区域 -->
+        <div class="danger-zone">
+            <div class="danger-title">?? 危险区域</div>
+            <div class="setting-item" style="padding: 0; border: none;">
+                <div class="setting-info">
+                    <div class="setting-name">清除所有数据</div>
+                    <div class="setting-desc">删除所有本地缓存和设置</div>
+                </div>
+                <button class="btn btn-danger" onclick="clearAllData()">清除数据</button>
+            </div>
+        </div>
+        
+        <!-- 关于 -->
+        <div class="settings-section">
+            <h2 class="section-title">
+                <span>??</span> 关于
+            </h2>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">版本</div>
+                    <div class="setting-desc">Kaelis v3.0.0 (Build 2026.03.17)</div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-name">检查更新</div>
+                    <div class="setting-desc">当前已是最新版本</div>
+                </div>
+                <button class="btn btn-secondary" onclick="checkUpdate()">检查</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换开关
+        function toggleSetting(toggle) {
+            toggle.classList.toggle('active');
+        }
+        
+        // 选择主题
+        function selectTheme(card, theme) {
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            
+            // 应用主题
+            const root = document.documentElement;
+            const themes = {
+                'purple': { primary: 'var(--primary)', light: '#BD95FF' },
+                'blue': { primary: 'var(--secondary)', light: '#06B6D4' },
+                'green': { primary: '#22C55E', light: '#10B981' },
+                'orange': { primary: '#F59E0B', light: '#EF4444' }
+            };
+            
+            root.style.setProperty('--primary-color', themes[theme].primary);
+            root.style.setProperty('--primary-light', themes[theme].light);
+        }
+        
+        // 更新滑块值
+        function updateSlider(slider) {
+            slider.nextElementSibling.textContent = slider.value + '%';
+        }
+        
+        // 选择语言
+        function selectLanguage(item) {
+            document.querySelectorAll('.language-item').forEach(i => {
+                i.classList.remove('active');
+                i.querySelector('.lang-check')?.remove();
+            });
+            item.classList.add('active');
+            item.insertAdjacentHTML('beforeend', '<span class="lang-check">?</span>');
+        }
+        
+        // 清除数据
+        function clearAllData() {
+            if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                alert('数据已清除');
+            }
+        }
+        
+        // 检查更新
+        function checkUpdate() {
+            alert('正在检查更新...');
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

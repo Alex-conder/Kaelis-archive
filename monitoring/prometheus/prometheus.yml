@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'kg-flywheel-monitor'
+
+# 告警管理器配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# 规则文件
+rule_files:
+  - "alerts.yml"
+
+# 抓取目标
+scrape_configs:
+  # KgFlywheel 应用指标
+  - job_name: 'kg-flywheel'
+    static_configs:
+      - targets: ['kaelis-app:5000']
+    metrics_path: '/api/kg-flywheel/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Neo4j 指标（通过 Neo4j Prometheus 扩展）
+  - job_name: 'neo4j'
+    static_configs:
+      - targets: ['neo4j:2004']
+    scrape_interval: 30s
+
+  # Prometheus 自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter（系统指标）
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s

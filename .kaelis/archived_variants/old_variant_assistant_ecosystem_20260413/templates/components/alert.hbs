@@ -1,0 +1,13 @@
+<!-- 警告提示组件 -->
+<div class="alert alert-{{type}} {{#if dismissible}}alert-dismissible{{/if}}">
+  <div class="alert-content">
+    <span class="alert-icon">{{icon}}</span>
+    <div class="alert-message">
+      {{#if title}}<strong>{{title}}</strong>{{/if}}
+      <p>{{message}}</p>
+    </div>
+  </div>
+  {{#if dismissible}}
+  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+  {{/if}}
+</div>

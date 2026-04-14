@@ -1,0 +1,24 @@
+version: '1.0'
+generated_at: '2026-04-12T20:30:00'
+rules:
+  - file_pattern: scripts
+    content_feature: auto_fix_marker
+    action: format_code
+    confidence: 0.98
+    success_count: 49
+    total_count: 50
+    priority: 1
+  - file_pattern: api_routes
+    content_feature: null
+    action: sync_docs
+    confidence: 0.92
+    success_count: 23
+    total_count: 25
+    priority: 2
+  - file_pattern: config_files
+    content_feature: null
+    action: run_check
+    confidence: 0.88
+    success_count: 7
+    total_count: 8
+    priority: 3

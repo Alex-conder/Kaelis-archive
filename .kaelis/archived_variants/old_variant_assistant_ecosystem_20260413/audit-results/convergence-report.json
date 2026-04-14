@@ -1,0 +1,433 @@
+{
+  "scores": {
+    "overall": 81,
+    "details": {
+      "cssVariables": 100,
+      "components": 100,
+      "navigation": 100,
+      "jsLogic": 100,
+      "inlineStyles": 39.09438016528926,
+      "hardcodedColors": 99.88429752066116,
+      "templates": 0.8264462809917356
+    }
+  },
+  "issues": [
+    {
+      "file": "3d-visualization.html",
+      "type": "P2",
+      "issue": "内联样式过多 (10247字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "activity-logs.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6544字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "ai-assistant.html",
+      "type": "P2",
+      "issue": "内联样式过多 (10192字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "ai-automation.html",
+      "type": "P2",
+      "issue": "内联样式过多 (8007字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "animation-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6212字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "api-auto-discovery.html",
+      "type": "P2",
+      "issue": "内联样式过多 (11894字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "api-docs.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7737字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "api-integration.html",
+      "type": "P2",
+      "issue": "内联样式过多 (10060字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "api-monitor.html",
+      "type": "P2",
+      "issue": "内联样式过多 (11908字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "api-performance.html",
+      "type": "P2",
+      "issue": "内联样式过多 (10018字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "backup-restore.html",
+      "type": "P2",
+      "issue": "内联样式过多 (8559字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "batch-operations.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7113字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "button-test.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5476字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "card-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (11147字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "character-system.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6792字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "chart-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7799字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "code-editor.html",
+      "type": "P2",
+      "issue": "内联样式过多 (10302字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "collaboration.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6301字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "combination-docking.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6746字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "component-docs.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6389字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "component-playground.html",
+      "type": "P2",
+      "issue": "内联样式过多 (9311字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "data-monitor-dashboard.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7939字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "data-sync.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6906字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "data-transfer.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7427字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "data-visualization.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6792字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "docking-analysis.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6413字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "encryption-audit.html",
+      "type": "P2",
+      "issue": "内联样式过多 (10324字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "experiment-design.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6308字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "file-manager.html",
+      "type": "P2",
+      "issue": "内联样式过多 (9414字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "form-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (11036字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "global-search.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7602字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "help-center.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5952字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "knowledge-rag.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7492字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "ligand-protein-docking.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5733字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "loading-animations.html",
+      "type": "P2",
+      "issue": "内联样式过多 (15290字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "login.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7095字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "meropenem-docking.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6252字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "micro-interactions.html",
+      "type": "P2",
+      "issue": "内联样式过多 (13303字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "mobile-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (13184字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "mobile-forms.html",
+      "type": "P2",
+      "issue": "内联样式过多 (17583字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "mobile-navigation.html",
+      "type": "P2",
+      "issue": "内联样式过多 (12818字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "modal-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (11262字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "nav-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (9794字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "notification-center.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5079字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "oauth-manager.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5806字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "page-transitions.html",
+      "type": "P2",
+      "issue": "内联样式过多 (9703字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "paper-management.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6894字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "peer-review.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5612字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "performance-monitor.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6525字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "plugin-import.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7080字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "plugin-store.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6268字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "pwa-offline.html",
+      "type": "P2",
+      "issue": "内联样式过多 (9423字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "register.html",
+      "type": "P2",
+      "issue": "内联样式过多 (5928字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "research-resources.html",
+      "type": "P2",
+      "issue": "内联样式过多 (8819字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "scheduled-jobs.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6623字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "scroll-animations.html",
+      "type": "P2",
+      "issue": "内联样式过多 (12878字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "security-center.html",
+      "type": "P2",
+      "issue": "内联样式过多 (8099字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "settings-new.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7107字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "system-health.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7952字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "system-updates.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7489字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "table-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (8885字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "testing-center.html",
+      "type": "P2",
+      "issue": "内联样式过多 (7133字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "touch-gestures.html",
+      "type": "P2",
+      "issue": "内联样式过多 (11459字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "ui-components.html",
+      "type": "P2",
+      "issue": "内联样式过多 (8842字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "vancomycin-docking.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6515字符)",
+      "action": "提取到外部CSS"
+    },
+    {
+      "file": "webhook-management.html",
+      "type": "P2",
+      "issue": "内联样式过多 (6094字符)",
+      "action": "提取到外部CSS"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "P1",
+      "area": "内联样式",
+      "current": "39.1%",
+      "target": "80%+",
+      "action": "使用style-migrate.js批量迁移",
+      "effort": "中",
+      "impact": "中"
+    },
+    {
+      "priority": "P2",
+      "area": "模板系统",
+      "current": "0.8%",
+      "target": "50%+",
+      "action": "逐步迁移页面到Handlebars模板",
+      "effort": "高",
+      "impact": "高"
+    }
+  ],
+  "timestamp": "2026-03-17T18:36:02.078Z"
+}

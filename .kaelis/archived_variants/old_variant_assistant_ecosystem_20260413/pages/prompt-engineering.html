@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt工程 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .prompt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .prompt-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-prompt-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .prompt-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .prompt-editor { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .editor-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .editor-actions { display: flex; gap: 8px; }
+        .editor-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .editor-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .prompt-textarea { width: 100%; min-height: 300px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; resize: vertical; }
+        .variables-section { margin-top: 20px; }
+        .variables-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px; }
+        .variable-tag { display: inline-flex; align-items: center; padding: 6px 12px; background: #f3e8ff; color: var(--primary); border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 8px; margin-bottom: 8px; }
+        .prompt-preview { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .preview-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .preview-input { margin-bottom: 16px; }
+        .preview-label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+        .preview-field { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; }
+        .preview-output { background: #f8fafc; border-radius: 12px; padding: 16px; min-height: 200px; font-size: 14px; line-height: 1.6; color: #374151; }
+        .preview-stats { display: flex; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+        .preview-stat { font-size: 13px; color: #64748b; }
+        .preview-stat span { font-weight: 600; color: #1e293b; }
+        .prompt-library { margin-top: 24px; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .library-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .library-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .library-item { padding: 16px; background: #f8fafc; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+        .library-item:hover { background: #f3e8ff; }
+        .library-item-name { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .library-item-desc { font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">Prompt工程</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="prompt-header">
+            <h1>Prompt 工程工作室</h1>
+            <button class="new-prompt-btn">+ 新建 Prompt</button>
+        </div>
+        <div class="prompt-workspace">
+            <div class="prompt-editor">
+                <div class="editor-title">
+                    <span>?? Prompt 编辑器</span>
+                    <div class="editor-actions">
+                        <button class="editor-btn">?? 保存</button>
+                        <button class="editor-btn primary">? 运行</button>
+                    </div>
+                </div>
+                <textarea class="prompt-textarea" placeholder="输入你的 Prompt 模板...">你是一个专业的客服助手。请根据用户的问题提供友好、准确的回答。
+
+用户问题：{{user_question}}
+上下文：{{context}}
+
+请用中文回答，保持礼貌和专业。</textarea>
+                <div class="variables-section">
+                    <div class="variables-title">?? 可用变量</div>
+                    <span class="variable-tag">{{user_question}}</span>
+                    <span class="variable-tag">{{context}}</span>
+                    <span class="variable-tag">{{user_name}}</span>
+                </div>
+            </div>
+            <div class="prompt-preview">
+                <div class="preview-title">??? 实时预览</div>
+                <div class="preview-input">
+                    <div class="preview-label">用户问题</div>
+                    <input type="text" class="preview-field" value="如何重置密码？">
+                </div>
+                <div class="preview-input">
+                    <div class="preview-label">上下文</div>
+                    <input type="text" class="preview-field" value="用户已登录，需要帮助文档">
+                </div>
+                <div class="preview-output">
+                    您好！重置密码很简单，请按照以下步骤操作：<br><br>
+                    1. 点击右上角头像进入个人设置<br>
+                    2. 选择"安全设置"选项卡<br>
+                    3. 点击"修改密码"按钮<br>
+                    4. 输入当前密码和新密码<br>
+                    5. 点击确认完成修改<br><br>
+                    如果您忘记了当前密码，可以使用登录页面的"忘记密码"功能通过邮箱找回。
+                </div>
+                <div class="preview-stats">
+                    <div class="preview-stat">Token: <span>156</span></div>
+                    <div class="preview-stat">耗时: <span>1.2s</span></div>
+                    <div class="preview-stat">模型: <span>GPT-4</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="prompt-library">
+            <h2 class="library-title">?? Prompt 模板库</h2>
+            <div class="library-grid">
+                <div class="library-item">
+                    <div class="library-item-name">客服助手</div>
+                    <div class="library-item-desc">处理常见客户咨询</div>
+                </div>
+                <div class="library-item">
+                    <div class="library-item-name">代码审查</div>
+                    <div class="library-item-desc">自动审查代码质量</div>
+                </div>
+                <div class="library-item">
+                    <div class="library-item-name">数据分析</div>
+                    <div class="library-item-desc">解释数据报表</div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

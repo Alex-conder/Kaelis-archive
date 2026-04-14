@@ -1,0 +1,146 @@
+# KgFlywheel 告警规则
+# 导入 Prometheus Alertmanager 使用
+
+groups:
+  - name: kg-flywheel-alerts
+    interval: 30s
+    rules:
+      # 1. Neo4j 连接断开告警
+      - alert: Neo4jDisconnected
+        expr: kg_neo4j_connected == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: kg-flywheel
+        annotations:
+          summary: "Neo4j 连接断开"
+          description: "KgFlywheel 无法连接到 Neo4j 数据库，当前使用 Mock 模式运行。请检查 Neo4j 容器状态。"
+          runbook_url: "https://github.com/yourusername/kaelis/wiki/Neo4j-Troubleshooting"
+
+      # 2. 知识提取失败率过高
+      - alert: HighExtractionFailureRate
+        expr: |
+          (
+            sum(rate(kg_extraction_total{status="error"}[5m]))
+            /
+            sum(rate(kg_extraction_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: kg-flywheel
+        annotations:
+          summary: "知识提取失败率过高"
+          description: "过去 5 分钟内知识提取失败率超过 5%，当前值: {{ $value | humanizePercentage }}"
+
+      # 3. 查询响应时间过长
+      - alert: SlowQueryResponse
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(kg_query_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 3m
+        labels:
+          severity: warning
+          service: kg-flywheel
+        annotations:
+          summary: "查询响应缓慢"
+          description: "95% 的查询响应时间超过 2 秒，当前 P95: {{ $value }}s"
+
+      # 4. 质量评分过低
+      - alert: LowQualityScore
+        expr: kg_quality_score{metric="overall"} < 0.6
+        for: 5m
+        labels:
+          severity: warning
+          service: kg-flywheel
+        annotations:
+          summary: "知识图谱质量评分过低"
+          description: "整体质量评分低于 60%，当前值: {{ $value | humanizePercentage }}。建议运行质量检查。"
+
+      # 5. 错误数激增
+      - alert: ErrorSpike
+        expr: |
+          sum(rate(kg_errors_total[5m])) > 10
+        for: 1m
+        labels:
+          severity: critical
+          service: kg-flywheel
+        annotations:
+          summary: "错误率激增"
+          description: "过去 5 分钟内错误数超过 10 个/秒，当前值: {{ $value }}"
+
+      # 6. 提取操作完全停止
+      - alert: ExtractionStopped
+        expr: |
+          sum(rate(kg_extraction_total[10m])) == 0
+        for: 10m
+        labels:
+          severity: info
+          service: kg-flywheel
+        annotations:
+          summary: "知识提取操作停止"
+          description: "过去 10 分钟内没有知识提取操作，系统可能处于空闲状态或出现故障。"
+
+      # 7. 实体数量异常下降
+      - alert: EntityCountDrop
+        expr: |
+          (
+            kg_entity_count
+            <
+            (kg_entity_count offset 1h) * 0.8
+          )
+        for: 5m
+        labels:
+          severity: critical
+          service: kg-flywheel
+        annotations:
+          summary: "实体数量异常下降"
+          description: "实体数量在过去 1 小时内下降超过 20%，可能存在数据丢失。"
+
+      # 8. 飞轮执行耗时过长
+      - alert: SlowFlywheelExecution
+        expr: |
+          histogram_quantile(0.90,
+            sum(rate(kg_extraction_duration_seconds_bucket[10m]) 
+              + rate(kg_query_duration_seconds_bucket[10m])
+              + rate(kg_inspection_duration_seconds_bucket[10m])
+            ) by (le)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: kg-flywheel
+        annotations:
+          summary: "飞轮执行耗时过长"
+          description: "完整飞轮执行时间超过 30 秒，可能存在性能瓶颈。"
+
+  # 系统资源告警
+  - name: system-alerts
+    interval: 1m
+    rules:
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes{job="kg-flywheel"}
+            /
+            (1024 * 1024 * 1024)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: kg-flywheel
+        annotations:
+          summary: "内存使用过高"
+          description: "KgFlywheel 内存使用超过 1GB，当前值: {{ $value | humanize }}GB"
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="kg-flywheel"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: kg-flywheel
+        annotations:
+          summary: "CPU 使用过高"
+          description: "KgFlywheel CPU 使用率超过 80%"

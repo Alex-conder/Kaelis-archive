@@ -1,0 +1,1665 @@
+#!/usr/bin/env python3
+"""
+Kaelis 统一 CLI 入口 v1.0
+以 ACK v2.1 前馈确定性内核为统一基准
+
+使用方式:
+  kaelis intent "<自然语言目标>"          # 启动完整前馈流水线
+  kaelis plan "<目标>"                   # 仅生成计划，不执行
+  kaelis execute <plan-id>               # 执行已审批的计划
+  
+  kaelis op file add <path> --intent "..."
+  kaelis op env set <key> <value>
+  
+  kaelis session start --intent "..."
+  kaelis snapshot rollback <id>
+  
+  kaelis profile                          # 查看认知画像
+  kaelis guide                            # 获取导航建议
+
+作者: Kaelis Unified Architecture
+版本: 1.0.0
+"""
+
+import os
+import sys
+import argparse
+import json
+from pathlib import Path
+from datetime import datetime
+
+# 确保可以导入 scripts 目录下的模块
+SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+# 尝试导入 ACK v2.1 组件
+try:
+    from idea_factory_v2 import IdeaFactoryV2
+    from rule_engine import RuleEngine
+    from hallucination_detector import HallucinationDetector
+    from sandbox_runner import SandboxRunner
+    from atomic_executor import AtomicExecutor
+    ACK_AVAILABLE = True
+except ImportError as e:
+    print(f"[WARN] ACK components not fully available: {e}")
+    ACK_AVAILABLE = False
+
+# 常量
+CONFIG_FILE = Path("config/kaelis.yaml")
+VERSION = "1.0.0"
+
+
+def load_config():
+    """加载主配置"""
+    import yaml
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    return {}
+
+
+class KaelisCLI:
+    """Kaelis 统一 CLI"""
+    
+    def __init__(self):
+        self.config = load_config()
+        self.factory = IdeaFactoryV2() if ACK_AVAILABLE else None
+    
+    # ========================================================================
+    # 核心命令: intent
+    # ========================================================================
+    def cmd_intent(self, args):
+        """处理自然语言意图"""
+        if not self.factory:
+            print("[ERROR] ACK v2.1 not available")
+            return 1
+        
+        description = args.description
+        dry_run = args.dry_run
+        skip_sandbox = args.skip_sandbox
+        
+        print(f"\n[Kaelis] Processing intent: {description}")
+        print("=" * 60)
+        
+        success = self.factory.process(description, dry_run=dry_run, skip_sandbox=skip_sandbox)
+        
+        return 0 if success else 1
+    
+    # ========================================================================
+    # 核心命令: plan
+    # ========================================================================
+    def cmd_plan(self, args):
+        """仅生成执行计划"""
+        if not self.factory:
+            print("[ERROR] ACK v2.1 not available")
+            return 1
+        
+        description = args.description
+        
+        print(f"\n[Kaelis] Generating plan for: {description}")
+        print("=" * 60)
+        
+        # 解析意图
+        from idea_factory_v2 import IntentParser
+        parser = IntentParser()
+        intent = parser.parse(description)
+        
+        if not intent:
+            print("[FAIL] Failed to parse intent")
+            return 1
+        
+        # 匹配规则
+        engine = RuleEngine()
+        template, matches = engine.match_intent(intent)
+        
+        if not template:
+            print("[FAIL] No matching template found")
+            print(engine.get_no_match_guidance())
+            return 1
+        
+        # 生成计划
+        plan = engine.generate_execution_plan(template, intent)
+        
+        # 输出
+        output_file = args.output
+        if output_file:
+            with open(output_file, 'w') as f:
+                json.dump(plan, f, indent=2, ensure_ascii=False)
+            print(f"[OK] Plan saved to: {output_file}")
+        else:
+            print("\nGenerated Plan:")
+            print(json.dumps(plan, indent=2, ensure_ascii=False))
+        
+        return 0
+    
+    # ========================================================================
+    # 核心命令: execute
+    # ========================================================================
+    def cmd_execute(self, args):
+        """执行已生成的计划"""
+        plan_file = args.plan_file
+        
+        if not Path(plan_file).exists():
+            print(f"[ERROR] Plan file not found: {plan_file}")
+            return 1
+        
+        with open(plan_file, 'r') as f:
+            plan = json.load(f)
+        
+        print(f"\n[Kaelis] Executing plan: {plan.get('template_name', 'Unknown')}")
+        print("=" * 60)
+        
+        executor = AtomicExecutor()
+        try:
+            record = executor.execute(plan)
+            print(f"[OK] Execution successful: {record.execution_id}")
+            return 0
+        except Exception as e:
+            print(f"[FAIL] Execution failed: {e}")
+            return 1
+    
+    # ========================================================================
+    # 操作命令: op file
+    # ========================================================================
+    def cmd_op_file(self, args):
+        """文件操作"""
+        action = args.file_action  # add, update, delete
+        path = args.path
+        intent_desc = args.intent
+        
+        # 构建意图
+        action_map = {
+            'add': 'add',
+            'update': 'modify',
+            'delete': 'delete'
+        }
+        
+        intent_action = action_map.get(action, action)
+        
+        if not intent_desc:
+            intent_desc = f"{action} file {path}"
+        
+        # 构建完整描述
+        full_desc = f"{intent_action} {path}: {intent_desc}"
+        
+        # 复用 intent 命令
+        class Args:
+            pass
+        
+        intent_args = Args()
+        intent_args.description = full_desc
+        intent_args.dry_run = args.dry_run
+        intent_args.skip_sandbox = args.skip_sandbox
+        
+        return self.cmd_intent(intent_args)
+    
+    # ========================================================================
+    # 操作命令: op env
+    # ========================================================================
+    def cmd_op_env(self, args):
+        """环境变量操作"""
+        action = args.env_action  # set, get, delete
+        
+        if action == 'set':
+            key = args.key
+            value = args.value
+            print(f"[Kaelis] Setting env: {key}={value}")
+            # 实际实现需要修改 .env 文件
+            return 0
+        elif action == 'get':
+            key = args.key
+            print(f"[Kaelis] Getting env: {key}")
+            return 0
+        
+        return 0
+    
+    # ========================================================================
+    # 会话命令
+    # ========================================================================
+    def cmd_session(self, args):
+        """会话管理"""
+        action = args.session_action  # start, end, list
+        
+        if action == 'start':
+            intent = args.intent
+            session_id = f"sess_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            print(f"[Kaelis] Session started: {session_id}")
+            if intent:
+                print(f"  Intent: {intent}")
+            return 0
+        
+        elif action == 'end':
+            print("[Kaelis] Session ended")
+            return 0
+        
+        elif action == 'list':
+            print("[Kaelis] Active sessions:")
+            # 列出会话
+            return 0
+        
+        return 0
+    
+    # ========================================================================
+    # 快照命令
+    # ========================================================================
+    def cmd_snapshot(self, args):
+        """快照管理"""
+        action = args.snapshot_action  # list, rollback
+        
+        if action == 'list':
+            print("[Kaelis] Available snapshots:")
+            snapshots_dir = Path(".kaelis/snapshots")
+            if snapshots_dir.exists():
+                for snap in sorted(snapshots_dir.glob("snapshot_*")):
+                    print(f"  - {snap.name}")
+            return 0
+        
+        elif action == 'rollback':
+            snapshot_id = args.snapshot_id
+            print(f"[Kaelis] Rolling back to: {snapshot_id}")
+            # 调用回滚逻辑
+            return 0
+        
+        return 0
+    
+    # ========================================================================
+    # 认知命令
+    # ========================================================================
+    def cmd_profile(self, args):
+        """查看认知画像"""
+        print("[Kaelis] Developer Profile")
+        print("=" * 60)
+        
+        profile_file = Path(".kaelis/profile.json")
+        if profile_file.exists():
+            with open(profile_file, 'r') as f:
+                profile = json.load(f)
+            print(json.dumps(profile, indent=2))
+        else:
+            print("No profile data available yet.")
+            print("Profile is built from your operation history over time.")
+        
+        return 0
+    
+    def cmd_guide(self, args):
+        """获取导航建议"""
+        print("[Kaelis] Navigation Guide")
+        print("=" * 60)
+        print("""
+Quick Start:
+  kaelis intent "Add API timeout configuration"
+  kaelis intent "Create new database model"
+  kaelis intent "Add test case for auth module"
+
+Operations:
+  kaelis op file add api/routes/new.py --intent "Add endpoint"
+  kaelis op env set DEBUG true
+
+Session & Snapshot:
+  kaelis session start --intent "Refactor auth system"
+  kaelis snapshot rollback snapshot_20260101_120000
+
+Cognitive:
+  kaelis profile              # View your cognitive profile
+  kaelis guide                # Show this guide
+        """)
+        return 0
+    
+    # ========================================================================
+    # 状态命令
+    # ========================================================================
+    def cmd_status(self, args):
+        """系统状态"""
+        print("[Kaelis] System Status")
+        print("=" * 60)
+        print(f"Version: {VERSION}")
+        print(f"ACK v2.1 Available: {'Yes' if ACK_AVAILABLE else 'No'}")
+        
+        # 检查组件
+        components = [
+            ("config/kaelis.yaml", "Main Config"),
+            ("config/intent_schema.json", "Intent Schema"),
+            ("config/action_templates.yaml", "Action Templates"),
+            ("scripts/idea_factory_v2.py", "Idea Factory v2"),
+            ("scripts/rule_engine.py", "Rule Engine"),
+            ("scripts/hallucination_detector.py", "Hallucination Detector"),
+            ("scripts/sandbox_runner.py", "Sandbox Runner"),
+            ("scripts/atomic_executor.py", "Atomic Executor"),
+        ]
+        
+        print("\nComponents:")
+        for path, name in components:
+            status = "[OK]" if Path(path).exists() else "[MISSING]"
+            print(f"  {status} {name}")
+        
+        # 数据目录
+        print("\nData Directories:")
+        for dir_name in [".kaelis/audit", ".kaelis/snapshots", ".kaelis/sessions"]:
+            exists = Path(dir_name).exists()
+            status = "[OK]" if exists else "[MISSING]"
+            print(f"  {status} {dir_name}")
+        
+        # v2.0 新增状态
+        print("\nv2.0 Features:")
+        team_dir = Path(".kaelis-team/.git")
+        print(f"  [{'OK' if team_dir.exists() else 'PENDING'}] Team Repository")
+        
+        symbol_file = Path(".kaelis/symbols/symbols.json")
+        print(f"  [{'OK' if symbol_file.exists() else 'PENDING'}] Symbol Index")
+        
+        pending_dir = Path("config/templates/pending")
+        pending_count = len(list(pending_dir.glob("*.yaml"))) if pending_dir.exists() else 0
+        print(f"  [{'OK' if pending_count == 0 else 'PENDING'}] Pending Templates ({pending_count})")
+        
+        return 0
+    
+    # ========================================================================
+    # v2.0 新增命令
+    # ========================================================================
+    
+    def cmd_team(self, args):
+        """团队命令"""
+        import subprocess
+        
+        action = args.team_action
+        
+        if action == 'init':
+            cmd = ['python', 'scripts/team_sync.py', 'init']
+            if args.remote_url:
+                cmd.append(args.remote_url)
+            subprocess.run(cmd)
+        elif action == 'sync':
+            subprocess.run(['python', 'scripts/team_sync.py', 'sync'])
+        elif action == 'status':
+            subprocess.run(['python', 'scripts/team_sync.py', 'status'])
+        
+        return 0
+    
+    def cmd_template(self, args):
+        """模板命令"""
+        action = args.template_action
+        
+        if action == 'list':
+            pending = args.pending
+            if pending or not args.template_id:
+                print("Pending Templates:")
+                pending_dir = Path("config/templates/pending")
+                if pending_dir.exists():
+                    for f in sorted(pending_dir.glob("*.yaml")):
+                        print(f"  - {f.stem}")
+                else:
+                    print("  (none)")
+            else:
+                print("Approved Templates:")
+                approved_dir = Path("config/templates/approved")
+                if approved_dir.exists():
+                    for f in sorted(approved_dir.glob("*.yaml")):
+                        print(f"  - {f.stem}")
+        
+        elif action == 'approve':
+            if not args.template_id:
+                print("Error: template_id required")
+                return 1
+            pending_file = Path(f"config/templates/pending/{args.template_id}.yaml")
+            approved_dir = Path("config/templates/approved")
+            approved_dir.mkdir(parents=True, exist_ok=True)
+            
+            if pending_file.exists():
+                import shutil
+                shutil.move(pending_file, approved_dir / pending_file.name)
+                print(f"[OK] Template {args.template_id} approved")
+            else:
+                print(f"[ERROR] Template not found: {pending_file}")
+                return 1
+        
+        return 0
+    
+    def cmd_symbols(self, args):
+        """符号命令"""
+        import subprocess
+        
+        action = args.symbols_action or 'build'
+        
+        if action == 'build':
+            cmd = ['python', 'scripts/symbol_indexer.py']
+            if args.full:
+                cmd.append('--full')
+            subprocess.run(cmd)
+        elif action == 'query':
+            if not args.query:
+                print("Error: --query required for query action")
+                return 1
+            subprocess.run(['python', 'scripts/symbol_indexer.py', '--query', args.query])
+        
+        return 0
+    
+    def cmd_learn(self, args):
+        """学习命令"""
+        import subprocess
+        
+        cmd = [
+            'python', 'scripts/rule_learner.py',
+            '--min-frequency', str(args.min_frequency),
+            '--min-success-rate', str(args.min_success_rate)
+        ]
+        subprocess.run(cmd)
+        return 0
+    
+    # ========================================================================
+    # v2.1 架构收敛命令 (Schema-Driven Linkage System)
+    # ========================================================================
+    
+    def cmd_knowledge(self, args):
+        """Phase 5: 知识管理命令"""
+        import subprocess
+        
+        action = args.knowledge_action or 'status'
+        
+        if action == 'status':
+            print("🧠 Phase 5 - 认知外骨骼状态")
+            print("=" * 60)
+            print()
+            
+            # 检查 ADR
+            adr_dir = Path(".kaelis/adr")
+            adr_count = len(list(adr_dir.glob("ADR-*.json"))) if adr_dir.exists() else 0
+            print(f"[ADR 架构决策记录]")
+            print(f"  [{'✅' if adr_count > 0 else '❌'}] 已创建 {adr_count} 个 ADR")
+            print()
+            
+            # 检查故障知识库
+            kb_file = Path(".kaelis/fault-kb.jsonl")
+            fault_count = 0
+            if kb_file.exists():
+                fault_count = len([l for l in kb_file.read_text().split('\n') if l.strip()])
+            print(f"[故障知识库]")
+            print(f"  [{'✅' if fault_count > 0 else '❌'}] 已记录 {fault_count} 个故障")
+            print()
+            
+            # 检查知识链接
+            links_file = Path(".kaelis/knowledge_links.json")
+            print(f"[知识链接]")
+            print(f"  [{'✅' if links_file.exists() else '❌'}] 知识-代码符号链接")
+            print()
+            
+            print("快速命令:")
+            print("  kaelis knowledge adr create        创建 ADR")
+            print("  kaelis knowledge adr list          列出 ADR")
+            print("  kaelis knowledge fault record      记录故障")
+            print("  kaelis knowledge fault lookup      查询故障")
+            print("  kaelis knowledge linked-to <file>  查询文件关联知识")
+            print("  kaelis knowledge verify            验证知识新鲜度")
+            print("  kaelis knowledge daily             每日认知简报")
+        
+        elif action == 'adr':
+            sub_action = args.knowledge_sub_action or 'list'
+            
+            if sub_action == 'create':
+                result = subprocess.run(['python', 'scripts/adr_wizard.py', 'create'])
+                return result.returncode
+            elif sub_action == 'list':
+                result = subprocess.run(['python', 'scripts/adr_wizard.py', 'list'])
+                return result.returncode
+            elif sub_action == 'show':
+                if not args.knowledge_id:
+                    print("Error: --id required")
+                    return 1
+                result = subprocess.run(['python', 'scripts/adr_wizard.py', 'show', args.knowledge_id])
+                return result.returncode
+        
+        elif action == 'fault':
+            sub_action = args.knowledge_sub_action or 'list'
+            
+            if sub_action == 'record':
+                result = subprocess.run(['python', 'scripts/fault_kb.py', 'record'] + sys.argv[4:])
+                return result.returncode
+            elif sub_action == 'lookup':
+                result = subprocess.run(['python', 'scripts/fault_kb.py', 'lookup'] + sys.argv[4:])
+                return result.returncode
+            elif sub_action == 'stats':
+                result = subprocess.run(['python', 'scripts/fault_kb.py', 'stats'])
+                return result.returncode
+            elif sub_action == 'list':
+                result = subprocess.run(['python', 'scripts/fault_kb.py', 'list'])
+                return result.returncode
+        
+        elif action == 'linked-to':
+            if not args.knowledge_target:
+                print("Error: file path required")
+                return 1
+            result = subprocess.run(['python', 'scripts/knowledge_connector.py', 'linked-to', args.knowledge_target])
+            return result.returncode
+        
+        elif action == 'verify':
+            result = subprocess.run(['python', 'scripts/knowledge_verifier.py', 'verify'])
+            return result.returncode
+        
+        elif action == 'daily':
+            result = subprocess.run(['python', 'scripts/cognitive_navigator.py', 'daily'])
+            return result.returncode
+        
+        return 0
+    
+    def cmd_converge(self, args):
+        """架构收敛命令"""
+        import subprocess
+        from pathlib import Path
+        
+        action = args.converge_action or 'status'
+        
+        # Phase 4: 运维契约化子命令
+        if action == 'ops':
+            return self._cmd_converge_ops(args)
+        
+        if action == 'status':
+            print("🏗️  Kaelis Architecture Convergence Status")
+            print("=" * 60)
+            print()
+            print("[单一事实源]")
+            openapi = Path("contracts/openapi.yaml")
+            print(f"  [{'✅' if openapi.exists() else '❌'}] OpenAPI Specification")
+            print()
+            print("[代码生成器]")
+            codegen = Path("scripts/codegen.py")
+            print(f"  [{'✅' if codegen.exists() else '❌'}] Code Generator")
+            print()
+            print("[依赖图谱]")
+            dep_graph = Path("scripts/dependency_graph.py")
+            print(f"  [{'✅' if dep_graph.exists() else '❌'}] Dependency Graph Engine")
+            print()
+            print("[配置同步]")
+            sync_cfg = Path("scripts/sync_config.py")
+            print(f"  [{'✅' if sync_cfg.exists() else '❌'}] Config Sync Engine")
+            print()
+            print("快速命令:")
+            print("  kaelis converge sync       一键同步所有模块")
+            print("  kaelis converge audit      执行架构审计 (通、达、速、省)")
+            print("  kaelis converge check      检查系统一致性")
+        
+        elif action == 'sync':
+            scope = args.scope or 'all'
+            
+            if args.full:
+                # 全量同步：后端+前端+测试+文档+Postman+数据库模型
+                print("🔗 Full synchronization: backend + frontend + tests + docs + postman + models...")
+                print()
+                print("1️⃣  Synchronizing configuration...")
+                subprocess.run(['python', 'scripts/sync_config.py', 'sync'])
+                print()
+                print("2️⃣  Generating backend routes...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'backend', '--output', 'api/routes'])
+                print()
+                print("3️⃣  Generating frontend types...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'frontend', '--output', 'web/frontend/src/api'])
+                print()
+                print("4️⃣  Generating tests...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'tests', '--output', 'tests', '--append'])
+                print()
+                print("5️⃣  Generating Postman collection...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'postman', '--output', 'postman'])
+                print()
+                print("6️⃣  Updating README.md API documentation...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'readme', '--readme', 'README.md'])
+                print()
+                if args.with_models:
+                    print("7️⃣  Generating SQLAlchemy models...")
+                    subprocess.run(['python', 'scripts/generate_models.py', '--output', 'api/models', '--factory-output', 'tests/factories'])
+                print()
+                print("✅ Full synchronization complete!")
+            elif scope == 'all':
+                print("🔗 Synchronizing all modules...")
+                subprocess.run(['python', 'scripts/sync_config.py', 'sync'])
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'backend', '--output', 'api/routes'])
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'frontend', '--output', 'web/frontend/src/api'])
+            elif scope == 'backend':
+                print("🐍 Generating backend routes...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'backend', '--output', 'api/routes'])
+            elif scope == 'frontend':
+                print("⚛️ Generating frontend types...")
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'frontend', '--output', 'web/frontend/src/api'])
+            elif scope == 'config':
+                print("🔧 Synchronizing configuration...")
+                subprocess.run(['python', 'scripts/sync_config.py', 'sync'])
+        
+        elif action == 'audit':
+            print("🔍 Running Architecture Audit...")
+            subprocess.run(['python', 'scripts/dependency_graph.py', 'audit'])
+        
+        elif action == 'check':
+            print("📊 Checking system consistency...")
+            subprocess.run(['python', 'scripts/dependency_graph.py', 'check'])
+        
+        elif action == 'affected':
+            if not args.file:
+                print("Error: --file required for affected action")
+                return 1
+            print(f"🔍 Analyzing impact of: {args.file}")
+            subprocess.run(['python', 'scripts/dependency_graph.py', 'affected', args.file])
+        
+        elif action == 'validate':
+            print("✅ Validating OpenAPI specification...")
+            subprocess.run(['python', 'scripts/dependency_graph.py', 'validate', '--type', 'openapi'])
+        
+        elif action == 'verify':
+            print("🔍 Running bidirectional verification...")
+            subprocess.run(['python', 'scripts/dependency_graph.py', 'verify'])
+        
+        elif action == 'ops':
+            # Phase 4: 运维契约化
+            pass  # 由上面的 if action == 'ops' 处理
+        
+        elif action == 'knowledge':
+            # Phase 5: 知识契约化
+            pass  # 由 cmd_knowledge 处理
+        
+        return 0
+    
+    def cmd_codegen(self, args):
+        """代码生成命令"""
+        import subprocess
+        
+        target = args.target
+        output = args.output
+        
+        cmd = ['python', 'scripts/codegen.py', target]
+        if output:
+            cmd.extend(['--output', output])
+        
+        subprocess.run(cmd)
+        return 0
+    
+    def cmd_env(self, args):
+        """Phase 6: 环境契约命令"""
+        import subprocess
+        
+        action = args.env_action or 'verify'
+        
+        if action == 'verify':
+            cmd = ['python', 'scripts/env_contract.py', 'verify']
+            if args.fix:
+                cmd.append('--fix')
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'snapshot':
+            sub_action = args.env_sub_action or 'list'
+            
+            if sub_action == 'save':
+                cmd = ['python', 'scripts/env_contract.py', 'snapshot', 'save']
+                if args.name:
+                    cmd.extend(['--name', args.name])
+                result = subprocess.run(cmd)
+                return result.returncode
+            
+            elif sub_action == 'list':
+                result = subprocess.run(['python', 'scripts/env_contract.py', 'snapshot', 'list'])
+                return result.returncode
+            
+            elif sub_action == 'diff':
+                if not args.env_arg1 or not args.env_arg2:
+                    print("Error: Two snapshot names required for diff")
+                    return 1
+                result = subprocess.run([
+                    'python', 'scripts/env_contract.py', 'snapshot', 'diff',
+                    args.env_arg1, args.env_arg2
+                ])
+                return result.returncode
+        
+        elif action == 'generate':
+            gen_type = args.env_sub_action or 'devcontainer'
+            if gen_type == 'devcontainer':
+                result = subprocess.run(['python', 'scripts/env_contract.py', 'generate', 'devcontainer'])
+                return result.returncode
+        
+        return 0
+    
+    def cmd_guard(self, args):
+        """Phase 7: 护栏命令"""
+        import subprocess
+        
+        action = args.guard_action or 'check'
+        
+        if action == 'check':
+            cmd = ['python', 'scripts/kaelis_lsp.py', 'check']
+            if args.file:
+                cmd.extend(['--file', args.file])
+            elif args.code:
+                cmd.extend(['--code', args.code])
+            else:
+                print("Error: --file or --code required")
+                return 1
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'lsp':
+            sub_action = args.env_sub_action or 'start'
+            cmd = ['python', 'scripts/kaelis_lsp.py']
+            if args.mode == 'tcp':
+                cmd.append('tcp')
+            else:
+                cmd.append('stdio')
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'analyze':
+            result = subprocess.run(['python', 'scripts/guard_rules.py', 'analyze'])
+            return result.returncode
+        
+        return 0
+    
+    def cmd_decision(self, args):
+        """Phase 5 (重构): 决策契约命令"""
+        import subprocess
+        
+        action = args.decision_action or 'list'
+        
+        if action == 'create':
+            cmd = ['python', 'scripts/decision_engine.py', 'create']
+            if args.auto:
+                cmd.append('--auto')
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'activate':
+            if not args.decision_id:
+                print("Error: decision_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/decision_engine.py', 'activate', args.decision_id])
+            return result.returncode
+        
+        elif action == 'verify':
+            result = subprocess.run(['python', 'scripts/decision_engine.py', 'verify'])
+            return result.returncode
+        
+        elif action == 'list':
+            cmd = ['python', 'scripts/decision_engine.py', 'list']
+            if args.status:
+                cmd.extend(['--status', args.status])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'expired':
+            result = subprocess.run(['python', 'scripts/decision_engine.py', 'expired'])
+            return result.returncode
+        
+        elif action == 'migrate':
+            if not args.decision_id:
+                print("Error: adr_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/decision_engine.py', 'migrate', args.decision_id])
+            return result.returncode
+        
+        elif action == 'deprecate':
+            if not args.decision_id:
+                print("Error: decision_id required")
+                return 1
+            cmd = ['python', 'scripts/decision_engine.py', 'deprecate', args.decision_id]
+            if args.reason:
+                cmd.extend(['--reason', args.reason])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        return 0
+    
+    # ========================================================================
+    # Phase 8: 运行时确定性基础设施
+    # ========================================================================
+    
+    def cmd_runtime(self, args):
+        """Phase 8: Runtime API 服务"""
+        import subprocess
+        
+        action = args.runtime_action or 'start'
+        
+        if action == 'start':
+            cmd = ['python', 'services/kaelis_runtime/main.py', '--host', args.host, '--port', str(args.port)]
+            if args.reload:
+                cmd.append('--reload')
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'status':
+            print("🚀 Kaelis Runtime API 状态")
+            print("=" * 60)
+            print("\n[服务组件]")
+            runtime_main = Path("services/kaelis_runtime/main.py")
+            print(f"  [{'✅' if runtime_main.exists() else '❌'}] Runtime API Service")
+            print("\n[API 端点]")
+            print("  POST /v1/validate/code")
+            print("  GET  /v1/validate/environment")
+            print("  GET  /v1/slo/{service}")
+            print("  GET  /health")
+            print("  GET  /metrics")
+            print("\n启动命令:")
+            print("  kaelis runtime start")
+        
+        return 0
+    
+    def cmd_slo(self, args):
+        """Phase 8: SLO 运行时校验"""
+        import subprocess
+        
+        action = args.slo_action or 'check'
+        
+        if action == 'check':
+            result = subprocess.run(['python', 'scripts/slo_runtime.py', 'check'])
+            return result.returncode
+        
+        elif action == 'monitor':
+            cmd = ['python', 'scripts/slo_runtime.py', 'monitor']
+            if args.interval:
+                cmd.extend(['--interval', str(args.interval)])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'report':
+            result = subprocess.run(['python', 'scripts/slo_runtime.py', 'report'])
+            return result.returncode
+        
+        elif action == 'simulate':
+            cmd = ['python', 'scripts/slo_runtime.py', 'simulate']
+            if args.service:
+                cmd.extend(['--service', args.service])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        return 0
+    
+    def cmd_drift(self, args):
+        """Phase 8: 语义漂移检测"""
+        import subprocess
+        
+        action = args.drift_action or 'check'
+        
+        if action == 'check':
+            result = subprocess.run(['python', 'scripts/semantic_drift.py', 'check'])
+            return result.returncode
+        
+        elif action == 'evaluate':
+            result = subprocess.run(['python', 'scripts/semantic_drift.py', 'evaluate'])
+            return result.returncode
+        
+        elif action == 'report':
+            result = subprocess.run(['python', 'scripts/semantic_drift.py', 'report'])
+            return result.returncode
+        
+        elif action == 'simulate':
+            result = subprocess.run(['python', 'scripts/semantic_drift.py', 'simulate'])
+            return result.returncode
+        
+        return 0
+    
+    def cmd_chaos(self, args):
+        """Phase 8: 混沌工程"""
+        import subprocess
+        
+        action = args.chaos_action or 'status'
+        
+        if action == 'inject':
+            if not args.fault_type:
+                print("Error: fault_type required")
+                return 1
+            cmd = ['python', 'scripts/chaos_verify.py', 'inject', args.fault_type, '--target', args.target]
+            if args.duration:
+                cmd.extend(['--duration', str(args.duration)])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'experiment':
+            result = subprocess.run(['python', 'scripts/chaos_verify.py', 'experiment'])
+            return result.returncode
+        
+        elif action == 'report':
+            result = subprocess.run(['python', 'scripts/chaos_verify.py', 'report'])
+            return result.returncode
+        
+        elif action == 'status':
+            print("🔥 Kaelis 混沌工程状态")
+            print("=" * 60)
+            print("\n[可用故障类型]")
+            print("  - network_partition: 网络分区")
+            print("  - service_kill: 服务终止")
+            print("  - resource_exhaustion: 资源耗尽")
+            print("\n命令示例:")
+            print("  kaelis chaos inject service_kill --target neo4j")
+            print("  kaelis chaos experiment")
+        
+        return 0
+    
+    def cmd_optimize(self, args):
+        """Phase 8: 认知负担优化"""
+        import subprocess
+        
+        action = args.optimize_action or 'report'
+        
+        if action == 'analyze':
+            result = subprocess.run(['python', 'scripts/cognitive_load_analyzer.py', 'analyze'])
+            return result.returncode
+        
+        elif action == 'run':
+            result = subprocess.run(['python', 'scripts/cognitive_load_analyzer.py', 'optimize'])
+            return result.returncode
+        
+        elif action == 'recommend':
+            cmd = ['python', 'scripts/cognitive_load_analyzer.py', 'recommend']
+            if args.context:
+                cmd.extend(['--context', args.context])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'report':
+            result = subprocess.run(['python', 'scripts/cognitive_load_analyzer.py', 'report'])
+            return result.returncode
+        
+        return 0
+    
+    def cmd_experience(self, args):
+        """KECL - Kaelis Experience Contract Language"""
+        import subprocess
+        
+        cmd = ['python', 'scripts/kaelis_experience.py']
+        if args.list:
+            cmd.append('--list')
+        else:
+            cmd.append(args.journey)
+        
+        result = subprocess.run(cmd)
+        return result.returncode
+    
+    def cmd_ai(self, args):
+        """AI Native Development System (Phase 1)"""
+        import subprocess
+        
+        action = args.ai_action or 'status'
+        
+        if action == 'status':
+            result = subprocess.run(['python', 'scripts/kaelis_ai.py', 'status'])
+            return result.returncode
+        
+        elif action == 'sync':
+            result = subprocess.run(['python', 'scripts/kaelis_ai.py', 'sync'])
+            return result.returncode
+        
+        elif action == 'query':
+            if not args.ai_arg:
+                print("Error: Query text required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_ai.py', 'query', args.ai_arg])
+            return result.returncode
+        
+        elif action == 'search':
+            if not args.ai_arg:
+                print("Error: Symbol name required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_ai.py', 'search', args.ai_arg])
+            return result.returncode
+        
+        elif action == 'impact':
+            if not args.ai_arg:
+                print("Error: File path required")
+                return 1
+            cmd = ['python', 'scripts/kaelis_ai.py', 'impact', args.ai_arg]
+            if args.symbol:
+                cmd.extend(['--symbol', args.symbol])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'risk':
+            if not args.ai_arg:
+                print("Error: File path required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_ai.py', 'risk', args.ai_arg])
+            return result.returncode
+        
+        elif action == 'analyze':
+            result = subprocess.run(['python', 'scripts/kaelis_ai.py', 'analyze'])
+            return result.returncode
+        
+        return 0
+    
+    def cmd_debt(self, args):
+        """技术债务治理 v2.0"""
+        import subprocess
+        
+        action = args.debt_action or 'list'
+        
+        if action == 'list':
+            cmd = ['python', 'scripts/kaelis_debt.py', 'list', '--sort', args.sort]
+            if args.category:
+                cmd.extend(['--category', args.category])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'show':
+            if not args.debt_id:
+                print("Error: debt_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_debt.py', 'show', args.debt_id])
+            return result.returncode
+        
+        elif action == 'create':
+            cmd = ['python', 'scripts/kaelis_debt.py', 'create', '--category', args.category or 'general']
+            if args.title:
+                cmd.extend(['--title', args.title])
+            if args.symbol:
+                cmd.extend(['--symbol', args.symbol])
+            if args.file:
+                cmd.extend(['--file', args.file])
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'link':
+            if not args.debt_id or not args.symbol or not args.file:
+                print("Error: debt_id, --symbol, and --file required")
+                return 1
+            result = subprocess.run([
+                'python', 'scripts/kaelis_debt.py', 'link', args.debt_id,
+                '--symbol', args.symbol, '--file', args.file
+            ])
+            return result.returncode
+        
+        elif action == 'relink':
+            result = subprocess.run(['python', 'scripts/kaelis_debt.py', 'relink'])
+            return result.returncode
+        
+        elif action == 'verify':
+            if not args.debt_id:
+                print("Error: debt_id required")
+                return 1
+            cmd = ['python', 'scripts/kaelis_debt.py', 'verify', args.debt_id]
+            if args.sandbox:
+                cmd.append('--sandbox')
+            result = subprocess.run(cmd)
+            return result.returncode
+        
+        elif action == 'impact':
+            if not args.debt_id:
+                print("Error: debt_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_debt.py', 'impact', args.debt_id])
+            return result.returncode
+        
+        elif action == 'suggest':
+            if not args.debt_id:
+                print("Error: debt_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_debt.py', 'suggest', args.debt_id])
+            return result.returncode
+        
+        elif action == 'adopt':
+            if not args.debt_id:
+                print("Error: debt_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_debt.py', 'adopt', args.debt_id])
+            return result.returncode
+        
+        elif action == 'resolve':
+            if not args.debt_id:
+                print("Error: debt_id required")
+                return 1
+            result = subprocess.run(['python', 'scripts/kaelis_debt.py', 'resolve', args.debt_id])
+            return result.returncode
+        
+        return 0
+    
+    def _cmd_converge_ops(self, args):
+        """Phase 4: 运维契约化子命令"""
+        import subprocess
+        
+        ops_action = args.ops_action or 'status'
+        
+        if ops_action == 'status':
+            print("🚀 Phase 4 - 运维契约化状态")
+            print("=" * 60)
+            print()
+            print("[SLO 配置]")
+            slo_file = Path("config/slo.yaml")
+            print(f"  [{'✅' if slo_file.exists() else '❌'}] config/slo.yaml")
+            print()
+            print("[Prometheus 规则]")
+            prom_file = Path("config/prometheus-rules.yaml")
+            print(f"  [{'✅' if prom_file.exists() else '❌'}] config/prometheus-rules.yaml")
+            print()
+            print("[Grafana 仪表盘]")
+            graf_file = Path("config/grafana-dashboard.json")
+            print(f"  [{'✅' if graf_file.exists() else '❌'}] config/grafana-dashboard.json")
+            print()
+            print("[K8s 资源配额]")
+            quota_file = Path("config/k8s-resource-quota.yaml")
+            print(f"  [{'✅' if quota_file.exists() else '❌'}] config/k8s-resource-quota.yaml")
+            print()
+            print("[K8s HPA]")
+            hpa_file = Path("config/k8s-hpa.yaml")
+            print(f"  [{'✅' if hpa_file.exists() else '❌'}] config/k8s-hpa.yaml")
+            print()
+            print("[Docker Compose 校验]")
+            print("  Run: kaelis converge ops validate")
+            print()
+            print("快速命令:")
+            print("  kaelis converge ops generate      生成所有运维配置")
+            print("  kaelis converge ops validate      校验 Docker Compose")
+            print("  kaelis converge ops sync --full   全量同步（含运维配置）")
+        
+        elif ops_action == 'generate':
+            print("🚀 Generating operations configurations...")
+            print("=" * 60)
+            result = subprocess.run(['python', 'scripts/ops_codegen.py', 'generate'])
+            return result.returncode
+        
+        elif ops_action == 'validate':
+            print("🔍 Validating Docker Compose environment variables...")
+            print("=" * 60)
+            result = subprocess.run(['python', 'scripts/ops_codegen.py', 'validate-compose'])
+            return result.returncode
+        
+        elif ops_action == 'sync':
+            scope = args.scope or 'all'
+            
+            if args.full:
+                print("🚀 Full sync including operations configs...")
+                print("=" * 60)
+                print("\n1️⃣  Generating SLO configs...")
+                subprocess.run(['python', 'scripts/ops_codegen.py', 'generate'])
+                print("\n2️⃣  Validating Docker Compose...")
+                subprocess.run(['python', 'scripts/ops_codegen.py', 'validate-compose'])
+                print("\n3️⃣  Syncing application code...")
+                subprocess.run(['python', 'scripts/sync_config.py', 'sync'])
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'backend', '--output', 'api/routes'])
+                subprocess.run(['python', 'scripts/codegen_v2.py', 'frontend', '--output', 'web/frontend/src/api'])
+                print("\n✅ Full sync complete!")
+            else:
+                print("🚀 Generating operations configurations...")
+                subprocess.run(['python', 'scripts/ops_codegen.py', 'generate'])
+        
+        return 0
+
+
+def create_parser():
+    """创建参数解析器"""
+    parser = argparse.ArgumentParser(
+        prog='kaelis',
+        description='Kaelis Unified CLI - Forward-Deterministic Kernel',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # 核心命令
+  kaelis intent "Add API timeout configuration"
+  kaelis intent "Create new database model" --dry-run
+  kaelis plan "Add test case" --output plan.json
+  kaelis execute plan.json
+
+  # 操作命令
+  kaelis op file add api/routes/auth.py --intent "Add login endpoint"
+  kaelis op file update config/settings.yaml --intent "Update timeout"
+  kaelis op env set DEBUG true
+
+  # 会话与快照
+  kaelis session start --intent "Refactor auth system"
+  kaelis snapshot list
+  kaelis snapshot rollback snapshot_20260101_120000
+
+  # 认知
+  kaelis profile              # View your cognitive profile
+  kaelis guide                # Show navigation guide
+  kaelis status               # System status
+
+For more help: kaelis <command> --help
+        """
+    )
+    
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # ------------------------------------------------------------------------
+    # intent 命令
+    # ------------------------------------------------------------------------
+    intent_parser = subparsers.add_parser('intent', help='Process natural language intent')
+    intent_parser.add_argument('description', help='Natural language description')
+    intent_parser.add_argument('--dry-run', '-n', action='store_true', help='Validate only')
+    intent_parser.add_argument('--skip-sandbox', action='store_true', help='Skip sandbox')
+    
+    # ------------------------------------------------------------------------
+    # plan 命令
+    # ------------------------------------------------------------------------
+    plan_parser = subparsers.add_parser('plan', help='Generate execution plan')
+    plan_parser.add_argument('description', help='Natural language description')
+    plan_parser.add_argument('--output', '-o', help='Output file for plan')
+    
+    # ------------------------------------------------------------------------
+    # execute 命令
+    # ------------------------------------------------------------------------
+    execute_parser = subparsers.add_parser('execute', help='Execute a plan')
+    execute_parser.add_argument('plan_file', help='Plan JSON file')
+    
+    # ------------------------------------------------------------------------
+    # op 命令
+    # ------------------------------------------------------------------------
+    op_parser = subparsers.add_parser('op', help='Atomic operations')
+    op_subparsers = op_parser.add_subparsers(dest='op_command')
+    
+    # op file
+    op_file = op_subparsers.add_parser('file', help='File operations')
+    op_file.add_argument('file_action', choices=['add', 'update', 'delete'])
+    op_file.add_argument('path', help='File path')
+    op_file.add_argument('--intent', '-i', help='Intent description')
+    op_file.add_argument('--dry-run', '-n', action='store_true')
+    op_file.add_argument('--skip-sandbox', action='store_true')
+    
+    # op env
+    op_env = op_subparsers.add_parser('env', help='Environment operations')
+    op_env.add_argument('env_action', choices=['set', 'get', 'delete'])
+    op_env.add_argument('key', help='Environment variable key')
+    op_env.add_argument('value', nargs='?', help='Value (for set)')
+    
+    # ------------------------------------------------------------------------
+    # session 命令
+    # ------------------------------------------------------------------------
+    session_parser = subparsers.add_parser('session', help='Session management')
+    session_parser.add_argument('session_action', choices=['start', 'end', 'list'])
+    session_parser.add_argument('--intent', help='Session intent')
+    
+    # ------------------------------------------------------------------------
+    # snapshot 命令
+    # ------------------------------------------------------------------------
+    snapshot_parser = subparsers.add_parser('snapshot', help='Snapshot management')
+    snapshot_parser.add_argument('snapshot_action', choices=['list', 'rollback'])
+    snapshot_parser.add_argument('snapshot_id', nargs='?', help='Snapshot ID for rollback')
+    
+    # ------------------------------------------------------------------------
+    # team 命令 (v2.0)
+    # ------------------------------------------------------------------------
+    team_parser = subparsers.add_parser('team', help='Team collaboration')
+    team_parser.add_argument('team_action', choices=['init', 'sync', 'status'])
+    team_parser.add_argument('remote_url', nargs='?', help='Remote repository URL')
+    
+    # ------------------------------------------------------------------------
+    # template 命令 (v2.0)
+    # ------------------------------------------------------------------------
+    template_parser = subparsers.add_parser('template', help='Template management')
+    template_parser.add_argument('template_action', choices=['list', 'approve', 'reject'])
+    template_parser.add_argument('template_id', nargs='?', help='Template ID')
+    template_parser.add_argument('--pending', action='store_true', help='Show pending templates')
+    
+    # ------------------------------------------------------------------------
+    # symbols 命令 (v2.0)
+    # ------------------------------------------------------------------------
+    symbols_parser = subparsers.add_parser('symbols', help='Symbol index management')
+    symbols_parser.add_argument('symbols_action', choices=['build', 'query'], nargs='?', default='build')
+    symbols_parser.add_argument('--query', '-q', help='Query pattern (e.g., function:login)')
+    symbols_parser.add_argument('--full', '-f', action='store_true', help='Full rebuild')
+    
+    # ------------------------------------------------------------------------
+    # learn 命令 (v2.0)
+    # ------------------------------------------------------------------------
+    learn_parser = subparsers.add_parser('learn', help='Learn rules from sessions')
+    learn_parser.add_argument('--min-frequency', '-f', type=int, default=3)
+    learn_parser.add_argument('--min-success-rate', '-s', type=float, default=0.9)
+    
+    # ------------------------------------------------------------------------
+    # 其他命令
+    # ------------------------------------------------------------------------
+    subparsers.add_parser('profile', help='View cognitive profile')
+    subparsers.add_parser('guide', help='Show navigation guide')
+    subparsers.add_parser('status', help='System status')
+    
+    # ------------------------------------------------------------------------
+    # converge 命令 (v2.1 - Architecture Convergence)
+    # ------------------------------------------------------------------------
+    converge_parser = subparsers.add_parser(
+        'converge',
+        help='Architecture convergence and linkage correction',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis converge status          # Show convergence status
+  kaelis converge sync            # Sync all modules
+  kaelis converge sync --scope backend    # Sync backend only
+  kaelis converge audit           # Run 通、达、速、省 audit
+  kaelis converge check           # Check system consistency
+  kaelis converge affected --file contracts/openapi.yaml
+  kaelis converge validate        # Validate OpenAPI spec
+  kaelis converge verify          # Bidirectional verification
+  kaelis converge sync --full     # Full sync (backend+frontend+tests+docs+postman)
+  kaelis converge sync --full --with-models  # Full sync including database models
+        """
+    )
+    converge_parser.add_argument(
+        'converge_action',
+        choices=['status', 'sync', 'audit', 'check', 'affected', 'validate', 'verify', 'ops'],
+        nargs='?',
+        default='status'
+    )
+    converge_parser.add_argument(
+        '--ops-action',
+        choices=['status', 'generate', 'validate', 'sync'],
+        default='status',
+        help='Operations action (for converge ops)'
+    )
+    
+    # ------------------------------------------------------------------------
+    # knowledge 命令 (Phase 5 - Cognitive Exoskeleton)
+    # ------------------------------------------------------------------------
+    knowledge_parser = subparsers.add_parser(
+        'knowledge',
+        help='Knowledge management (Phase 5 - Cognitive Exoskeleton)',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis knowledge                         # 显示知识管理状态
+  kaelis knowledge adr create              # 创建架构决策记录
+  kaelis knowledge adr list                # 列出所有 ADR
+  kaelis knowledge fault record            # 记录故障经验
+  kaelis knowledge fault lookup --file api/routes/kg.py
+  kaelis knowledge linked-to api/routes/kg.py
+  kaelis knowledge verify                  # 验证知识新鲜度
+  kaelis knowledge daily                   # 每日认知简报
+        """
+    )
+    knowledge_parser.add_argument(
+        'knowledge_action',
+        choices=['status', 'adr', 'fault', 'linked-to', 'verify', 'daily'],
+        nargs='?',
+        default='status'
+    )
+    knowledge_parser.add_argument('knowledge_sub_action', nargs='?', help='Sub-action for adr/fault')
+    knowledge_parser.add_argument('knowledge_target', nargs='?', help='Target file for linked-to')
+    knowledge_parser.add_argument('--id', dest='knowledge_id', help='Knowledge ID')
+    converge_parser.add_argument(
+        '--scope',
+        choices=['all', 'backend', 'frontend', 'config'],
+        default='all',
+        help='Sync scope'
+    )
+    converge_parser.add_argument('--file', help='File to analyze')
+    converge_parser.add_argument('--full', action='store_true', help='Full sync: backend+frontend+tests+docs+postman')
+    converge_parser.add_argument('--with-models', action='store_true', help='Include SQLAlchemy models generation')
+    converge_parser.add_argument('--fix', action='store_true', help='Auto-fix detected issues (used with verify)')
+    
+    # ------------------------------------------------------------------------
+    # env 命令 (Phase 6 - Environment Contract)
+    # ------------------------------------------------------------------------
+    env_parser = subparsers.add_parser(
+        'env',
+        help='Environment contract management (Phase 6)',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis env verify                        # 校验当前环境
+  kaelis env verify --fix                  # 校验并自动修复
+  kaelis env snapshot save                 # 保存环境快照
+  kaelis env snapshot list                 # 列出环境快照
+  kaelis env snapshot diff snap1 snap2     # 对比两个快照
+  kaelis env generate devcontainer         # 生成 DevContainer 配置
+        """
+    )
+    env_parser.add_argument(
+        'env_action',
+        choices=['verify', 'snapshot', 'generate'],
+        nargs='?',
+        default='verify'
+    )
+    env_parser.add_argument('env_sub_action', nargs='?', help='Sub-action')
+    env_parser.add_argument('env_arg1', nargs='?', help='Argument 1')
+    env_parser.add_argument('env_arg2', nargs='?', help='Argument 2')
+    env_parser.add_argument('--fix', '-f', action='store_true', help='Auto-fix issues')
+    env_parser.add_argument('--name', '-n', help='Snapshot name')
+    
+    # ------------------------------------------------------------------------
+    # guard 命令 (Phase 7 - Agent Guard)
+    # ------------------------------------------------------------------------
+    guard_parser = subparsers.add_parser(
+        'guard',
+        help='AI output guard (Phase 7)',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis guard check --file api/routes/kg.py   # 检查代码文件
+  kaelis guard lsp start                       # 启动 LSP 服务器
+  kaelis guard analyze                         # 分析护栏事件
+        """
+    )
+    guard_parser.add_argument(
+        'guard_action',
+        choices=['check', 'lsp', 'analyze'],
+        nargs='?',
+        default='check'
+    )
+    guard_parser.add_argument('--file', '-f', help='File to check')
+    guard_parser.add_argument('--code', '-c', help='Code string to check')
+    guard_parser.add_argument('--mode', '-m', choices=['stdio', 'tcp'], default='stdio', help='LSP mode')
+    
+    # ------------------------------------------------------------------------
+    # decision 命令 (Phase 5 重构 - Decision Contract)
+    # ------------------------------------------------------------------------
+    decision_parser = subparsers.add_parser(
+        'decision',
+        help='Decision contract management (Phase 5)',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis decision create                    # 创建决策契约
+  kaelis decision create --auto             # 自动创建
+  kaelis decision activate DEC-20260413-001 # 激活决策
+  kaelis decision verify                    # 校验约束
+  kaelis decision list                      # 列出决策
+  kaelis decision expired                   # 查看过期决策
+  kaelis decision migrate ADR-20260413-001  # 从 ADR 迁移
+  kaelis decision deprecate DEC-20260413-001 # 废弃决策
+        """
+    )
+    decision_parser.add_argument(
+        'decision_action',
+        choices=['create', 'activate', 'verify', 'list', 'expired', 'migrate', 'deprecate'],
+        nargs='?',
+        default='list'
+    )
+    decision_parser.add_argument('decision_id', nargs='?', help='Decision ID or ADR ID')
+    decision_parser.add_argument('--status', '-s', choices=['proposed', 'active', 'deprecated'])
+    decision_parser.add_argument('--auto', '-a', action='store_true', help='Auto-create without interaction')
+    decision_parser.add_argument('--reason', '-r', help='Reason for deprecation')
+    
+    # ------------------------------------------------------------------------
+    # Phase 8: Runtime Infrastructure
+    # ------------------------------------------------------------------------
+    
+    # runtime 命令
+    runtime_parser = subparsers.add_parser('runtime', help='Runtime API service (Phase 8)')
+    runtime_parser.add_argument('runtime_action', choices=['start', 'status'], nargs='?', default='status')
+    runtime_parser.add_argument('--host', default='0.0.0.0')
+    runtime_parser.add_argument('--port', type=int, default=5001)
+    runtime_parser.add_argument('--reload', action='store_true')
+    
+    # slo 命令
+    slo_parser = subparsers.add_parser('slo', help='SLO runtime validation (Phase 8)')
+    slo_parser.add_argument('slo_action', choices=['check', 'monitor', 'report', 'simulate'], nargs='?', default='check')
+    slo_parser.add_argument('--service', '-s')
+    slo_parser.add_argument('--interval', '-i', type=int)
+    
+    # drift 命令
+    drift_parser = subparsers.add_parser('drift', help='Semantic drift detection (Phase 8)')
+    drift_parser.add_argument('drift_action', choices=['check', 'evaluate', 'report', 'simulate'], nargs='?', default='check')
+    
+    # chaos 命令
+    chaos_parser = subparsers.add_parser('chaos', help='Chaos engineering (Phase 8)')
+    chaos_parser.add_argument('chaos_action', choices=['status', 'inject', 'experiment', 'report'], nargs='?', default='status')
+    chaos_parser.add_argument('fault_type', nargs='?', choices=['network_partition', 'service_kill', 'resource_exhaustion'])
+    chaos_parser.add_argument('--target', '-t')
+    chaos_parser.add_argument('--duration', '-d', type=int)
+    
+    # optimize 命令
+    optimize_parser = subparsers.add_parser('optimize', help='Cognitive optimization (Phase 8)')
+    optimize_parser.add_argument('optimize_action', choices=['analyze', 'run', 'recommend', 'report'], nargs='?', default='report')
+    optimize_parser.add_argument('--context', '-c')
+    
+    # ------------------------------------------------------------------------
+    # experience 命令 (KECL - Kaelis Experience Contract Language)
+    # ------------------------------------------------------------------------
+    exp_parser = subparsers.add_parser(
+        'experience',
+        help='Run user experience journey (KECL)',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis experience first_time_user    # New user initialization
+  kaelis experience dev_quickstart     # Developer quick start
+  kaelis experience --list             # List all journeys
+        """
+    )
+    exp_parser.add_argument('journey', nargs='?', default='first_time_user', help='Journey name')
+    exp_parser.add_argument('--list', '-l', action='store_true', help='List available journeys')
+    
+    # ------------------------------------------------------------------------
+    # codegen 命令 (v2.1 - Code Generation)
+    # ------------------------------------------------------------------------
+    codegen_parser = subparsers.add_parser(
+        'codegen',
+        help='Generate code from OpenAPI specification'
+    )
+    codegen_parser.add_argument(
+        'target',
+        choices=['backend', 'frontend'],
+        help='Generation target'
+    )
+    codegen_parser.add_argument('--output', '-o', help='Output directory')
+    
+    # ------------------------------------------------------------------------
+    # ai 命令 (AI Native Development System)
+    # ------------------------------------------------------------------------
+    ai_parser = subparsers.add_parser(
+        'ai',
+        help='AI Native Development System (Phase 1)',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis ai status                    # 查看 AI 服务状态
+  kaelis ai sync                      # 同步 AI 上下文文件
+  kaelis ai query "M0 规则有哪些？"   # 自然语言查询
+  kaelis ai search UserService        # 符号搜索
+  kaelis ai impact api/services/order.py  # 影响分析
+  kaelis ai risk api/routes/users.py  # 风险评分
+  kaelis ai analyze                   # 分析阻断模式
+        """
+    )
+    ai_parser.add_argument(
+        'ai_action',
+        choices=['status', 'sync', 'query', 'search', 'impact', 'risk', 'analyze'],
+        nargs='?',
+        default='status'
+    )
+    ai_parser.add_argument('ai_arg', nargs='?', help='Argument for query/search/impact/risk')
+    ai_parser.add_argument('--symbol', '-s', help='Symbol name for impact analysis')
+    
+    # ------------------------------------------------------------------------
+    # debt 命令 (技术债务治理 v2.0)
+    # ------------------------------------------------------------------------
+    debt_parser = subparsers.add_parser(
+        'debt',
+        help='Technical debt governance v2.0',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kaelis debt list --sort impact      # 按影响评分排序
+  kaelis debt show TD-20260101-001    # 查看债务详情
+  kaelis debt create --title "..." --category api --symbol X --file path
+  kaelis debt link TD-001 --symbol X --file path  # 关联符号（自动指纹）
+  kaelis debt relink                  # 重构后重新匹配
+  kaelis debt verify TD-001 --sandbox # 验证债务
+  kaelis debt impact TD-001           # 查看影响评分
+  kaelis debt suggest TD-001          # 生成AI建议
+  kaelis debt adopt TD-001            # 采纳建议
+  kaelis debt resolve TD-001          # 解决债务
+        """
+    )
+    debt_parser.add_argument(
+        'debt_action',
+        choices=['list', 'show', 'create', 'link', 'relink', 'verify', 'impact', 'suggest', 'adopt', 'resolve'],
+        nargs='?',
+        default='list'
+    )
+    debt_parser.add_argument('debt_id', nargs='?', help='Debt ID')
+    debt_parser.add_argument('--sort', choices=['impact', 'date'], default='impact', help='Sort order')
+    debt_parser.add_argument('--category', help='Filter by category')
+    debt_parser.add_argument('--title', help='Debt title (for create)')
+    debt_parser.add_argument('--symbol', help='Symbol name')
+    debt_parser.add_argument('--file', help='File path')
+    debt_parser.add_argument('--sandbox', action='store_true', help='Use sandbox mode')
+    
+    return parser
+
+
+def check_project_identity():
+    """校验项目身份"""
+    identity_file = Path(".kaelis/project_identity.json")
+    if not identity_file.exists():
+        print("[ERR] Current directory is not a Kaelis project root.")
+        print("      Please switch to a directory containing .kaelis/project_identity.json")
+        print("      or run 'python scripts/init_identity.py' to initialize.")
+        return False
+    
+    try:
+        import json
+        with open(identity_file) as f:
+            identity = json.load(f)
+        if identity.get("project") != "Kaelis":
+            print(f"[ERR] Invalid project identity: {identity.get('project')}")
+            return False
+        return True
+    except json.JSONDecodeError:
+        print("[ERR] Invalid project_identity.json format")
+        return False
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return 0
+    
+    # 项目身份校验 (在运行命令前)
+    if not check_project_identity():
+        return 1
+    
+    cli = KaelisCLI()
+    
+    # 路由到对应命令
+    command_map = {
+        'intent': cli.cmd_intent,
+        'plan': cli.cmd_plan,
+        'execute': cli.cmd_execute,
+        'op': lambda a: cli.cmd_op_file(a) if a.op_command == 'file' else cli.cmd_op_env(a),
+        'session': cli.cmd_session,
+        'snapshot': cli.cmd_snapshot,
+        'profile': cli.cmd_profile,
+        'guide': cli.cmd_guide,
+        'status': cli.cmd_status,
+        'team': cli.cmd_team,
+        'template': cli.cmd_template,
+        'symbols': cli.cmd_symbols,
+        'learn': cli.cmd_learn,
+        'converge': cli.cmd_converge,
+        'codegen': cli.cmd_codegen,
+        'knowledge': cli.cmd_knowledge,
+        'env': cli.cmd_env,
+        'guard': cli.cmd_guard,
+        'decision': cli.cmd_decision,
+        'runtime': cli.cmd_runtime,
+        'slo': cli.cmd_slo,
+        'drift': cli.cmd_drift,
+        'chaos': cli.cmd_chaos,
+        'optimize': cli.cmd_optimize,
+        'ai': cli.cmd_ai,
+        'debt': cli.cmd_debt,
+        'experience': cli.cmd_experience,
+    }
+    
+    handler = command_map.get(args.command)
+    if handler:
+        return handler(args)
+    else:
+        print(f"Unknown command: {args.command}")
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

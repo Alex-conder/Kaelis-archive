@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级图表库 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 24px;
+        }
+        
+        .card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 24px;
+        }
+        
+        .card-title { 
+            font-size: 16px; 
+            margin-bottom: 20px;
+            color: #A1A1AA;
+        }
+        
+        .chart-container { 
+            position: relative; 
+            height: 300px;
+        }
+        
+        /* 实时数据指示器 */
+        .live-indicator { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(34,197,94,0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            color: #22C55E;
+            margin-left: 12px;
+        }
+        .live-dot { 
+            width: 8px; 
+            height: 8px; 
+            background: #22C55E; 
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* 统计卡片 */
+        .stats-row { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card  { @extend .card; }
+        .stat-value { 
+            font-size: 36px; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-change { 
+            font-size: 14px; 
+            margin-top: 8px;
+        }
+        .stat-change.up { color: #22C55E; }
+        .stat-change.down { color: #EF4444; }
+        .stat-label { font-size: 14px; color: #6B7280; margin-top: 4px; }
+        
+        /* 控制面板 */
+        .controls { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .control-btn { 
+            padding: 10px 20px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .control-btn:hover, .control-btn.active { 
+            background: rgba(136,72,249,0.2);
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 高级图表库</h1>
+        <p>实时数据可视化与高级图表组件</p>
+    </div>
+    
+    <div class="container">
+        <!-- 统计卡片 -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value">￥2.4M</div>
+                <div class="stat-change up">↑ 12.5%</div>
+                <div class="stat-label">总收入</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">18.2K</div>
+                <div class="stat-change up">↑ 8.3%</div>
+                <div class="stat-label">活跃用户</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">94.2%</div>
+                <div class="stat-change down">↓ 2.1%</div>
+                <div class="stat-label">系统可用性</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1.8s</div>
+                <div class="stat-change up">↑ 15%</div>
+                <div class="stat-label">平均响应</div>
+            </div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="controls">
+            <button class="control-btn active" onclick="updateTimeRange('1h')">1小时</button>
+            <button class="control-btn" onclick="updateTimeRange('24h')">24小时</button>
+            <button class="control-btn" onclick="updateTimeRange('7d')">7天</button>
+            <button class="control-btn" onclick="updateTimeRange('30d')">30天</button>
+            <button class="control-btn" onclick="toggleLiveData()">
+                <span class="live-dot"></span> 实时数据
+            </button>
+        </div>
+        
+        <div class="grid">
+            <!-- 实时折线图 -->
+            <div class="card">
+                <div class="card-title">
+                    实时流量监控
+                    <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="realtimeChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 多轴图表 -->
+            <div class="card">
+                <div class="card-title">多维度数据分析</div>
+                <div class="chart-container">
+                    <canvas id="multiAxisChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 堆叠面积图 -->
+            <div class="card">
+                <div class="card-title">用户来源分布</div>
+                <div class="chart-container">
+                    <canvas id="stackedChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 雷达图 -->
+            <div class="card">
+                <div class="card-title">性能指标雷达</div>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 极地图 -->
+            <div class="card">
+                <div class="card-title">时段访问分布</div>
+                <div class="chart-container">
+                    <canvas id="polarChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 气泡图 -->
+            <div class="card">
+                <div class="card-title">用户行为分析</div>
+                <div class="chart-container">
+                    <canvas id="bubbleChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 散点图 -->
+            <div class="card">
+                <div class="card-title">相关性分析</div>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 混合图表 -->
+            <div class="card">
+                <div class="card-title">综合数据视图</div>
+                <div class="chart-container">
+                    <canvas id="mixedChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js 默认配置
+        Chart.defaults.color = '#6B7280';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+        
+        // 渐变色生成器
+        function createGradient(ctx, color1, color2) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            return gradient;
+        }
+        
+        // 实时折线图
+        const realtimeCtx = document.getElementById('realtimeChart').getContext('2d');
+        const realtimeChart = new Chart(realtimeCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 20}, (_, i) => i),
+                datasets: [{
+                    label: '请求数',
+                    data: Array.from({length: 20}, () => Math.floor(Math.random() * 1000) + 500),
+                    borderColor: 'var(--primary)',
+                    backgroundColor: createGradient(realtimeCtx, 'rgba(136,72,249,0.3)', 'rgba(136,72,249,0)'),
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: '响应时间',
+                    data: Array.from({length: 20}, () => Math.floor(Math.random() * 200) + 50),
+                    borderColor: 'var(--secondary)',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: { legend: { display: true } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+        
+        // 多轴图表
+        const multiAxisCtx = document.getElementById('multiAxisChart').getContext('2d');
+        new Chart(multiAxisCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                datasets: [{
+                    label: '收入',
+                    data: [120, 190, 150, 250, 220, 300],
+                    backgroundColor: 'var(--primary)',
+                    yAxisID: 'y'
+                }, {
+                    label: '增长率',
+                    data: [10, 15, 8, 20, 12, 25],
+                    borderColor: '#22C55E',
+                    type: 'line',
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left' },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+        
+        // 堆叠面积图
+        const stackedCtx = document.getElementById('stackedChart').getContext('2d');
+        new Chart(stackedCtx, {
+            type: 'line',
+            data: {
+                labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                datasets: [{
+                    label: '直接访问',
+                    data: [320, 332, 301, 334, 390, 330, 320],
+                    borderColor: 'var(--primary)',
+                    backgroundColor: 'rgba(136,72,249,0.3)',
+                    fill: true
+                }, {
+                    label: '邮件营销',
+                    data: [120, 132, 101, 134, 90, 230, 210],
+                    borderColor: 'var(--secondary)',
+                    backgroundColor: 'rgba(59,130,246,0.3)',
+                    fill: true
+                }, {
+                    label: '联盟广告',
+                    data: [220, 182, 191, 234, 290, 330, 310],
+                    borderColor: '#22C55E',
+                    backgroundColor: 'rgba(34,197,94,0.3)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { stacked: true } }
+            }
+        });
+        
+        // 雷达图
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['性能', '稳定性', '安全性', '可用性', '响应速度', '吞吐量'],
+                datasets: [{
+                    label: '当前',
+                    data: [85, 90, 95, 88, 92, 87],
+                    borderColor: 'var(--primary)',
+                    backgroundColor: 'rgba(136,72,249,0.2)',
+                }, {
+                    label: '目标',
+                    data: [90, 95, 98, 95, 95, 90],
+                    borderColor: 'var(--secondary)',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+        
+        // 极地图
+        const polarCtx = document.getElementById('polarChart').getContext('2d');
+        new Chart(polarCtx, {
+            type: 'polarArea',
+            data: {
+                labels: ['0-4时', '4-8时', '8-12时', '12-16时', '16-20时', '20-24时'],
+                datasets: [{
+                    data: [15, 25, 85, 95, 75, 45],
+                    backgroundColor: [
+                        'rgba(136,72,249,0.8)',
+                        'rgba(59,130,246,0.8)',
+                        'rgba(34,197,94,0.8)',
+                        'rgba(245,158,11,0.8)',
+                        'rgba(239,68,68,0.8)',
+                        'rgba(236,72,153,0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true } }
+            }
+        });
+        
+        // 气泡图
+        const bubbleCtx = document.getElementById('bubbleChart').getContext('2d');
+        new Chart(bubbleCtx, {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: '高价值用户',
+                    data: Array.from({length: 20}, () => ({
+                        x: Math.random() * 100,
+                        y: Math.random() * 100,
+                        r: Math.random() * 20 + 5
+                    })),
+                    backgroundColor: 'rgba(136,72,249,0.6)'
+                }, {
+                    label: '普通用户',
+                    data: Array.from({length: 30}, () => ({
+                        x: Math.random() * 100,
+                        y: Math.random() * 100,
+                        r: Math.random() * 10 + 3
+                    })),
+                    backgroundColor: 'rgba(59,130,246,0.6)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: '活跃度' } },
+                    y: { title: { display: true, text: '消费金额' } }
+                }
+            }
+        });
+        
+        // 散点图
+        const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+        new Chart(scatterCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: '数据集 A',
+                    data: Array.from({length: 50}, () => ({
+                        x: Math.random() * 100,
+                        y: Math.random() * 100
+                    })),
+                    backgroundColor: 'var(--primary)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', position: 'bottom' }
+                }
+            }
+        });
+        
+        // 混合图表
+        const mixedCtx = document.getElementById('mixedChart').getContext('2d');
+        new Chart(mixedCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                datasets: [{
+                    type: 'bar',
+                    label: '销售额',
+                    data: [300, 450, 400, 600],
+                    backgroundColor: 'var(--primary)'
+                }, {
+                    type: 'line',
+                    label: '目标',
+                    data: [350, 400, 450, 550],
+                    borderColor: '#22C55E',
+                    borderWidth: 2
+                }, {
+                    type: 'line',
+                    label: '预测',
+                    data: [320, 480, 420, 650],
+                    borderColor: '#F59E0B',
+                    borderDash: [5, 5]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        
+        // 实时数据更新
+        let liveUpdateInterval;
+        function toggleLiveData() {
+            if (liveUpdateInterval) {
+                clearInterval(liveUpdateInterval);
+                liveUpdateInterval = null;
+            } else {
+                liveUpdateInterval = setInterval(() => {
+                    const data = realtimeChart.data.datasets[0].data;
+                    data.shift();
+                    data.push(Math.floor(Math.random() * 1000) + 500);
+                    realtimeChart.update('none');
+                }, 1000);
+            }
+        }
+        
+        function updateTimeRange(range) {
+            document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        // 启动实时更新
+        toggleLiveData();
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

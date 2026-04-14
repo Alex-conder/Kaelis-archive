@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据导入导出中心 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #A1A1AA; }
+        
+        /* 标签页 */
+        .tabs { display: flex; gap: 8px; margin-bottom: 32px; background: rgba(23,23,23,0.8); padding: 8px; border-radius: 12px; width: fit-content; }
+        .tab { padding: 12px 24px; border: none; background: transparent; color: #A1A1AA; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+        .tab.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; }
+        
+        /* 导入区域 */
+        .import-section { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+        
+        .upload-zone { 
+            border: 2px dashed rgba(136,72,249,0.5); 
+            border-radius: 16px; 
+            padding: 60px; 
+            text-align: center; 
+            background: rgba(136,72,249,0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-zone:hover { 
+            border-color: var(--primary); 
+            background: rgba(136,72,249,0.1); 
+        }
+        .upload-icon { font-size: 64px; margin-bottom: 16px; }
+        .upload-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .upload-desc { font-size: 14px; color: #A1A1AA; }
+        .upload-formats { 
+            display: flex; 
+            gap: 12px; 
+            justify-content: center; 
+            margin-top: 20px; 
+        }
+        .format-tag { 
+            padding: 8px 16px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            font-size: 13px; 
+        }
+        
+        /* 数据源卡片 */
+        .source-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 24px; }
+        .source-card { 
+            padding: 24px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px; 
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .source-card:hover { border-color: rgba(136,72,249,0.3); }
+        .source-card.active { border-color: var(--primary); background: rgba(136,72,249,0.1); }
+        .source-icon { font-size: 40px; margin-bottom: 12px; }
+        .source-name { font-size: 15px; font-weight: 600; }
+        .source-desc { font-size: 12px; color: #6B7280; margin-top: 4px; }
+        
+        /* 导出区域 */
+        .export-list { display: flex; flex-direction: column; gap: 12px; }
+        .export-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 20px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .export-icon { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            margin-right: 16px;
+            background: rgba(136,72,249,0.2);
+        }
+        .export-info { flex: 1; }
+        .export-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .export-meta { font-size: 13px; color: #6B7280; }
+        .export-size { font-size: 14px; color: #A1A1AA; margin-right: 16px; }
+        .export-btn { 
+            padding: 10px 20px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            cursor: pointer;
+        }
+        
+        /* 进度面板 */
+        .progress-panel { 
+            background: rgba(0,0,0,0.5); 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-top: 24px; 
+        }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+        .progress-title { font-size: 14px; font-weight: 600; }
+        .progress-percent { font-size: 14px; color: var(--primary); }
+        .progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 4px; width: 0; transition: width 0.3s; }
+        .progress-stats { display: flex; gap: 24px; margin-top: 16px; font-size: 13px; color: #A1A1AA; }
+        
+        /* 历史记录 */
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 10px; 
+        }
+        .history-type { 
+            padding: 4px 10px; 
+            border-radius: 6px; 
+            font-size: 11px; 
+            font-weight: 600; 
+            margin-right: 16px;
+        }
+        .history-type.import { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .history-type.export { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .history-info { flex: 1; }
+        .history-file { font-size: 14px; font-weight: 500; }
+        .history-time { font-size: 12px; color: #6B7280; }
+        .history-status { 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 600;
+        }
+        .history-status.success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .history-status.pending { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        
+        @media (max-width: 768px) {
+            .source-grid { grid-template-columns: repeat(2, 1fr); }
+            .export-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">☰</button>
+            <span class="logo">📦 数据导入导出中心</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="showHistory()">📋 历史记录</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">数据导入导出中心</h1>
+            <p class="page-subtitle">轻松迁移和备份您的数据</p>
+        </div>
+        
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab(this, 'import')">📥 导入数据</button>
+            <button class="tab" onclick="switchTab(this, 'export')">📤 导出数据</button>
+            <button class="tab" onclick="switchTab(this, 'sync')">🔄 数据同步</button>
+        </div>
+        
+        <!-- 导入区域 -->
+        <div id="import-panel">
+            <div class="import-section">
+                <h2 class="section-title">
+                    <span>📤</span> 选择数据源
+                </h2>
+                <div class="source-grid">
+                    <div class="source-card active" onclick="selectSource(this)">
+                        <div class="source-icon">📄</div>
+                        <div class="source-name">本地文件</div>
+                        <div class="source-desc">JSON / CSV / Excel</div>
+                    </div>
+                    <div class="source-card" onclick="selectSource(this)">
+                        <div class="source-icon">☁️</div>
+                        <div class="source-name">云存储</div>
+                        <div class="source-desc">Google Drive / Dropbox</div>
+                    </div>
+                    <div class="source-card" onclick="selectSource(this)">
+                        <div class="source-icon">🔗</div>
+                        <div class="source-name">API导入</div>
+                        <div class="source-desc">REST API / GraphQL</div>
+                    </div>
+                    <div class="source-card" onclick="selectSource(this)">
+                        <div class="source-icon">🗄️</div>
+                        <div class="source-name">数据库</div>
+                        <div class="source-desc">MySQL / PostgreSQL</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="import-section">
+                <h2 class="section-title">
+                    <span>📁</span> 上传文件
+                </h2>
+                <div class="upload-zone" onclick="selectFile()">
+                    <div class="upload-icon">📎</div>
+                    <div class="upload-title">点击或拖拽文件到此处</div>
+                    <div class="upload-desc">支持批量上传，单个文件最大 100MB</div>
+                    <div class="upload-formats">
+                        <span class="format-tag">JSON</span>
+                        <span class="format-tag">CSV</span>
+                        <span class="format-tag">Excel</span>
+                        <span class="format-tag">XML</span>
+                    </div>
+                </div>
+                
+                <div class="progress-panel" id="progressPanel" style="display:none;">
+                    <div class="progress-header">
+                        <span class="progress-title">正在导入数据...</span>
+                        <span class="progress-percent" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>📊 已处理: <strong>0 / 1,250</strong> 条记录</span>
+                        <span>⏱️ 预计剩余: <strong>45秒</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 导出区域 -->
+        <div id="export-panel" style="display:none;">
+            <div class="import-section">
+                <h2 class="section-title">
+                    <span>💾</span> 选择要导出的数据
+                </h2>
+                <div class="export-list">
+                    <div class="export-item">
+                        <div class="export-icon">💬</div>
+                        <div class="export-info">
+                            <div class="export-name">对话记录</div>
+                            <div class="export-meta">包含所有AI对话历史</div>
+                        </div>
+                        <span class="export-size">256 MB</span>
+                        <button class="export-btn" onclick="exportData('chat')">导出</button>
+                    </div>
+                    <div class="export-item">
+                        <div class="export-icon">🔌</div>
+                        <div class="export-info">
+                            <div class="export-name">插件配置</div>
+                            <div class="export-meta">已安装插件及设置</div>
+                        </div>
+                        <span class="export-size">12 MB</span>
+                        <button class="export-btn" onclick="exportData('plugins')">导出</button>
+                    </div>
+                    <div class="export-item">
+                        <div class="export-icon">👤</div>
+                        <div class="export-info">
+                            <div class="export-name">用户数据</div>
+                            <div class="export-meta">个人设置和偏好</div>
+                        </div>
+                        <span class="export-size">2 MB</span>
+                        <button class="export-btn" onclick="exportData('user')">导出</button>
+                    </div>
+                    <div class="export-item">
+                        <div class="export-icon">📚</div>
+                        <div class="export-info">
+                            <div class="export-name">知识库</div>
+                            <div class="export-meta">所有文档和向量索引</div>
+                        </div>
+                        <span class="export-size">1.2 GB</span>
+                        <button class="export-btn" onclick="exportData('knowledge')">导出</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="import-section">
+                <h2 class="section-title">
+                    <span>📋</span> 导出历史
+                </h2>
+                <div class="history-list">
+                    <div class="history-item">
+                        <span class="history-type export">导出</span>
+                        <div class="history-info">
+                            <div class="history-file">chat_backup_20260317.json</div>
+                            <div class="history-time">2026-03-17 10:30:25</div>
+                        </div>
+                        <span class="history-status success">✓ 完成</span>
+                    </div>
+                    <div class="history-item">
+                        <span class="history-type import">导入</span>
+                        <div class="history-info">
+                            <div class="history-file">plugins_config.csv</div>
+                            <div class="history-time">2026-03-16 15:45:12</div>
+                        </div>
+                        <span class="history-status success">✓ 完成</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab, panel) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            document.getElementById('import-panel').style.display = 'none';
+            document.getElementById('export-panel').style.display = 'none';
+            
+            if (panel === 'import') {
+                document.getElementById('import-panel').style.display = 'block';
+            } else if (panel === 'export') {
+                document.getElementById('export-panel').style.display = 'block';
+            }
+        }
+        
+        function selectSource(card) {
+            document.querySelectorAll('.source-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+        }
+        
+        function selectFile() {
+            document.getElementById('progressPanel').style.display = 'block';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressPercent').textContent = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    alert('导入完成！');
+                }
+            }, 200);
+        }
+        
+        function exportData(type) {
+            alert('正在导出 ' + type + ' 数据...');
+        }
+        
+        function showHistory() {
+            alert('显示完整历史记录');
+        }
+    </script>
+    <!-- Kaelis 统一加载器 -->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard,binary"></script>
+</body>
+</html>
+
+
+
+
+

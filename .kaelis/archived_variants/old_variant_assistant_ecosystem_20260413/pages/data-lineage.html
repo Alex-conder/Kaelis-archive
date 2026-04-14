@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据血缘 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .lineage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .lineage-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .search-box { display: flex; gap: 12px; }
+        .search-input { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; width: 300px; }
+        .search-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
+        .lineage-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .lineage-visual { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .visual-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .lineage-graph { height: 400px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .graph-placeholder { text-align: center; color: #64748b; }
+        .graph-placeholder-icon { font-size: 64px; margin-bottom: 16px; }
+        .lineage-nodes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; position: absolute; width: 90%; height: 80%; }
+        .node-group { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .node { padding: 12px 24px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 14px; font-weight: 600; color: #1e293b; border: 2px solid transparent; }
+        .node.source { border-color: #3b82f6; }
+        .node.transform { border-color: var(--primary); }
+        .node.destination { border-color: #10b981; }
+        .node-connections { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, #3b82f6, var(--primary), #10b981); }
+        .impact-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .impact-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .impact-item { display: flex; align-items: center; padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 12px; }
+        .impact-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px; }
+        .impact-info { flex: 1; }
+        .impact-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .impact-desc { font-size: 12px; color: #64748b; }
+        .impact-badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .impact-badge.high { background: #fee2e2; color: #dc2626; }
+        .impact-badge.medium { background: #fef3c7; color: #d97706; }
+        .impact-badge.low { background: #dcfce7; color: #16a34a; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">数据血缘</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="lineage-header">
+            <h1>数据血缘追踪</h1>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="搜索数据表、字段或任务...">
+                <button class="search-btn">?? 追踪</button>
+            </div>
+        </div>
+        <div class="lineage-stats">
+            <div class="stat-card"><div class="stat-value">1,234</div><div class="stat-label">数据表</div></div>
+            <div class="stat-card"><div class="stat-value">8,567</div><div class="stat-label">数据字段</div></div>
+            <div class="stat-card"><div class="stat-value">456</div><div class="stat-label">ETL任务</div></div>
+            <div class="stat-card"><div class="stat-value">99.2%</div><div class="stat-label">覆盖率</div></div>
+        </div>
+        <div class="lineage-visual">
+            <h2 class="visual-title">血缘关系图</h2>
+            <div class="lineage-graph">
+                <div class="lineage-nodes">
+                    <div class="node-group">
+                        <div class="node source">?? 用户行为日志</div>
+                        <div class="node source">?? 订单数据</div>
+                        <div class="node source">?? 商品信息</div>
+                    </div>
+                    <div class="node-group">
+                        <div class="node transform">?? 数据清洗</div>
+                        <div class="node transform">?? 数据聚合</div>
+                        <div class="node transform">?? 特征工程</div>
+                    </div>
+                    <div class="node-group">
+                        <div class="node destination">?? 用户画像表</div>
+                        <div class="node destination">?? 销售报表</div>
+                        <div class="node destination">?? 推荐模型</div>
+                    </div>
+                </div>
+                <div class="node-connections"></div>
+            </div>
+        </div>
+        <div class="impact-card">
+            <h2 class="impact-title">影响分析</h2>
+            <div class="impact-item">
+                <div class="impact-icon" style="background:#fee2e2;">??</div>
+                <div class="impact-info"><div class="impact-name">user_behavior.raw_events</div><div class="impact-desc">变更将影响 12 个下游表</div></div>
+                <span class="impact-badge high">高风险</span>
+            </div>
+            <div class="impact-item">
+                <div class="impact-icon" style="background:#fef3c7;">?</div>
+                <div class="impact-info"><div class="impact-name">daily_aggregation.job</div><div class="impact-desc">调度延迟影响 5 个报表</div></div>
+                <span class="impact-badge medium">中风险</span>
+            </div>
+            <div class="impact-item">
+                <div class="impact-icon" style="background:#dcfce7;">?</div>
+                <div class="impact-info"><div class="impact-name">product_catalog.dim_product</div><div class="impact-desc">无下游依赖，可安全修改</div></div>
+                <span class="impact-badge low">低风险</span>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,33 @@
+# Prometheus 配置 - Windows 本地部署
+# 适用于: E:\prometheus-3.11.0.windows-amd64\
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'kg-flywheel-local'
+
+# 告警规则
+rule_files:
+  - "alerts.yml"
+
+# 抓取配置
+scrape_configs:
+  # KgFlywheel 应用指标
+  - job_name: 'kg-flywheel'
+    static_configs:
+      - targets: ['localhost:5000']
+    metrics_path: '/api/kg-flywheel/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Prometheus 自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Windows 系统指标（使用 wmi_exporter 或 windows_exporter）
+  - job_name: 'windows'
+    static_configs:
+      - targets: ['localhost:9182']
+    scrape_interval: 30s

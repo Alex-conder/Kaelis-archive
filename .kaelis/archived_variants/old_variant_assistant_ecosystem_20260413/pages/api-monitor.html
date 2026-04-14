@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API监控告警中心 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        .nav-btn.alert { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .container { max-width: 1600px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #A1A1AA; }
+        
+        /* 告警状态概览 */
+        .alert-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .alert-card { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; }
+        .alert-card.critical { border-color: rgba(239,68,68,0.5); background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(23,23,23,0.8) 100%); }
+        .alert-card.warning { border-color: rgba(245,158,11,0.5); background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(23,23,23,0.8) 100%); }
+        .alert-card.good { border-color: rgba(34,197,94,0.5); background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(23,23,23,0.8) 100%); }
+        .alert-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+        .alert-card.critical .alert-icon { background: rgba(239,68,68,0.2); }
+        .alert-card.warning .alert-icon { background: rgba(245,158,11,0.2); }
+        .alert-card.good .alert-icon { background: rgba(34,197,94,0.2); }
+        .alert-value { font-size: 36px; font-weight: 700; margin-bottom: 4px; }
+        .alert-card.critical .alert-value { color: #EF4444; }
+        .alert-card.warning .alert-value { color: #F59E0B; }
+        .alert-card.good .alert-value { color: #22C55E; }
+        .alert-label { font-size: 14px; color: #A1A1AA; }
+        .alert-trend { font-size: 12px; margin-top: 8px; }
+        .alert-card.critical .alert-trend { color: #EF4444; }
+        .alert-card.warning .alert-trend { color: #F59E0B; }
+        .alert-card.good .alert-trend { color: #22C55E; }
+        
+        /* 实时监控图表 */
+        .monitor-section { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+        .live-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #22C55E; }
+        .live-dot { width: 8px; height: 8px; background: #22C55E; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        .section-actions { display: flex; gap: 12px; }
+        .btn { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+        
+        /* 监控图表 */
+        .chart-container { height: 300px; background: rgba(0,0,0,0.3); border-radius: 12px; position: relative; overflow: hidden; }
+        .chart-grid { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-rows: repeat(5, 1fr); }
+        .grid-line { border-bottom: 1px dashed rgba(255,255,255,0.05); }
+        .chart-content { position: absolute; top: 20px; left: 60px; right: 20px; bottom: 40px; }
+        .chart-line { position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: linear-gradient(180deg, rgba(136,72,249,0.3) 0%, transparent 100%); }
+        .chart-svg { width: 100%; height: 100%; }
+        .chart-labels { position: absolute; left: 10px; top: 20px; bottom: 40px; display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: #6B7280; }
+        .chart-xlabels { position: absolute; left: 60px; right: 20px; bottom: 10px; display: flex; justify-content: space-between; font-size: 11px; color: #6B7280; }
+        
+        /* API健康状态 */
+        .health-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 24px; }
+        .health-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .health-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .health-platform { display: flex; align-items: center; gap: 12px; }
+        .health-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .health-name { font-size: 16px; font-weight: 600; }
+        .health-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .health-status.online { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .health-status.warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .health-status.offline { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .health-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .metric-item { text-align: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .metric-value { font-size: 20px; font-weight: 700; }
+        .metric-value.good { color: #22C55E; }
+        .metric-value.warning { color: #F59E0B; }
+        .metric-value.bad { color: #EF4444; }
+        .metric-label { font-size: 11px; color: #6B7280; margin-top: 4px; }
+        
+        /* 告警列表 */
+        .alert-list { display: flex; flex-direction: column; gap: 12px; }
+        .alert-item { display: flex; align-items: center; padding: 16px 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 4px solid; transition: all 0.3s; }
+        .alert-item:hover { background: rgba(255,255,255,0.05); }
+        .alert-item.critical { border-left-color: #EF4444; }
+        .alert-item.warning { border-left-color: #F59E0B; }
+        .alert-item.info { border-left-color: var(--secondary); }
+        .alert-level { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-right: 16px; }
+        .alert-item.critical .alert-level { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .alert-item.warning .alert-level { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .alert-item.info .alert-level { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .alert-content { flex: 1; }
+        .alert-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .alert-desc { font-size: 12px; color: #A1A1AA; }
+        .alert-meta { display: flex; align-items: center; gap: 16px; font-size: 12px; color: #6B7280; }
+        .alert-actions { display: flex; gap: 8px; }
+        .alert-btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+        .alert-btn.resolve { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .alert-btn.resolve:hover { background: #22C55E; color: white; }
+        .alert-btn.ignore { background: rgba(255,255,255,0.1); color: #A1A1AA; }
+        .alert-btn.ignore:hover { background: rgba(255,255,255,0.15); }
+        
+        /* 告警规则配置 */
+        .rule-panel { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 24px; margin-top: 24px; }
+        .rule-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .rule-title { font-size: 16px; font-weight: 600; }
+        .rule-list { display: flex; flex-direction: column; gap: 12px; }
+        .rule-item { display: flex; align-items: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+        .rule-toggle { width: 44px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; position: relative; cursor: pointer; margin-right: 16px; transition: all 0.3s; }
+        .rule-toggle.active { background: #22C55E; }
+        .rule-toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: all 0.3s; }
+        .rule-toggle.active::after { left: 22px; }
+        .rule-info { flex: 1; }
+        .rule-name { font-size: 14px; font-weight: 600; }
+        .rule-condition { font-size: 12px; color: #A1A1AA; margin-top: 4px; }
+        .rule-actions { display: flex; gap: 8px; }
+        .rule-action-btn { width: 32px; height: 32px; border: none; background: rgba(255,255,255,0.1); border-radius: 8px; color: white; cursor: pointer; font-size: 14px; }
+        .rule-action-btn:hover { background: var(--primary); }
+        
+        /* 通知渠道 */
+        .channel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 24px; }
+        .channel-card { padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: all 0.3s; }
+        .channel-card:hover { border-color: rgba(136,72,249,0.3); }
+        .channel-card.active { border-color: var(--primary); background: rgba(136,72,249,0.1); }
+        .channel-icon { font-size: 32px; margin-bottom: 12px; }
+        .channel-name { font-size: 14px; font-weight: 600; }
+        .channel-status { font-size: 11px; color: #6B7280; margin-top: 4px; }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; transform: translateX(150%); transition: transform 0.3s; z-index: 1000; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: #22C55E; }
+        .toast.error { background: #EF4444; }
+        .toast.warning { background: #F59E0B; }
+        
+        @media (max-width: 1200px) {
+            .alert-overview { grid-template-columns: repeat(2, 1fr); }
+            .health-grid { grid-template-columns: repeat(2, 1fr); }
+            .channel-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .alert-overview { grid-template-columns: 1fr; }
+            .health-grid { grid-template-columns: 1fr; }
+            .channel-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? API监控告警中心</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="refreshMonitor()">?? 刷新</button>
+            <button class="nav-btn alert" onclick="showAlerts()">?? 告警 (3)</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">API监控告警中心</h1>
+            <p class="page-subtitle">实时监控多平台API健康状态，智能告警保障系统稳定</p>
+        </div>
+        
+        <!-- 告警状态概览 -->
+        <div class="alert-overview">
+            <div class="alert-card critical">
+                <div class="alert-icon">??</div>
+                <div class="alert-value" id="criticalCount">2</div>
+                <div class="alert-label">严重告警</div>
+                <div class="alert-trend">↑ 1 较上小时</div>
+            </div>
+            <div class="alert-card warning">
+                <div class="alert-icon">??</div>
+                <div class="alert-value" id="warningCount">5</div>
+                <div class="alert-label">警告告警</div>
+                <div class="alert-trend">↓ 2 较上小时</div>
+            </div>
+            <div class="alert-card good">
+                <div class="alert-icon">??</div>
+                <div class="alert-value" id="onlineCount">4</div>
+                <div class="alert-label">在线平台</div>
+                <div class="alert-trend">→ 无变化</div>
+            </div>
+            <div class="alert-card">
+                <div class="alert-icon" style="background:rgba(136,72,249,0.2);">??</div>
+                <div class="alert-value" id="avgUptime">99.5%</div>
+                <div class="alert-label">平均可用性</div>
+                <div class="alert-trend" style="color:#22C55E;">↑ 0.2% 较昨日</div>
+            </div>
+        </div>
+        
+        <!-- 实时监控图表 -->
+        <div class="monitor-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 实时响应时间监控
+                    <span class="live-indicator">
+                        <span class="live-dot"></span>
+                        LIVE
+                    </span>
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="changeTimeRange('1h')">1小时</button>
+                    <button class="btn btn-secondary" onclick="changeTimeRange('6h')">6小时</button>
+                    <button class="btn btn-secondary" onclick="changeTimeRange('24h')">24小时</button>
+                    <button class="btn btn-primary" onclick="exportData()">?? 导出</button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-grid">
+                    <div class="grid-line"></div>
+                    <div class="grid-line"></div>
+                    <div class="grid-line"></div>
+                    <div class="grid-line"></div>
+                    <div class="grid-line"></div>
+                </div>
+                <div class="chart-labels">
+                    <span>500ms</span>
+                    <span>400ms</span>
+                    <span>300ms</span>
+                    <span>200ms</span>
+                    <span>100ms</span>
+                    <span>0ms</span>
+                </div>
+                <div class="chart-content">
+                    <svg class="chart-svg" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                        <!-- GitHub -->
+                        <polyline fill="none" stroke="var(--primary)" stroke-width="2" points="0,150 100,140 200,130 300,145 400,120 500,110 600,125 700,100 800,95 900,105 1000,90"/>
+                        <!-- GitLab -->
+                        <polyline fill="none" stroke="#FC6D26" stroke-width="2" points="0,160 100,155 200,165 300,150 400,160 500,145 600,155 700,140 800,150 900,145 1000,140"/>
+                        <!-- Gitee -->
+                        <polyline fill="none" stroke="#C71D23" stroke-width="2" points="0,140 100,135 200,140 300,130 400,135 500,125 600,130 700,120 800,125 900,115 1000,110"/>
+                    </svg>
+                </div>
+                <div class="chart-xlabels">
+                    <span>10:00</span>
+                    <span>10:15</span>
+                    <span>10:30</span>
+                    <span>10:45</span>
+                    <span>11:00</span>
+                    <span>11:15</span>
+                </div>
+            </div>
+            
+            <!-- 图例 -->
+            <div style="display:flex;gap:24px;margin-top:16px;justify-content:center;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:12px;height:12px;background:var(--primary);border-radius:2px;"></span>
+                    <span style="font-size:13px;color:#A1A1AA;">GitHub (145ms avg)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:12px;height:12px;background:#FC6D26;border-radius:2px;"></span>
+                    <span style="font-size:13px;color:#A1A1AA;">GitLab (180ms avg)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:12px;height:12px;background:#C71D23;border-radius:2px;"></span>
+                    <span style="font-size:13px;color:#A1A1AA;">Gitee (120ms avg)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- API健康状态 -->
+        <div class="monitor-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 平台健康状态
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="checkAllHealth()">?? 全部检测</button>
+                </div>
+            </div>
+            
+            <div class="health-grid">
+                <div class="health-card">
+                    <div class="health-header">
+                        <div class="health-platform">
+                            <div class="health-icon" style="background:#24292E;">??</div>
+                            <div class="health-name">GitHub</div>
+                        </div>
+                        <span class="health-status online">● 在线</span>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value good">145ms</div>
+                            <div class="metric-label">响应时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">99.9%</div>
+                            <div class="metric-label">可用性</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">0</div>
+                            <div class="metric-label">错误数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="health-card">
+                    <div class="health-header">
+                        <div class="health-platform">
+                            <div class="health-icon" style="background:#FC6D26;">??</div>
+                            <div class="health-name">GitLab</div>
+                        </div>
+                        <span class="health-status warning">● 警告</span>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value warning">380ms</div>
+                            <div class="metric-label">响应时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">98.5%</div>
+                            <div class="metric-label">可用性</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value warning">3</div>
+                            <div class="metric-label">错误数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="health-card">
+                    <div class="health-header">
+                        <div class="health-platform">
+                            <div class="health-icon" style="background:#C71D23;">??</div>
+                            <div class="health-name">Gitee</div>
+                        </div>
+                        <span class="health-status online">● 在线</span>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value good">95ms</div>
+                            <div class="metric-label">响应时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">99.8%</div>
+                            <div class="metric-label">可用性</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">0</div>
+                            <div class="metric-label">错误数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="health-card">
+                    <div class="health-header">
+                        <div class="health-platform">
+                            <div class="health-icon" style="background:#2684FF;">??</div>
+                            <div class="health-name">Bitbucket</div>
+                        </div>
+                        <span class="health-status offline">● 离线</span>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value bad">--</div>
+                            <div class="metric-label">响应时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value bad">0%</div>
+                            <div class="metric-label">可用性</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value bad"> timeout</div>
+                            <div class="metric-label">状态</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="health-card">
+                    <div class="health-header">
+                        <div class="health-platform">
+                            <div class="health-icon" style="background:#CB3837;">??</div>
+                            <div class="health-name">NPM</div>
+                        </div>
+                        <span class="health-status online">● 在线</span>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value good">110ms</div>
+                            <div class="metric-label">响应时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">99.9%</div>
+                            <div class="metric-label">可用性</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">0</div>
+                            <div class="metric-label">错误数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="health-card">
+                    <div class="health-header">
+                        <div class="health-platform">
+                            <div class="health-icon" style="background:#2C8EBB;">??</div>
+                            <div class="health-name">PyPI</div>
+                        </div>
+                        <span class="health-status online">● 在线</span>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value good">125ms</div>
+                            <div class="metric-label">响应时间</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">99.7%</div>
+                            <div class="metric-label">可用性</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value good">1</div>
+                            <div class="metric-label">错误数</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 告警列表 -->
+        <div class="monitor-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 活跃告警
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="filterAlerts('all')">全部</button>
+                    <button class="btn btn-secondary" onclick="filterAlerts('critical')">严重</button>
+                    <button class="btn btn-secondary" onclick="filterAlerts('warning')">警告</button>
+                    <button class="btn btn-primary" onclick="acknowledgeAll()">? 全部确认</button>
+                </div>
+            </div>
+            
+            <div class="alert-list">
+                <div class="alert-item critical">
+                    <span class="alert-level">CRITICAL</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Bitbucket API 连接超时</div>
+                        <div class="alert-desc">无法连接到 Bitbucket API，已连续失败 5 次</div>
+                    </div>
+                    <div class="alert-meta">
+                        <span>?? Bitbucket</span>
+                        <span>?? 2分钟前</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-btn resolve" onclick="resolveAlert(this)">? 解决</button>
+                        <button class="alert-btn ignore" onclick="ignoreAlert(this)">忽略</button>
+                    </div>
+                </div>
+                
+                <div class="alert-item critical">
+                    <span class="alert-level">CRITICAL</span>
+                    <div class="alert-content">
+                        <div class="alert-title">GitLab 响应时间超过阈值</div>
+                        <div class="alert-desc">平均响应时间 380ms，超过设定阈值 300ms</div>
+                    </div>
+                    <div class="alert-meta">
+                        <span>?? GitLab</span>
+                        <span>?? 5分钟前</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-btn resolve" onclick="resolveAlert(this)">? 解决</button>
+                        <button class="alert-btn ignore" onclick="ignoreAlert(this)">忽略</button>
+                    </div>
+                </div>
+                
+                <div class="alert-item warning">
+                    <span class="alert-level">WARNING</span>
+                    <div class="alert-content">
+                        <div class="alert-title">GitLab 错误率上升</div>
+                        <div class="alert-desc">过去1小时内错误率达到 1.5%，超过阈值 1%</div>
+                    </div>
+                    <div class="alert-meta">
+                        <span>?? GitLab</span>
+                        <span>?? 12分钟前</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-btn resolve" onclick="resolveAlert(this)">? 解决</button>
+                        <button class="alert-btn ignore" onclick="ignoreAlert(this)">忽略</button>
+                    </div>
+                </div>
+                
+                <div class="alert-item warning">
+                    <span class="alert-level">WARNING</span>
+                    <div class="alert-content">
+                        <div class="alert-title">PyPI API 速率限制警告</div>
+                        <div class="alert-desc">接近 API 调用限制，剩余 100 次/小时</div>
+                    </div>
+                    <div class="alert-meta">
+                        <span>?? PyPI</span>
+                        <span>?? 18分钟前</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-btn resolve" onclick="resolveAlert(this)">? 解决</button>
+                        <button class="alert-btn ignore" onclick="ignoreAlert(this)">忽略</button>
+                    </div>
+                </div>
+                
+                <div class="alert-item info">
+                    <span class="alert-level">INFO</span>
+                    <div class="alert-content">
+                        <div class="alert-title">NPM 维护通知</div>
+                        <div class="alert-desc">NPM 将于今晚 02:00-04:00 进行计划维护</div>
+                    </div>
+                    <div class="alert-meta">
+                        <span>?? NPM</span>
+                        <span>?? 1小时前</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-btn resolve" onclick="resolveAlert(this)">? 确认</button>
+                        <button class="alert-btn ignore" onclick="ignoreAlert(this)">忽略</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 告警规则配置 -->
+        <div class="monitor-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 告警规则配置
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-primary" onclick="addRule()">? 添加规则</button>
+                </div>
+            </div>
+            
+            <div class="rule-panel">
+                <div class="rule-list">
+                    <div class="rule-item">
+                        <div class="rule-toggle active" onclick="toggleRule(this)"></div>
+                        <div class="rule-info">
+                            <div class="rule-name">响应时间超过阈值</div>
+                            <div class="rule-condition">当 API 响应时间 > 300ms 持续 5 分钟时触发</div>
+                        </div>
+                        <div class="rule-actions">
+                            <button class="rule-action-btn" onclick="editRule()">??</button>
+                            <button class="rule-action-btn" onclick="deleteRule()">???</button>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-item">
+                        <div class="rule-toggle active" onclick="toggleRule(this)"></div>
+                        <div class="rule-info">
+                            <div class="rule-name">错误率过高</div>
+                            <div class="rule-condition">当错误率 > 1% 持续 10 分钟时触发</div>
+                        </div>
+                        <div class="rule-actions">
+                            <button class="rule-action-btn" onclick="editRule()">??</button>
+                            <button class="rule-action-btn" onclick="deleteRule()">???</button>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-item">
+                        <div class="rule-toggle active" onclick="toggleRule(this)"></div>
+                        <div class="rule-info">
+                            <div class="rule-name">API 连接失败</div>
+                            <div class="rule-condition">当连续失败次数 >= 3 次时触发</div>
+                        </div>
+                        <div class="rule-actions">
+                            <button class="rule-action-btn" onclick="editRule()">??</button>
+                            <button class="rule-action-btn" onclick="deleteRule()">???</button>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-item">
+                        <div class="rule-toggle" onclick="toggleRule(this)"></div>
+                        <div class="rule-info">
+                            <div class="rule-name">速率限制警告</div>
+                            <div class="rule-condition">当 API 剩余调用次数 < 10% 时触发</div>
+                        </div>
+                        <div class="rule-actions">
+                            <button class="rule-action-btn" onclick="editRule()">??</button>
+                            <button class="rule-action-btn" onclick="deleteRule()">???</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 通知渠道 -->
+        <div class="monitor-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>??</span> 通知渠道配置
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-primary" onclick="configureChannels()">?? 配置</button>
+                </div>
+            </div>
+            
+            <div class="channel-grid">
+                <div class="channel-card active" onclick="toggleChannel(this)">
+                    <div class="channel-icon">??</div>
+                    <div class="channel-name">邮件通知</div>
+                    <div class="channel-status">已启用</div>
+                </div>
+                <div class="channel-card active" onclick="toggleChannel(this)">
+                    <div class="channel-icon">??</div>
+                    <div class="channel-name">Slack</div>
+                    <div class="channel-status">已启用</div>
+                </div>
+                <div class="channel-card" onclick="toggleChannel(this)">
+                    <div class="channel-icon">??</div>
+                    <div class="channel-name">钉钉</div>
+                    <div class="channel-status">未启用</div>
+                </div>
+                <div class="channel-card active" onclick="toggleChannel(this)">
+                    <div class="channel-icon">??</div>
+                    <div class="channel-name">短信</div>
+                    <div class="channel-status">仅严重告警</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 刷新监控
+        function refreshMonitor() {
+            showToast('正在刷新监控数据...', 'info');
+            setTimeout(() => {
+                showToast('监控数据已更新', 'success');
+            }, 1000);
+        }
+        
+        // 显示告警
+        function showAlerts() {
+            document.querySelector('.monitor-section:nth-of-type(3)').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 切换时间范围
+        function changeTimeRange(range) {
+            showToast(`切换到 ${range} 视图`, 'info');
+        }
+        
+        // 导出数据
+        function exportData() {
+            showToast('正在导出监控数据...', 'info');
+            setTimeout(() => {
+                showToast('数据导出成功', 'success');
+            }, 1500);
+        }
+        
+        // 检测所有健康状态
+        function checkAllHealth() {
+            showToast('正在检测所有平台健康状态...', 'info');
+            setTimeout(() => {
+                showToast('健康检测完成', 'success');
+            }, 2000);
+        }
+        
+        // 筛选告警
+        function filterAlerts(type) {
+            showToast(`筛选 ${type === 'all' ? '全部' : type === 'critical' ? '严重' : '警告'} 告警`, 'info');
+        }
+        
+        // 确认所有告警
+        function acknowledgeAll() {
+            if (confirm('确定要确认所有告警吗?')) {
+                showToast('所有告警已确认', 'success');
+            }
+        }
+        
+        // 解决告警
+        function resolveAlert(btn) {
+            btn.closest('.alert-item').style.opacity = '0.5';
+            showToast('告警已标记为已解决', 'success');
+        }
+        
+        // 忽略告警
+        function ignoreAlert(btn) {
+            btn.closest('.alert-item').style.display = 'none';
+            showToast('告警已忽略', 'info');
+        }
+        
+        // 切换规则
+        function toggleRule(toggle) {
+            toggle.classList.toggle('active');
+            const isActive = toggle.classList.contains('active');
+            showToast(`规则已${isActive ? '启用' : '禁用'}`, isActive ? 'success' : 'info');
+        }
+        
+        // 添加规则
+        function addRule() {
+            showToast('添加规则功能开发中...', 'info');
+        }
+        
+        // 编辑规则
+        function editRule() {
+            showToast('编辑规则...', 'info');
+        }
+        
+        // 删除规则
+        function deleteRule() {
+            if (confirm('确定要删除这条规则吗?')) {
+                showToast('规则已删除', 'success');
+            }
+        }
+        
+        // 切换通知渠道
+        function toggleChannel(card) {
+            card.classList.toggle('active');
+            const isActive = card.classList.contains('active');
+            card.querySelector('.channel-status').textContent = isActive ? '已启用' : '未启用';
+            showToast(`通知渠道已${isActive ? '启用' : '禁用'}`, isActive ? 'success' : 'info');
+        }
+        
+        // 配置渠道
+        function configureChannels() {
+            showToast('打开渠道配置...', 'info');
+        }
+        
+        // 显示Toast
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // 模拟实时数据更新
+        setInterval(() => {
+            // 随机更新响应时间
+            const githubTime = Math.floor(Math.random() * 50 + 120);
+            const gitlabTime = Math.floor(Math.random() * 100 + 150);
+            const giteeTime = Math.floor(Math.random() * 30 + 80);
+            
+            // 更新图表数据（这里简化处理，实际应该更新 SVG）
+        }, 5000);
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('API监控告警中心已加载');
+        });
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="dashboard"></script>
+
+</body>
+</html>
+

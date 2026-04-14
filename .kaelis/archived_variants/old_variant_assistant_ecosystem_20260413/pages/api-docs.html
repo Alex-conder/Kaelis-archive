@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API文档 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white;
+            display: flex;
+        }
+        
+        /* 侧边导航 */
+        .sidebar { 
+            width: 300px; 
+            background: rgba(23,23,23,0.95); 
+            border-right: 1px solid rgba(255,255,255,0.1);
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .sidebar-logo { 
+            font-size: 20px; 
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .sidebar-version { 
+            font-size: 12px; 
+            color: #6B7280;
+            margin-bottom: 32px;
+        }
+        .nav-section { margin-bottom: 24px; }
+        .nav-title { 
+            font-size: 12px; 
+            color: #6B7280; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .nav-item { 
+            display: block; 
+            padding: 8px 12px; 
+            color: #A1A1AA; 
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-family: monospace;
+        }
+        .nav-item:hover, .nav-item.active { 
+            background: rgba(136,72,249,0.1); 
+            color: var(--primary);
+        }
+        .nav-method { 
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-right: 8px;
+            font-weight: 600;
+        }
+        .method-get { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .method-post { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .method-put { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .method-delete { background: rgba(239,68,68,0.2); color: #EF4444; }
+        
+        /* 主内容区 */
+        .main { 
+            flex: 1; 
+            margin-left: 300px;
+            padding: 40px;
+            max-width: 1000px;
+        }
+        
+        .endpoint-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .endpoint-method { 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .endpoint-method.get { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .endpoint-method.post { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .endpoint-path { 
+            font-family: monospace; 
+            font-size: 24px;
+            color: #A1A1AA;
+        }
+        
+        .endpoint-desc { 
+            font-size: 16px; 
+            color: #6B7280; 
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        /* 请求参数 */
+        .section-title { 
+            font-size: 20px; 
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .params-table { 
+            width: 100%; 
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        .params-table th, .params-table td { 
+            padding: 16px; 
+            text-align: left; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .params-table th { 
+            color: #6B7280; 
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .param-name { 
+            font-family: monospace; 
+            color: #ffcb6b;
+        }
+        .param-type { 
+            font-family: monospace; 
+            color: #c792ea;
+            font-size: 13px;
+        }
+        .param-required { 
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(239,68,68,0.2);
+            color: #EF4444;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        .param-optional { 
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(107,114,128,0.2);
+            color: #6B7280;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        /* 代码示例 */
+        .code-tabs { 
+            display: flex; 
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .code-tab { 
+            padding: 8px 16px; 
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: #6B7280;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .code-tab:hover, .code-tab.active { 
+            background: rgba(136,72,249,0.1);
+            color: var(--primary);
+        }
+        
+        .code-block { 
+            background: #1a1a2e; 
+            border-radius: 12px; 
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+        .code-content { 
+            padding: 24px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-keyword { color: #c792ea; }
+        .code-string { color: #c3e88d; }
+        .code-comment { color: #676e95; }
+        .code-number { color: #f78c6c; }
+        .code-boolean { color: #ff5370; }
+        
+        /* 响应示例 */
+        .response-status { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .status-code { 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .status-200 { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .status-400 { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .status-401 { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .status-desc { color: #6B7280; font-size: 14px; }
+        
+        /* 分页 */
+        .pagination { 
+            display: flex; 
+            justify-content: space-between;
+            margin-top: 60px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .pagination-btn { 
+            display: flex; 
+            flex-direction: column;
+            padding: 16px 24px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover { background: rgba(136,72,249,0.1); }
+        .pagination-btn.next { text-align: right; }
+        .pagination-label { 
+            font-size: 12px; 
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+        .pagination-title { font-size: 16px; }
+        
+        /* 搜索框 */
+        .search-box { 
+            position: relative;
+            margin-bottom: 32px;
+        }
+        .search-input { 
+            width: 100%; 
+            padding: 12px 16px 12px 44px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+        }
+        .search-input:focus { 
+            outline: none; 
+            border-color: var(--primary);
+        }
+        .search-icon { 
+            position: absolute; 
+            left: 16px; 
+            top: 50%; 
+            transform: translateY(-50%);
+            color: #6B7280;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">? Kaelis API</div>
+        <div class="sidebar-version">v2.0.0</div>
+        
+        <div class="search-box">
+            <span class="search-icon">??</span>
+            <input type="text" class="search-input" placeholder="搜索 API...">
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Authentication</div>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-post">POST</span>/auth/login
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-post">POST</span>/auth/logout
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-post">POST</span>/auth/refresh
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Users</div>
+            <a href="#" class="nav-item active">
+                <span class="nav-method method-get">GET</span>/users
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-post">POST</span>/users
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-get">GET</span>/users/:id
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-put">PUT</span>/users/:id
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-delete">DEL</span>/users/:id
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Projects</div>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-get">GET</span>/projects
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-method method-post">POST</span>/projects
+            </a>
+        </div>
+    </aside>
+    
+    <main class="main">
+        <div class="endpoint-header">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/api/v2/users</span>
+        </div>
+        
+        <p class="endpoint-desc">
+            获取用户列表。支持分页、筛选和排序。返回的用户数据包含基本信息和统计信息。
+        </p>
+        
+        <!-- 请求参数 -->
+        <h2 class="section-title">请求参数</h2>
+        <h3 style="font-size: 14px; color: #6B7280; margin-bottom: 16px;">Query Parameters</h3>
+        <table class="params-table">
+            <thead>
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>必填</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="param-name">page</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td><span class="param-optional">可选</span></td>
+                    <td>页码，默认 1</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">limit</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td><span class="param-optional">可选</span></td>
+                    <td>每页数量，默认 20，最大 100</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">sort</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="param-optional">可选</span></td>
+                    <td>排序字段，如 created_at, -name（倒序）</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">role</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="param-optional">可选</span></td>
+                    <td>按角色筛选：admin, editor, viewer</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">status</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="param-optional">可选</span></td>
+                    <td>按状态筛选：active, inactive, suspended</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3 style="font-size: 14px; color: #6B7280; margin-bottom: 16px;">Headers</h3>
+        <table class="params-table">
+            <thead>
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>必填</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="param-name">Authorization</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="param-required">必需</span></td>
+                    <td>Bearer Token，格式：Bearer {token}</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">X-API-Key</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="param-optional">可选</span></td>
+                    <td>API 密钥，用于速率限制</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- 代码示例 -->
+        <h2 class="section-title">请求示例</h2>
+        <div class="code-tabs">
+            <button class="code-tab active">cURL</button>
+            <button class="code-tab">JavaScript</button>
+            <button class="code-tab">Python</button>
+            <button class="code-tab">Go</button>
+        </div>
+        <div class="code-block">
+            <div class="code-content">
+<span class="code-comment"># 获取第1页，每页10条，按创建时间倒序</span>
+curl -X GET <span class="code-string">"https://api.kaelis.io/v2/users?page=1&limit=10&sort=-created_at"</span> \\
+  -H <span class="code-string">"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span> \\
+  -H <span class="code-string">"Content-Type: application/json"</span>
+            </div>
+        </div>
+        
+        <!-- 响应示例 -->
+        <h2 class="section-title">响应示例</h2>
+        
+        <div class="response-status">
+            <span class="status-code status-200">200 OK</span>
+            <span class="status-desc">成功返回用户列表</span>
+        </div>
+        <div class="code-block">
+            <div class="code-content">
+{
+  <span class="code-string">"code"</span>: <span class="code-number">200</span>,
+  <span class="code-string">"message"</span>: <span class="code-string">"success"</span>,
+  <span class="code-string">"data"</span>: {
+    <span class="code-string">"items"</span>: [
+      {
+        <span class="code-string">"id"</span>: <span class="code-string">"usr_1234567890"</span>,
+        <span class="code-string">"email"</span>: <span class="code-string">"user@example.com"</span>,
+        <span class="code-string">"name"</span>: <span class="code-string">"张三"</span>,
+        <span class="code-string">"avatar"</span>: <span class="code-string">"https://cdn.kaelis.io/avatars/usr_1234567890.png"</span>,
+        <span class="code-string">"role"</span>: <span class="code-string">"admin"</span>,
+        <span class="code-string">"status"</span>: <span class="code-string">"active"</span>,
+        <span class="code-string">"stats"</span>: {
+          <span class="code-string">"projects"</span>: <span class="code-number">12</span>,
+          <span class="code-string">"tasks"</span>: <span class="code-number">156</span>,
+          <span class="code-string">"lastActive"</span>: <span class="code-string">"2026-03-18T10:30:00Z"</span>
+        },
+        <span class="code-string">"createdAt"</span>: <span class="code-string">"2024-01-15T08:00:00Z"</span>,
+        <span class="code-string">"updatedAt"</span>: <span class="code-string">"2026-03-18T10:30:00Z"</span>
+      }
+    ],
+    <span class="code-string">"pagination"</span>: {
+      <span class="code-string">"page"</span>: <span class="code-number">1</span>,
+      <span class="code-string">"limit"</span>: <span class="code-number">10</span>,
+      <span class="code-string">"total"</span>: <span class="code-number">256</span>,
+      <span class="code-string">"totalPages"</span>: <span class="code-number">26</span>,
+      <span class="code-string">"hasNext"</span>: <span class="code-boolean">true</span>,
+      <span class="code-string">"hasPrev"</span>: <span class="code-boolean">false</span>
+    }
+  }
+}
+            </div>
+        </div>
+        
+        <div class="response-status">
+            <span class="status-code status-401">401 Unauthorized</span>
+            <span class="status-desc">未授权或 Token 过期</span>
+        </div>
+        <div class="code-block">
+            <div class="code-content">
+{
+  <span class="code-string">"code"</span>: <span class="code-number">401</span>,
+  <span class="code-string">"message"</span>: <span class="code-string">"Unauthorized: Invalid or expired token"</span>,
+  <span class="code-string">"error"</span>: {
+    <span class="code-string">"type"</span>: <span class="code-string">"AUTHENTICATION_ERROR"</span>,
+    <span class="code-string">"details"</span>: <span class="code-string">"The provided authentication token is invalid or has expired"</span>
+  }
+}
+            </div>
+        </div>
+        
+        <!-- 错误码 -->
+        <h2 class="section-title">错误码</h2>
+        <table class="params-table">
+            <thead>
+                <tr>
+                    <th>状态码</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="param-name">200</span></td>
+                    <td>请求成功</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">400</span></td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">401</span></td>
+                    <td>未授权，需要登录</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">403</span></td>
+                    <td>禁止访问，权限不足</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">404</span></td>
+                    <td>资源不存在</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">429</span></td>
+                    <td>请求过于频繁</td>
+                </tr>
+                <tr>
+                    <td><span class="param-name">500</span></td>
+                    <td>服务器内部错误</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+            <a href="#" class="pagination-btn">
+                <span class="pagination-label">上一页</span>
+                <span class="pagination-title">← 身份认证</span>
+            </a>
+            <a href="#" class="pagination-btn next">
+                <span class="pagination-label">下一页</span>
+                <span class="pagination-title">创建用户 →</span>
+            </a>
+        </div>
+    </main>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,754 @@
+openapi: 3.0.0
+info:
+  title: Kaelis Unified API
+  description: |
+    Kaelis 统一 API 规范 - 前后端契约单一事实源
+    
+    本文件为 Kaelis 系统的 OpenAPI 规范，所有后端路由、前端类型、
+    测试用例、文档均从此文件生成。修改本文件后，运行 `make sync-all`
+    自动同步到所有相关模块。
+  version: 5.0.0
+  contact:
+    name: Kaelis Team
+    url: https://github.com/kaelis/kaelis
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: http://localhost:5001
+    description: Local alternative port
+
+# ============================================================================
+# 通用组件
+# ============================================================================
+components:
+  schemas:
+    # ------------------------------------------------------------------------
+    # 基础响应结构
+    # ------------------------------------------------------------------------
+    BaseResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+        error:
+          type: string
+          description: 错误信息（仅当 success=false 时）
+        message:
+          type: string
+          description: 提示信息
+        timestamp:
+          type: string
+          format: date-time
+          description: 响应时间戳
+
+    # ------------------------------------------------------------------------
+    # 分页响应
+    # ------------------------------------------------------------------------
+    PaginatedResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: {}
+                total:
+                  type: integer
+                  minimum: 0
+                page:
+                  type: integer
+                  minimum: 1
+                page_size:
+                  type: integer
+                  minimum: 1
+
+    # ------------------------------------------------------------------------
+    # 知识图谱相关
+    # ------------------------------------------------------------------------
+    Triple:
+      type: object
+      description: 知识图谱三元组
+      required:
+        - subject
+        - predicate
+        - object
+      properties:
+        subject:
+          type: string
+          description: 主体
+          example: " metabolite"
+        predicate:
+          type: string
+          description: 谓词/关系
+          example: "has_function"
+        object:
+          type: string
+          description: 客体
+          example: "antioxidant"
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 置信度
+          example: 0.95
+        metadata:
+          type: object
+          description: 额外元数据
+          additionalProperties: true
+
+    KGExtractRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: 待提取知识的文本
+          example: "代谢物具有抗氧化功能"
+        domain:
+          type: string
+          description: 领域上下文
+          enum: [metabolomics, genomics, general]
+          default: general
+        min_confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+          description: 最小置信度阈值
+
+    KGExtractResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - triples
+              properties:
+                triples:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Triple'
+                entities:
+                  type: array
+                  items:
+                    type: string
+                  description: 提取的实体列表
+                relations:
+                  type: array
+                  items:
+                    type: string
+                  description: 提取的关系列表
+
+    KGQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Cypher 查询语句或自然语言查询
+          example: "MATCH (m:Metabolite)-[:HAS_FUNCTION]->(f) RETURN m, f"
+        query_type:
+          type: string
+          enum: [cypher, nl]
+          default: cypher
+          description: 查询类型
+
+    KGQueryResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                results:
+                  type: array
+                  items:
+                    type: object
+                columns:
+                  type: array
+                  items:
+                    type: string
+
+    # ------------------------------------------------------------------------
+    # 意图解析相关
+    # ------------------------------------------------------------------------
+    IntentParseRequest:
+      type: object
+      required:
+        - description
+      properties:
+        description:
+          type: string
+          description: 自然语言描述
+          example: "添加 API 超时配置"
+        context:
+          type: object
+          description: 上下文信息
+          additionalProperties: true
+
+    IntentParseResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - version
+                - action
+                - target
+              properties:
+                version:
+                  type: string
+                  example: "2.1"
+                action:
+                  type: string
+                  enum: [add, modify, delete, query, deploy, test, migrate, refactor, configure]
+                target:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [api_route, agent_tool, config, web_frontend, database, script, test, documentation]
+                    path:
+                      type: string
+                      example: "api/routes/auth.py"
+                    entity_name:
+                      type: string
+                      example: "login_endpoint"
+                parameters:
+                  type: object
+                constraints:
+                  type: array
+                  items:
+                    type: object
+
+    # ------------------------------------------------------------------------
+    # 执行计划相关
+    # ------------------------------------------------------------------------
+    ExecutionPlan:
+      type: object
+      required:
+        - template_id
+        - template_name
+        - intent
+        - steps
+      properties:
+        template_id:
+          type: string
+        template_name:
+          type: string
+        intent:
+          type: object
+        steps:
+          type: array
+          items:
+            type: object
+            required:
+              - step
+              - type
+            properties:
+              step:
+                type: integer
+              type:
+                type: string
+                enum: [verify_file_exists, create_file, modify_file, delete_file, ast_inject, ast_modify, yaml_modify, json_modify, verify_syntax, run_tests, run_migration, backup_file, restore_backup]
+              params:
+                type: object
+        validation:
+          type: object
+        rollback_steps:
+          type: array
+          items:
+            type: object
+        requires_confirmation:
+          type: boolean
+        risk_level:
+          type: string
+          enum: [low, medium, high]
+
+    ExecutePlanRequest:
+      type: object
+      required:
+        - plan
+      properties:
+        plan:
+          $ref: '#/components/schemas/ExecutionPlan'
+        dry_run:
+          type: boolean
+          default: false
+        skip_sandbox:
+          type: boolean
+          default: false
+
+    ExecutePlanResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                execution_id:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, running, success, failed, rolled_back]
+                snapshot_path:
+                  type: string
+                modified_files:
+                  type: array
+                  items:
+                    type: string
+
+    # ------------------------------------------------------------------------
+    # 符号索引相关
+    # ------------------------------------------------------------------------
+    SymbolIndexResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                total_files:
+                  type: integer
+                total_functions:
+                  type: integer
+                total_classes:
+                  type: integer
+                total_routes:
+                  type: integer
+                last_updated:
+                  type: string
+                  format: date-time
+
+    # ------------------------------------------------------------------------
+    # 团队同步相关
+    # ------------------------------------------------------------------------
+    TeamSyncStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                initialized:
+                  type: boolean
+                remote_url:
+                  type: string
+                last_sync:
+                  type: string
+                  format: date-time
+                pending_templates:
+                  type: integer
+
+    # ------------------------------------------------------------------------
+    # 报表导出相关
+    # ------------------------------------------------------------------------
+    ReportExportRequest:
+      type: object
+      required:
+        - report_type
+        - format
+      properties:
+        report_type:
+          type: string
+          enum: [knowledge_graph, metabolomics, system_stats]
+          description: 报表类型
+        format:
+          type: string
+          enum: [pdf, csv, json]
+          description: 导出格式
+        date_range:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        filters:
+          type: object
+          description: 过滤条件
+
+    ReportExportResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                download_url:
+                  type: string
+                  description: 下载链接
+                file_size:
+                  type: integer
+                  description: 文件大小(字节)
+                expires_at:
+                  type: string
+                  format: date-time
+                  description: 过期时间
+
+    # ------------------------------------------------------------------------
+    # 代谢组学相关
+    # ------------------------------------------------------------------------
+    MetabolomicsAnalyzeRequest:
+      type: object
+      required:
+        - file_path
+      properties:
+        file_path:
+          type: string
+          description: mzML 文件路径
+        analysis_type:
+          type: string
+          enum: [peak_detection, compound_identification, pathway_analysis]
+          default: peak_detection
+        parameters:
+          type: object
+          description: 分析参数
+
+    MetabolomicsAnalyzeResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                peaks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      mz:
+                        type: number
+                      intensity:
+                        type: number
+                      rt:
+                        type: number
+                compounds:
+                  type: array
+                  items:
+                    type: object
+                pathways:
+                  type: array
+                  items:
+                    type: string
+
+# ============================================================================
+# API 路径定义
+# ============================================================================
+paths:
+  # ========================================================================
+  # 健康检查
+  # ========================================================================
+  /api/health:
+    get:
+      summary: 健康检查
+      operationId: healthCheck
+      tags:
+        - System
+      x-slo:
+        success_rate: 99.9
+        latency_p95: 100
+        error_budget: 0.1
+      x-capacity:
+        qps: 1000
+        burst_qps: 2000
+      responses:
+        '200':
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+              example:
+                success: true
+                message: "Kaelis API is healthy"
+                timestamp: "2026-04-12T12:00:00Z"
+
+  # ========================================================================
+  # 知识图谱
+  # ========================================================================
+  /api/kg/extract:
+    post:
+      summary: 从文本提取知识三元组
+      description: |
+        从自然语言文本中提取知识图谱三元组。
+        
+        **注意**：这是统一的入口，后端实现为 `extract_triples`，
+        但前端应调用此路径。
+      operationId: kgExtract
+      tags:
+        - Knowledge Graph
+      x-slo:
+        success_rate: 99.5
+        latency_p95: 3000
+        latency_p99: 5000
+        error_budget: 0.5
+      x-capacity:
+        qps: 50
+        burst_qps: 75
+        cpu_millicores: 600
+        memory_mb: 512
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KGExtractRequest'
+      responses:
+        '200':
+          description: 提取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KGExtractResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /api/kg/query:
+    post:
+      summary: 查询知识图谱
+      operationId: kgQuery
+      tags:
+        - Knowledge Graph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KGQueryRequest'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KGQueryResponse'
+
+  # ========================================================================
+  # 意图解析与执行
+  # ========================================================================
+  /api/intent/parse:
+    post:
+      summary: 解析自然语言意图
+      operationId: intentParse
+      tags:
+        - Intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntentParseRequest'
+      responses:
+        '200':
+          description: 解析成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentParseResponse'
+
+  /api/intent/execute:
+    post:
+      summary: 执行意图
+      operationId: intentExecute
+      tags:
+        - Intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutePlanRequest'
+      responses:
+        '200':
+          description: 执行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutePlanResponse'
+
+  # ========================================================================
+  # 符号索引
+  # ========================================================================
+  /api/symbols/index:
+    post:
+      summary: 构建符号索引
+      operationId: buildSymbolIndex
+      tags:
+        - Symbols
+      responses:
+        '200':
+          description: 索引构建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SymbolIndexResponse'
+
+  /api/symbols/query:
+    get:
+      summary: 查询符号
+      operationId: querySymbols
+      tags:
+        - Symbols
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [function, class, route, config]
+        - name: pattern
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          results:
+                            type: array
+                            items:
+                              type: string
+
+  # ========================================================================
+  # 团队同步
+  # ========================================================================
+  /api/team/status:
+    get:
+      summary: 获取团队同步状态
+      operationId: getTeamSyncStatus
+      tags:
+        - Team
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamSyncStatusResponse'
+
+  # ========================================================================
+  # 报表导出
+  # ========================================================================
+  /api/reports/export:
+    post:
+      summary: 导出报表
+      description: 导出知识图谱、代谢组学等报表
+      operationId: exportReport
+      tags:
+        - Reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportExportRequest'
+      responses:
+        '200':
+          description: 导出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportExportResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /api/reports/status/{job_id}:
+    get:
+      summary: 查询导出任务状态
+      operationId: getExportStatus
+      tags:
+        - Reports
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  # ========================================================================
+  # 代谢组学
+  # ========================================================================
+  /api/omics/metabolomics/analyze:
+    post:
+      summary: 代谢组学分析
+      operationId: metabolomicsAnalyze
+      tags:
+        - Omics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetabolomicsAnalyzeRequest'
+      responses:
+        '200':
+          description: 分析成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetabolomicsAnalyzeResponse'
+
+# ============================================================================
+# 标签分组
+# ============================================================================
+tags:
+  - name: System
+    description: 系统相关
+  - name: Knowledge Graph
+    description: 知识图谱相关
+  - name: Intent
+    description: 意图解析与执行
+  - name: Symbols
+    description: 符号索引
+  - name: Team
+    description: 团队协作
+  - name: Reports
+    description: 报表导出
+  - name: Omics
+    description: 组学分析

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配体-蛋白对接分析 - Ligand-Protein Docking Analysis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8fafc; color: #1e293b; }
+        .header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 20px 32px; }
+        .header h1 { font-size: 26px; font-weight: 700; }
+        .header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
+        .analysis-header { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .analysis-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+        .ligands-row { display: flex; gap: 16px; margin-bottom: 20px; }
+        .ligand-card { flex: 1; padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 16px; }
+        .ligand-card.mero { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+        .ligand-card.vanco { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); }
+        .ligand-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .ligand-icon.mero { background: #0ea5e9; color: white; }
+        .ligand-icon.vanco { background: #8b5cf6; color: white; }
+        .ligand-info h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .ligand-info p { font-size: 13px; color: #64748b; }
+        .proteins-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+        .protein-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .protein-pdb { font-family: monospace; font-size: 20px; font-weight: 700; color: #0ea5e9; margin-bottom: 8px; }
+        .protein-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .protein-org { font-size: 12px; color: #64748b; }
+        .results-section { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .docking-table { width: 100%; border-collapse: collapse; }
+        .docking-table th { text-align: left; padding: 14px; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+        .docking-table td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .docking-table tr:hover { background: #f8fafc; }
+        .score-cell { font-weight: 700; }
+        .score-excellent { color: #16a34a; }
+        .score-good { color: #2563eb; }
+        .score-moderate { color: #d97706; }
+        .score-poor { color: #dc2626; }
+        .affinity-bar { width: 80px; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .affinity-fill { height: 100%; border-radius: 4px; }
+        .interaction-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .int-tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .int-hbond { background: #dbeafe; color: #1e40af; }
+        .int-hydrophobic { background: #fef3c7; color: #92400e; }
+        .int-pi { background: #f3e8ff; color: #6b21a8; }
+        .int-ionic { background: #fee2e2; color: #991b1b; }
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .comparison-panel { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .chart-container { height: 300px; background: #f8fafc; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-top: 16px; }
+        .bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 250px; width: 100%; padding: 20px; }
+        .bar-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .bar { width: 50px; border-radius: 6px 6px 0 0; transition: all 0.3s; }
+        .bar.mero { background: linear-gradient(180deg, #0ea5e9, #0284c7); }
+        .bar.vanco { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+        .bar-label { font-size: 11px; color: #64748b; text-align: center; }
+        .bar-value { font-size: 12px; font-weight: 700; }
+        .summary-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-icon { font-size: 32px; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #0ea5e9; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .export-bar { display: flex; gap: 12px; margin-top: 24px; }
+        .export-btn { padding: 12px 24px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .export-btn:hover { background: #f8fafc; border-color: #0ea5e9; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 12px 24px; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.3s; }
+        .tab:hover { color: #0ea5e9; }
+        .tab.active { color: #0ea5e9; border-bottom-color: #0ea5e9; }
+    .brand-accent { color: var(--primary); }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 配体-蛋白对接分析</h1>
+        <p>2个配体 × 5个蛋白靶点 = 10组对接结果</p>
+    </div>
+    <div class="container">
+        <div class="analysis-header">
+            <div class="analysis-title">?? 分析概览</div>
+            <div class="ligands-row">
+                <div class="ligand-card mero">
+                    <div class="ligand-icon mero">??</div>
+                    <div class="ligand-info">
+                        <h3>美罗培南 (Meropenem)</h3>
+                        <p>碳青霉烯类抗生素 | MW: 383.46 | LogP: -0.6</p>
+                    </div>
+                </div>
+                <div class="ligand-card vanco">
+                    <div class="ligand-icon vanco">??</div>
+                    <div class="ligand-info">
+                        <h3>万古霉素 (Vancomycin)</h3>
+                        <p>糖肽类抗生素 | MW: 1449.25 | LogP: -0.8</p>
+                    </div>
+                </div>
+            </div>
+            <div class="proteins-grid">
+                <div class="protein-card">
+                    <div class="protein-pdb">1PBP</div>
+                    <div class="protein-name">PBP1A</div>
+                    <div class="protein-org">大肠杆菌</div>
+                </div>
+                <div class="protein-card">
+                    <div class="protein-pdb">2PBP</div>
+                    <div class="protein-name">PBP2B</div>
+                    <div class="protein-org">肺炎链球菌</div>
+                </div>
+                <div class="protein-card">
+                    <div class="protein-pdb">3PBP</div>
+                    <div class="protein-name">PBP3</div>
+                    <div class="protein-org">铜绿假单胞菌</div>
+                </div>
+                <div class="protein-card">
+                    <div class="protein-pdb">1VQQ</div>
+                    <div class="protein-name">MRSA PBP2a</div>
+                    <div class="protein-org">耐药金葡菌</div>
+                </div>
+                <div class="protein-card">
+                    <div class="protein-pdb">5LJX</div>
+                    <div class="protein-name">L,D-Trans</div>
+                    <div class="protein-org">结核分枝杆菌</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-stats">
+            <div class="stat-card">
+                <div class="stat-icon">??</div>
+                <div class="stat-value">10</div>
+                <div class="stat-label">对接组合</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">??</div>
+                <div class="stat-value">-10.5</div>
+                <div class="stat-label">最佳评分</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">?</div>
+                <div class="stat-value">8.2</div>
+                <div class="stat-label">平均评分</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">??</div>
+                <div class="stat-value">5</div>
+                <div class="stat-label">高亲和力</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active">AutoDock Vina 结果</div>
+            <div class="tab">GOLD 结果</div>
+            <div class="tab">Glide 结果</div>
+            <div class="tab">对比分析</div>
+        </div>
+
+        <div class="results-section">
+            <div class="section-title">?? AutoDock Vina 对接结果 (kcal/mol)</div>
+            <table class="docking-table">
+                <thead>
+                    <tr>
+                        <th>蛋白靶点</th>
+                        <th>美罗培南</th>
+                        <th>万古霉素</th>
+                        <th>差异</th>
+                        <th>美罗培南亲和力</th>
+                        <th>万古霉素亲和力</th>
+                        <th>主要相互作用</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PBP1A (1PBP)</strong><br><span style="font-size:12px;color:#64748b;">大肠杆菌</span></td>
+                        <td class="score-cell score-excellent">-9.2</td>
+                        <td class="score-cell score-good">-8.9</td>
+                        <td>-0.3</td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:92%;background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div></td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:89%;background:linear-gradient(90deg,#3b82f6,#2563eb);"></div></div></td>
+                        <td>
+                            <div class="interaction-tags">
+                                <span class="int-tag int-hbond">H键</span>
+                                <span class="int-tag int-hydrophobic">疏水</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>PBP2B (2PBP)</strong><br><span style="font-size:12px;color:#64748b;">肺炎链球菌</span></td>
+                        <td class="score-cell score-excellent">-8.7</td>
+                        <td class="score-cell score-excellent">-9.1</td>
+                        <td>+0.4</td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:87%;background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div></td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:91%;background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div></td>
+                        <td>
+                            <div class="interaction-tags">
+                                <span class="int-tag int-hbond">H键</span>
+                                <span class="int-tag int-pi">π-π</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>PBP3 (3PBP)</strong><br><span style="font-size:12px;color:#64748b;">铜绿假单胞菌</span></td>
+                        <td class="score-cell score-excellent">-8.4</td>
+                        <td class="score-cell score-good">-8.6</td>
+                        <td>+0.2</td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:84%;background:linear-gradient(90deg,#3b82f6,#2563eb);"></div></div></td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:86%;background:linear-gradient(90deg,#3b82f6,#2563eb);"></div></div></td>
+                        <td>
+                            <div class="interaction-tags">
+                                <span class="int-tag int-hbond">H键</span>
+                                <span class="int-tag int-ionic">离子</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>MRSA PBP2a (1VQQ)</strong><br><span style="font-size:12px;color:#64748b;">耐药金葡菌</span></td>
+                        <td class="score-cell score-good">-7.8</td>
+                        <td class="score-cell score-excellent">-9.8</td>
+                        <td>+2.0</td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:78%;background:linear-gradient(90deg,#f59e0b,#d97706);"></div></div></td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:98%;background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div></td>
+                        <td>
+                            <div class="interaction-tags">
+                                <span class="int-tag int-hbond">H键</span>
+                                <span class="int-tag int-hydrophobic">疏水</span>
+                                <span class="int-tag int-ionic">离子</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>L,D-Trans (5LJX)</strong><br><span style="font-size:12px;color:#64748b;">结核分枝杆菌</span></td>
+                        <td class="score-cell score-good">-7.2</td>
+                        <td class="score-cell score-good">-7.5</td>
+                        <td>+0.3</td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:72%;background:linear-gradient(90deg,#f59e0b,#d97706);"></div></div></td>
+                        <td><div class="affinity-bar"><div class="affinity-fill" style="width:75%;background:linear-gradient(90deg,#f59e0b,#d97706);"></div></div></td>
+                        <td>
+                            <div class="interaction-tags">
+                                <span class="int-tag int-hbond">H键</span>
+                                <span class="int-tag int-ionic">共价</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="comparison-panel">
+                <div class="section-title">?? 美罗培南 - 各靶点结合能</div>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-item">
+                            <div class="bar-value score-excellent">-9.2</div>
+                            <div class="bar mero" style="height:184px;"></div>
+                            <div class="bar-label">PBP1A</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-excellent">-8.7</div>
+                            <div class="bar mero" style="height:174px;"></div>
+                            <div class="bar-label">PBP2B</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-excellent">-8.4</div>
+                            <div class="bar mero" style="height:168px;"></div>
+                            <div class="bar-label">PBP3</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-good">-7.8</div>
+                            <div class="bar mero" style="height:156px;"></div>
+                            <div class="bar-label">MRSA</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-good">-7.2</div>
+                            <div class="bar mero" style="height:144px;"></div>
+                            <div class="bar-label">L,D-T</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="comparison-panel">
+                <div class="section-title">?? 万古霉素 - 各靶点结合能</div>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-item">
+                            <div class="bar-value score-good">-8.9</div>
+                            <div class="bar vanco" style="height:178px;"></div>
+                            <div class="bar-label">PBP1A</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-excellent">-9.1</div>
+                            <div class="bar vanco" style="height:182px;"></div>
+                            <div class="bar-label">PBP2B</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-good">-8.6</div>
+                            <div class="bar vanco" style="height:172px;"></div>
+                            <div class="bar-label">PBP3</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-excellent">-9.8</div>
+                            <div class="bar vanco" style="height:196px;"></div>
+                            <div class="bar-label">MRSA</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-value score-good">-7.5</div>
+                            <div class="bar vanco" style="height:150px;"></div>
+                            <div class="bar-label">L,D-T</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section" style="margin-top: 24px;">
+            <div class="section-title">?? 分析结论</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="padding: 20px; background: #f0fdf4; border-radius: 12px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #166534; margin-bottom: 12px;">? 美罗培南优势</h4>
+                    <ul style="font-size: 14px; color: #166534; line-height: 1.8; padding-left: 20px;">
+                        <li>PBP1A结合最强 (-9.2 kcal/mol)</li>
+                        <li>对革兰氏阴性菌活性优异</li>
+                        <li>分子量小，穿透性强</li>
+                        <li>与PBPs亲和力均衡</li>
+                    </ul>
+                </div>
+                <div style="padding: 20px; background: #f3e8ff; border-radius: 12px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #6b21a8; margin-bottom: 12px;">? 万古霉素优势</h4>
+                    <ul style="font-size: 14px; color: #6b21a8; line-height: 1.8; padding-left: 20px;">
+                        <li>MRSA PBP2a结合最强 (-9.8)</li>
+                        <li>对耐药菌效果显著</li>
+                        <li>多重氢键网络稳定</li>
+                        <li>不易产生交叉耐药</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-bar">
+            <button class="export-btn">?? 下载完整数据</button>
+            <button class="export-btn">?? 导出CSV</button>
+            <button class="export-btn">?? 生成分析报告</button>
+            <button class="export-btn">?? 保存图表</button>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

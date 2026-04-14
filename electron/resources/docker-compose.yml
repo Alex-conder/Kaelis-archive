@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: kaelis-postgres
+    restart: unless-stopped
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_USER: kaelis
+      POSTGRES_PASSWORD: kaelis123
+      POSTGRES_DB: kaelis
+    volumes:
+    - kaelis-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U kaelis -d kaelis
+      interval: 2ss
+      timeout: 30s
+      retries: 10
+  neo4j:
+    image: neo4j:5-community
+    container_name: kaelis-neo4j
+    restart: unless-stopped
+    ports:
+    - 7474:7474
+    - 7687:7687
+    environment:
+      NEO4J_AUTH: neo4j/kaelis123
+      NEO4J_PLUGINS: '["apoc", "gds"]'
+    volumes:
+    - kaelis-neo4j-data:/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -f http://localhost:7474 || exit 1
+      interval: 2ss
+      timeout: 45s
+      retries: 10
+volumes:
+  kaelis-postgres-data: null
+  kaelis-neo4j-data: null

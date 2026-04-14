@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验追踪 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .experiment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .experiment-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-run-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .experiment-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .experiments-list { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .list-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .filter-tabs { display: flex; gap: 8px; }
+        .filter-tab { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .filter-tab.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .experiment-row { display: flex; align-items: center; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; }
+        .exp-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-right: 16px; }
+        .exp-info { flex: 1; }
+        .exp-name { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .exp-meta { font-size: 13px; color: #64748b; }
+        .exp-metrics { display: flex; gap: 24px; margin-right: 24px; }
+        .exp-metric { text-align: center; }
+        .exp-metric-value { font-size: 18px; font-weight: 700; color: #1e293b; }
+        .exp-metric-label { font-size: 11px; color: #64748b; }
+        .exp-status { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .exp-status.running { background: #dbeafe; color: #2563eb; }
+        .exp-status.completed { background: #dcfce7; color: #16a34a; }
+        .exp-status.failed { background: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">实验追踪</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="experiment-header">
+            <h1>ML 实验追踪</h1>
+            <button class="new-run-btn">? 启动实验</button>
+        </div>
+        <div class="experiment-stats">
+            <div class="stat-card"><div class="stat-value">156</div><div class="stat-label">总实验数</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#2563eb;">12</div><div class="stat-label">运行中</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#16a34a;">128</div><div class="stat-label">已完成</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#dc2626;">16</div><div class="stat-label">失败</div></div>
+        </div>
+        <div class="experiments-list">
+            <div class="list-header">
+                <h2 class="list-title">实验列表</h2>
+                <div class="filter-tabs">
+                    <button class="filter-tab active">全部</button>
+                    <button class="filter-tab">运行中</button>
+                    <button class="filter-tab">已完成</button>
+                </div>
+            </div>
+            <div class="experiment-row">
+                <div class="exp-icon">??</div>
+                <div class="exp-info">
+                    <div class="exp-name">推荐模型优化 #128</div>
+                    <div class="exp-meta">2小时前 ? 用户: admin</div>
+                </div>
+                <div class="exp-metrics">
+                    <div class="exp-metric"><div class="exp-metric-value">0.923</div><div class="exp-metric-label">Accuracy</div></div>
+                    <div class="exp-metric"><div class="exp-metric-value">0.891</div><div class="exp-metric-label">F1 Score</div></div>
+                    <div class="exp-metric"><div class="exp-metric-value">45m</div><div class="exp-metric-label">Duration</div></div>
+                </div>
+                <span class="exp-status running">● 运行中</span>
+            </div>
+            <div class="experiment-row">
+                <div class="exp-icon">??</div>
+                <div class="exp-info">
+                    <div class="exp-name">NLP情感分析 #127</div>
+                    <div class="exp-meta">昨天 ? 用户: data-scientist</div>
+                </div>
+                <div class="exp-metrics">
+                    <div class="exp-metric"><div class="exp-metric-value">0.887</div><div class="exp-metric-label">Accuracy</div></div>
+                    <div class="exp-metric"><div class="exp-metric-value">0.865</div><div class="exp-metric-label">F1 Score</div></div>
+                    <div class="exp-metric"><div class="exp-metric-value">2h 15m</div><div class="exp-metric-label">Duration</div></div>
+                </div>
+                <span class="exp-status completed">? 已完成</span>
+            </div>
+            <div class="experiment-row">
+                <div class="exp-icon">??</div>
+                <div class="exp-info">
+                    <div class="exp-name">异常检测模型 #126</div>
+                    <div class="exp-meta">2天前 ? 用户: ml-engineer</div>
+                </div>
+                <div class="exp-metrics">
+                    <div class="exp-metric"><div class="exp-metric-value">-</div><div class="exp-metric-label">Accuracy</div></div>
+                    <div class="exp-metric"><div class="exp-metric-value">-</div><div class="exp-metric-label">F1 Score</div></div>
+                    <div class="exp-metric"><div class="exp-metric-value">15m</div><div class="exp-metric-label">Duration</div></div>
+                </div>
+                <span class="exp-status failed">? 失败</span>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

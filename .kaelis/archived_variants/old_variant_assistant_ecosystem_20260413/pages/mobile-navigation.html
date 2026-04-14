@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>移动端导航组件 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 演示容器 */
+        .demo-container { padding-bottom: 100px; }
+        
+        .section-title { 
+            font-size: 13px; 
+            color: #6B7280; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin: 24px 20px 12px;
+        }
+        
+        /* ========== 样式1: 底部标签栏 ========== */
+        .nav-bottom { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: rgba(23,23,23,0.98); 
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            padding: 8px 20px; 
+            color: #6B7280; 
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; transition: all 0.2s; }
+        .nav-item.active .nav-icon { transform: translateY(-2px); }
+        .nav-badge { 
+            position: absolute; 
+            top: 4px; 
+            right: 16px; 
+            min-width: 18px; 
+            height: 18px; 
+            padding: 0 5px; 
+            background: #EF4444; 
+            border-radius: 9px; 
+            font-size: 10px; 
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        /* ========== 样式2: 浮动导航 ========== */
+        .nav-floating { 
+            position: fixed; 
+            bottom: 100px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: rgba(23,23,23,0.95); 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px; 
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            z-index: 99;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .nav-floating .nav-item { 
+            padding: 10px 16px; 
+            border-radius: 22px;
+        }
+        .nav-floating .nav-item.active { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            color: white;
+        }
+        
+        /* ========== 样式3: 侧边抽屉导航 ========== */
+        .drawer-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .drawer-overlay.show { display: block; opacity: 1; }
+        .drawer { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            bottom: 0; 
+            width: 280px; 
+            background: rgba(23,23,23,0.98); 
+            backdrop-filter: blur(20px);
+            z-index: 201;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        .drawer.show { transform: translateX(0); }
+        .drawer-header { 
+            padding: 24px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .drawer-user { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px;
+        }
+        .drawer-avatar { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+        }
+        .drawer-info h3 { font-size: 18px; margin-bottom: 4px; }
+        .drawer-info p { font-size: 13px; color: #6B7280; }
+        .drawer-menu { flex: 1; padding: 16px 0; overflow-y: auto; }
+        .drawer-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px 24px; 
+            color: #A1A1AA;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drawer-item:active, .drawer-item.active { 
+            background: rgba(136,72,249,0.1); 
+            color: var(--primary);
+        }
+        .drawer-item-icon { font-size: 22px; }
+        .drawer-item-text { font-size: 15px; }
+        .drawer-footer { 
+            padding: 16px 24px; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* ========== 样式4: 顶部标签导航 ========== */
+        .nav-tabs { 
+            display: flex; 
+            background: rgba(23,23,23,0.8); 
+            padding: 4px;
+            margin: 0 20px;
+            border-radius: 12px;
+        }
+        .nav-tab { 
+            flex: 1; 
+            padding: 12px; 
+            text-align: center; 
+            font-size: 14px; 
+            color: #6B7280;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-tab.active { 
+            background: rgba(136,72,249,0.2); 
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        /* ========== 样式5: 分段控制器 ========== */
+        .nav-segment { 
+            display: flex; 
+            background: rgba(255,255,255,0.05); 
+            padding: 2px;
+            margin: 0 20px;
+            border-radius: 10px;
+        }
+        .nav-segment-item { 
+            flex: 1; 
+            padding: 10px; 
+            text-align: center; 
+            font-size: 13px; 
+            color: #6B7280;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-segment-item.active { 
+            background: rgba(255,255,255,0.1); 
+            color: white;
+        }
+        
+        /* ========== 样式6: 胶囊导航 ========== */
+        .nav-pills { 
+            display: flex; 
+            gap: 8px; 
+            padding: 0 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-pills::-webkit-scrollbar { display: none; }
+        .nav-pill { 
+            padding: 10px 20px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 20px; 
+            font-size: 14px; 
+            color: #A1A1AA;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-pill.active { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            color: white;
+        }
+        
+        /* ========== 样式7: 步骤导航 ========== */
+        .nav-steps { 
+            display: flex; 
+            align-items: center; 
+            padding: 0 20px;
+        }
+        .nav-step { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+        }
+        .step-number { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            background: rgba(255,255,255,0.1); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 14px; 
+            font-weight: 600;
+            color: #6B7280;
+        }
+        .step-number.active { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            color: white;
+        }
+        .step-number.completed { background: #22C55E; color: white; }
+        .step-label { font-size: 12px; color: #6B7280; }
+        .step-connector { 
+            flex: 1; 
+            height: 2px; 
+            background: rgba(255,255,255,0.1); 
+            margin: 0 8px;
+            min-width: 30px;
+        }
+        .step-connector.completed { background: #22C55E; }
+        
+        /* ========== 样式8: 面包屑导航 ========== */
+        .nav-breadcrumb { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 0 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-breadcrumb::-webkit-scrollbar { display: none; }
+        .breadcrumb-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 13px; 
+            color: #6B7280;
+            white-space: nowrap;
+        }
+        .breadcrumb-item.active { color: white; }
+        .breadcrumb-separator { color: #6B7280; }
+        
+        /* ========== 样式9: 汉堡菜单 ========== */
+        .hamburger { 
+            width: 44px; 
+            height: 44px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 6px; 
+            cursor: pointer;
+            padding: 10px;
+        }
+        .hamburger-line { 
+            width: 24px; 
+            height: 2px; 
+            background: white; 
+            border-radius: 2px; 
+            transition: all 0.3s;
+        }
+        .hamburger.active .hamburger-line:nth-child(1) { 
+            transform: translateY(8px) rotate(45deg); 
+        }
+        .hamburger.active .hamburger-line:nth-child(2) { 
+            opacity: 0; 
+        }
+        .hamburger.active .hamburger-line:nth-child(3) { 
+            transform: translateY(-8px) rotate(-45deg); 
+        }
+        
+        /* ========== 样式10: 浮动操作按钮 ========== */
+        .fab-container { 
+            position: fixed; 
+            bottom: 100px; 
+            right: 20px; 
+            z-index: 98;
+        }
+        .fab { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            color: white; 
+            font-size: 24px; 
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(136,72,249,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .fab.active { transform: rotate(45deg); }
+        .fab-menu { 
+            position: absolute; 
+            bottom: 70px; 
+            right: 0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        .fab-menu.show { 
+            opacity: 1; 
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .fab-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+        }
+        .fab-item-btn { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 50%; 
+            background: rgba(23,23,23,0.95); 
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white; 
+            font-size: 20px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .fab-item-label { 
+            padding: 6px 12px; 
+            background: rgba(0,0,0,0.8); 
+            border-radius: 6px; 
+            font-size: 12px; 
+            white-space: nowrap;
+        }
+        
+        /* 演示控制 */
+        .demo-preview { 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px; 
+            padding: 20px; 
+            margin: 0 20px 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #6B7280;
+        }
+        
+        /* 切换按钮 */
+        .toggle-btn { 
+            padding: 10px 20px; 
+            background: rgba(136,72,249,0.2); 
+            border: none; 
+            border-radius: 8px; 
+            color: var(--primary); 
+            font-size: 14px;
+            cursor: pointer;
+            margin: 0 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <!-- 汉堡菜单演示 -->
+        <div class="section-title">汉堡菜单</div>
+        <div style="padding: 20px; display: flex; justify-content: center;">
+            <div class="hamburger" id="hamburger" onclick="toggleHamburger()">
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+            </div>
+        </div>
+        
+        <!-- 抽屉菜单触发 -->
+        <button class="toggle-btn" onclick="openDrawer()">打开侧边抽屉导航</button>
+        
+        <!-- 标签导航 -->
+        <div class="section-title">顶部标签导航</div>
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="switchTab(this, 0)">全部</div>
+            <div class="nav-tab" onclick="switchTab(this, 1)">进行中</div>
+            <div class="nav-tab" onclick="switchTab(this, 2)">已完成</div>
+        </div>
+        
+        <!-- 分段控制器 -->
+        <div class="section-title">分段控制器</div>
+        <div class="nav-segment">
+            <div class="nav-segment-item active" onclick="switchSegment(this, 0)">日</div>
+            <div class="nav-segment-item" onclick="switchSegment(this, 1)">周</div>
+            <div class="nav-segment-item" onclick="switchSegment(this, 2)">月</div>
+            <div class="nav-segment-item" onclick="switchSegment(this, 3)">年</div>
+        </div>
+        
+        <!-- 胶囊导航 -->
+        <div class="section-title">胶囊导航</div>
+        <div class="nav-pills">
+            <div class="nav-pill active" onclick="switchPill(this)">推荐</div>
+            <div class="nav-pill" onclick="switchPill(this)">热门</div>
+            <div class="nav-pill" onclick="switchPill(this)">最新</div>
+            <div class="nav-pill" onclick="switchPill(this)">关注</div>
+            <div class="nav-pill" onclick="switchPill(this)">附近</div>
+        </div>
+        
+        <!-- 步骤导航 -->
+        <div class="section-title">步骤导航</div>
+        <div class="nav-steps">
+            <div class="nav-step">
+                <div class="step-number completed">?</div>
+                <span class="step-label">信息</span>
+            </div>
+            <div class="step-connector completed"></div>
+            <div class="nav-step">
+                <div class="step-number active">2</div>
+                <span class="step-label">验证</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="nav-step">
+                <div class="step-number">3</div>
+                <span class="step-label">完成</span>
+            </div>
+        </div>
+        
+        <!-- 面包屑导航 -->
+        <div class="section-title">面包屑导航</div>
+        <div class="nav-breadcrumb">
+            <div class="breadcrumb-item">首页</div>
+            <span class="breadcrumb-separator">?</span>
+            <div class="breadcrumb-item">产品</div>
+            <span class="breadcrumb-separator">?</span>
+            <div class="breadcrumb-item">软件</div>
+            <span class="breadcrumb-separator">?</span>
+            <div class="breadcrumb-item active">Kaelis</div>
+        </div>
+        
+        <!-- 演示预览区 -->
+        <div class="section-title">内容预览</div>
+        <div class="demo-preview" id="preview">??</div>
+    </div>
+    
+    <!-- 底部标签栏 -->
+    <nav class="nav-bottom">
+        <div class="nav-item active" onclick="switchNav(this, 0)">
+            <span class="nav-icon">??</span>
+            <span>首页</span>
+        </div>
+        <div class="nav-item" onclick="switchNav(this, 1)">
+            <span class="nav-icon">??</span>
+            <span>数据</span>
+            <span class="nav-badge">3</span>
+        </div>
+        <div class="nav-item" onclick="switchNav(this, 2)">
+            <span class="nav-icon">?</span>
+            <span>新建</span>
+        </div>
+        <div class="nav-item" onclick="switchNav(this, 3)">
+            <span class="nav-icon">??</span>
+            <span>消息</span>
+            <span class="nav-badge">9+</span>
+        </div>
+        <div class="nav-item" onclick="switchNav(this, 4)">
+            <span class="nav-icon">??</span>
+            <span>我的</span>
+        </div>
+    </nav>
+    
+    <!-- 浮动导航 -->
+    <nav class="nav-floating" style="display: none;">
+        <div class="nav-item active" onclick="switchFloatingNav(this)">??</div>
+        <div class="nav-item" onclick="switchFloatingNav(this)">??</div>
+        <div class="nav-item" onclick="switchFloatingNav(this)">?</div>
+        <div class="nav-item" onclick="switchFloatingNav(this)">??</div>
+    </nav>
+    
+    <!-- 侧边抽屉 -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <div class="drawer-user">
+                <div class="drawer-avatar">??</div>
+                <div class="drawer-info">
+                    <h3>用户名</h3>
+                    <p>user@example.com</p>
+                </div>
+            </div>
+        </div>
+        <div class="drawer-menu">
+            <div class="drawer-item active" onclick="selectDrawerItem(this)">
+                <span class="drawer-item-icon">??</span>
+                <span class="drawer-item-text">首页</span>
+            </div>
+            <div class="drawer-item" onclick="selectDrawerItem(this)">
+                <span class="drawer-item-icon">??</span>
+                <span class="drawer-item-text">仪表盘</span>
+            </div>
+            <div class="drawer-item" onclick="selectDrawerItem(this)">
+                <span class="drawer-item-icon">??</span>
+                <span class="drawer-item-text">文件</span>
+            </div>
+            <div class="drawer-item" onclick="selectDrawerItem(this)">
+                <span class="drawer-item-icon">?</span>
+                <span class="drawer-item-text">收藏</span>
+            </div>
+            <div class="drawer-item" onclick="selectDrawerItem(this)">
+                <span class="drawer-item-icon">??</span>
+                <span class="drawer-item-text">设置</span>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <div class="drawer-item" onclick="selectDrawerItem(this)">
+                <span class="drawer-item-icon">??</span>
+                <span class="drawer-item-text">退出登录</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 浮动操作按钮 -->
+    <div class="fab-container">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-item">
+                <span class="fab-item-label">新建文档</span>
+                <button class="fab-item-btn">??</button>
+            </div>
+            <div class="fab-item">
+                <span class="fab-item-label">上传文件</span>
+                <button class="fab-item-btn">??</button>
+            </div>
+            <div class="fab-item">
+                <span class="fab-item-label">拍照</span>
+                <button class="fab-item-btn">??</button>
+            </div>
+        </div>
+        <button class="fab" id="fab" onclick="toggleFab()">+</button>
+    </div>
+
+    <script>
+        // 底部导航切换
+        function switchNav(element, index) {
+            document.querySelectorAll('.nav-bottom .nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            updatePreview(['?? 首页', '?? 数据', '? 新建', '?? 消息', '?? 我的'][index]);
+        }
+        
+        // 浮动导航切换
+        function switchFloatingNav(element) {
+            document.querySelectorAll('.nav-floating .nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+        }
+        
+        // 标签切换
+        function switchTab(element, index) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+            updatePreview(['?? 全部内容', '?? 进行中', '? 已完成'][index]);
+        }
+        
+        // 分段切换
+        function switchSegment(element, index) {
+            document.querySelectorAll('.nav-segment-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            updatePreview(['?? 日视图', '?? 周视图', '??? 月视图', '?? 年视图'][index]);
+        }
+        
+        // 胶囊切换
+        function switchPill(element) {
+            document.querySelectorAll('.nav-pill').forEach(pill => pill.classList.remove('active'));
+            element.classList.add('active');
+            updatePreview(element.textContent);
+        }
+        
+        // 抽屉菜单
+        function openDrawer() {
+            document.getElementById('drawerOverlay').classList.add('show');
+            document.getElementById('drawer').classList.add('show');
+        }
+        
+        function closeDrawer() {
+            document.getElementById('drawer').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('drawerOverlay').classList.remove('show');
+            }, 300);
+        }
+        
+        function selectDrawerItem(element) {
+            document.querySelectorAll('.drawer-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            updatePreview(element.querySelector('.drawer-item-text').textContent);
+            setTimeout(closeDrawer, 200);
+        }
+        
+        // 汉堡菜单
+        function toggleHamburger() {
+            document.getElementById('hamburger').classList.toggle('active');
+        }
+        
+        // FAB 切换
+        function toggleFab() {
+            document.getElementById('fab').classList.toggle('active');
+            document.getElementById('fabMenu').classList.toggle('show');
+        }
+        
+        // 更新预览
+        function updatePreview(text) {
+            document.getElementById('preview').textContent = text;
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

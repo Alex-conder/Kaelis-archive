@@ -1,0 +1,116 @@
+{
+  "appId": "io.kaelis.workbench",
+  "productName": "Kaelis AI Workbench",
+  "directories": {
+    "output": "../../release",
+    "buildResources": "../../electron/assets"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "../../api",
+      "to": "api",
+      "filter": [
+        "**/*",
+        "!__pycache__",
+        "!*.pyc"
+      ]
+    },
+    {
+      "from": "../../core",
+      "to": "core",
+      "filter": [
+        "**/*",
+        "!__pycache__",
+        "!*.pyc"
+      ]
+    },
+    {
+      "from": "../../launch.py",
+      "to": "launch.py"
+    },
+    {
+      "from": "../../requirements.txt",
+      "to": "requirements.txt"
+    },
+    {
+      "from": "../../.env.example",
+      "to": ".env.example"
+    },
+    {
+      "from": "../../config",
+      "to": "config",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "../../electron/resources/python",
+      "to": "python",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "../../electron/resources/backend",
+      "to": "backend",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "../../electron/resources/docker-compose.yml",
+      "to": "docker-compose.yml"
+    }
+  ],
+  "asar": true,
+  "publish": null,
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "../../electron/assets/icon.ico"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
+    ],
+    "icon": "../../electron/assets/icon.icns",
+    "category": "public.app-category.developer-tools"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "../../electron/assets/icon.png",
+    "category": "Development"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Kaelis AI Workbench"
+  }
+}

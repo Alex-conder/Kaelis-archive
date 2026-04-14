@@ -1,0 +1,22 @@
+<!-- 弹窗组件 -->
+<div class="modal-overlay {{#if active}}active{{/if}}" id="{{id}}">
+  <div class="modal {{#if size}}modal-{{size}}{{/if}}">
+    <div class="modal-header">
+      <h3 class="modal-title">{{title}}</h3>
+      <button class="modal-close" onclick="closeModal('{{id}}')">&times;</button>
+    </div>
+    <div class="modal-body">
+      {{{content}}}
+    </div>
+    {{#if footer}}
+    <div class="modal-footer">
+      {{#if showCancel}}
+      <button class="btn btn-secondary" onclick="closeModal('{{id}}')">{{cancelLabel}}</button>
+      {{/if}}
+      {{#if showConfirm}}
+      <button class="btn btn-primary" onclick="confirmModal('{{id}}')">{{confirmLabel}}</button>
+      {{/if}}
+    </div>
+    {{/if}}
+  </div>
+</div>

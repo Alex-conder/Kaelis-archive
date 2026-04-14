@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI对话与自动化 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 24px;
+        }
+        
+        .card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 32px;
+        }
+        
+        .card-title { 
+            font-size: 18px; 
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-title .icon { 
+            width: 40px; 
+            height: 40px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px;
+        }
+        
+        /* 工作流列表 */
+        .workflow-list { }
+        .workflow-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .workflow-item:hover { background: rgba(136,72,249,0.1); }
+        .workflow-icon { 
+            width: 48px; 
+            height: 48px; 
+            background: rgba(136,72,249,0.2); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+        }
+        .workflow-info { flex: 1; }
+        .workflow-name { font-size: 15px; font-weight: 500; }
+        .workflow-desc { font-size: 13px; color: #6B7280; margin-top: 4px; }
+        .workflow-status { 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 12px;
+        }
+        .workflow-status.active { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .workflow-status.paused { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        
+        /* 提示词模板 */
+        .prompt-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px;
+        }
+        .prompt-card { 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        .prompt-card:hover { 
+            background: rgba(136,72,249,0.1); 
+            border-color: rgba(136,72,249,0.3);
+        }
+        .prompt-icon { font-size: 24px; margin-bottom: 8px; }
+        .prompt-name { font-size: 14px; font-weight: 500; }
+        .prompt-desc { font-size: 12px; color: #6B7280; margin-top: 4px; }
+        
+        /* 对话历史 */
+        .chat-history { }
+        .history-item { 
+            display: flex; 
+            align-items: flex-start; 
+            gap: 12px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .history-avatar { 
+            width: 36px; 
+            height: 36px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .history-content { flex: 1; }
+        .history-text { font-size: 14px; line-height: 1.5; }
+        .history-meta { 
+            display: flex; 
+            gap: 12px; 
+            font-size: 12px; 
+            color: #6B7280; 
+            margin-top: 8px;
+        }
+        
+        /* 模型选择 */
+        .model-list { }
+        .model-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .model-item:hover, .model-item.active { 
+            background: rgba(136,72,249,0.1); 
+            border-color: var(--primary);
+        }
+        .model-icon { font-size: 28px; }
+        .model-info { flex: 1; }
+        .model-name { font-size: 15px; font-weight: 500; }
+        .model-desc { font-size: 13px; color: #6B7280; margin-top: 2px; }
+        .model-badge { 
+            padding: 4px 10px; 
+            background: rgba(34,197,94,0.2); 
+            border-radius: 12px; 
+            font-size: 11px;
+            color: #22C55E;
+        }
+        
+        /* 设置面板 */
+        .settings-group { margin-bottom: 24px; }
+        .settings-label { 
+            display: block; 
+            font-size: 13px; 
+            color: #A1A1AA; 
+            margin-bottom: 8px;
+        }
+        .settings-slider { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+        }
+        .slider { 
+            flex: 1; 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px;
+            position: relative;
+        }
+        .slider-fill { 
+            height: 100%; 
+            background: var(--primary); 
+            border-radius: 3px;
+            width: 70%;
+        }
+        .slider-value { font-size: 14px; color: #6B7280; min-width: 40px; }
+        
+        /* 开关 */
+        .switch-label { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 12px 0;
+            cursor: pointer;
+        }
+        .switch-text { font-size: 14px; }
+        .switch { 
+            width: 44px; 
+            height: 24px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            position: relative;
+            transition: all 0.3s;
+        }
+        .switch.active { background: var(--primary); }
+        .switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .switch.active::after { left: 22px; }
+        
+        /* 统计 */
+        .stats-row { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .stat-item { 
+            text-align: center; 
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+        }
+        .stat-value { 
+            font-size: 24px; 
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+        
+        /* 按钮 */
+        .btn { 
+            padding: 12px 24px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        .btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? AI对话与自动化</h1>
+        <p>智能工作流与多模型对话管理</p>
+    </div>
+    
+    <div class="container">
+        <div class="grid">
+            <!-- 自动化工作流 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon">?</div>
+                    <span>自动化工作流</span>
+                </div>
+                <div class="workflow-list">
+                    <div class="workflow-item">
+                        <div class="workflow-icon">??</div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">智能邮件回复</div>
+                            <div class="workflow-desc">自动分析邮件内容并生成回复</div>
+                        </div>
+                        <span class="workflow-status active">运行中</span>
+                    </div>
+                    <div class="workflow-item">
+                        <div class="workflow-icon">??</div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">日报生成</div>
+                            <div class="workflow-desc">每日自动生成工作报告</div>
+                        </div>
+                        <span class="workflow-status active">运行中</span>
+                    </div>
+                    <div class="workflow-item">
+                        <div class="workflow-icon">??</div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">Bug自动分类</div>
+                            <div class="workflow-desc">根据描述自动分类和分配</div>
+                        </div>
+                        <span class="workflow-status paused">已暂停</span>
+                    </div>
+                    <div class="workflow-item">
+                        <div class="workflow-icon">??</div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">文档摘要</div>
+                            <div class="workflow-desc">自动提取文档关键信息</div>
+                        </div>
+                        <span class="workflow-status active">运行中</span>
+                    </div>
+                </div>
+                <button class="btn" style="margin-top: 16px;">+ 创建工作流</button>
+            </div>
+            
+            <!-- 提示词模板 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon">??</div>
+                    <span>提示词模板</span>
+                </div>
+                <div class="prompt-grid">
+                    <div class="prompt-card">
+                        <div class="prompt-icon">??</div>
+                        <div class="prompt-name">代码审查</div>
+                        <div class="prompt-desc">审查代码质量</div>
+                    </div>
+                    <div class="prompt-card">
+                        <div class="prompt-icon">??</div>
+                        <div class="prompt-name">知识问答</div>
+                        <div class="prompt-desc">解答技术问题</div>
+                    </div>
+                    <div class="prompt-card">
+                        <div class="prompt-icon">??</div>
+                        <div class="prompt-name">创意写作</div>
+                        <div class="prompt-desc">生成创意内容</div>
+                    </div>
+                    <div class="prompt-card">
+                        <div class="prompt-icon">??</div>
+                        <div class="prompt-name">数据分析</div>
+                        <div class="prompt-desc">分析数据趋势</div>
+                    </div>
+                    <div class="prompt-card">
+                        <div class="prompt-icon">??</div>
+                        <div class="prompt-name">翻译助手</div>
+                        <div class="prompt-desc">多语言翻译</div>
+                    </div>
+                    <div class="prompt-card">
+                        <div class="prompt-icon">??</div>
+                        <div class="prompt-name">Debug</div>
+                        <div class="prompt-desc">调试代码错误</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI模型选择 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon">??</div>
+                    <span>AI模型</span>
+                </div>
+                <div class="model-list">
+                    <div class="model-item active">
+                        <span class="model-icon">??</span>
+                        <div class="model-info">
+                            <div class="model-name">GPT-4</div>
+                            <div class="model-desc">最强大的通用模型</div>
+                        </div>
+                        <span class="model-badge">推荐</span>
+                    </div>
+                    <div class="model-item">
+                        <span class="model-icon">?</span>
+                        <div class="model-info">
+                            <div class="model-name">GPT-3.5</div>
+                            <div class="model-desc">快速响应，性价比高</div>
+                        </div>
+                    </div>
+                    <div class="model-item">
+                        <span class="model-icon">??</span>
+                        <div class="model-info">
+                            <div class="model-name">Claude 3</div>
+                            <div class="model-desc">优秀的推理能力</div>
+                        </div>
+                    </div>
+                    <div class="model-item">
+                        <span class="model-icon">??</span>
+                        <div class="model-info">
+                            <div class="model-name">Kimi</div>
+                            <div class="model-desc">长文本处理专家</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 模型设置 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon">??</div>
+                    <span>模型设置</span>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">Temperature (创造性)</label>
+                    <div class="settings-slider">
+                        <div class="slider"><div class="slider-fill" style="width: 70%"></div></div>
+                        <span class="slider-value">0.7</span>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">Max Tokens (最大长度)</label>
+                    <div class="settings-slider">
+                        <div class="slider"><div class="slider-fill" style="width: 80%"></div></div>
+                        <span class="slider-value">4K</span>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">Top P (多样性)</label>
+                    <div class="settings-slider">
+                        <div class="slider"><div class="slider-fill" style="width: 100%"></div></div>
+                        <span class="slider-value">1.0</span>
+                    </div>
+                </div>
+                <label class="switch-label">
+                    <span class="switch-text">流式输出</span>
+                    <div class="switch active" onclick="this.classList.toggle('active')"></div>
+                </label>
+                <label class="switch-label">
+                    <span class="switch-text">上下文记忆</span>
+                    <div class="switch active" onclick="this.classList.toggle('active')"></div>
+                </label>
+                <label class="switch-label">
+                    <span class="switch-text">代码高亮</span>
+                    <div class="switch active" onclick="this.classList.toggle('active')"></div>
+                </label>
+            </div>
+            
+            <!-- 使用统计 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon">??</div>
+                    <span>使用统计</span>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-value">12.5K</div>
+                        <div class="stat-label">总对话数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">3.2M</div>
+                        <div class="stat-label">Token消耗</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">￥156</div>
+                        <div class="stat-label">本月费用</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 最近对话 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon">??</div>
+                    <span>最近对话</span>
+                </div>
+                <div class="chat-history">
+                    <div class="history-item">
+                        <div class="history-avatar">??</div>
+                        <div class="history-content">
+                            <div class="history-text">如何优化 React 应用的性能？</div>
+                            <div class="history-meta">
+                                <span>GPT-4</span>
+                                <span>?</span>
+                                <span>2分钟前</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-avatar">??</div>
+                        <div class="history-content">
+                            <div class="history-text">帮我写一段 Python 爬虫代码</div>
+                            <div class="history-meta">
+                                <span>GPT-3.5</span>
+                                <span>?</span>
+                                <span>1小时前</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-avatar">??</div>
+                        <div class="history-content">
+                            <div class="history-text">解释什么是微服务架构</div>
+                            <div class="history-meta">
+                                <span>Claude 3</span>
+                                <span>?</span>
+                                <span>昨天</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

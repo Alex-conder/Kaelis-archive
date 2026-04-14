@@ -1,0 +1,302 @@
+# Kaelis 统一配置 v1.0
+# 以 ACK v2.1 前馈确定性内核为统一基准
+
+version: "1.0"
+system_name: "Kaelis"
+codename: "Forward-Deterministic Kernel"
+
+# ============================================================================
+# 系统路径配置
+# ============================================================================
+paths:
+  audit_dir: ".kaelis/audit"
+  snapshots_dir: ".kaelis/snapshots"
+  sessions_dir: ".kaelis/sessions"
+  insights_dir: ".kaelis/insights"
+  cache_dir: ".kaelis/cache"
+  schemas_dir: "config/schemas"
+  templates_file: "config/action_templates.yaml"
+  intent_schema: "config/schemas/intent.json"
+
+# ============================================================================
+# LLM 配置 (仅用于语义解析)
+# ============================================================================
+llm:
+  provider: "openai"  # openai | anthropic | local
+  model: "gpt-3.5-turbo"
+  temperature: 0.1  # 低温度，减少随机性
+  max_tokens: 1000
+  timeout: 30
+  
+  # 语义解析专用配置
+  intent_parsing:
+    system_prompt: |
+      You are a semantic parser for Kaelis ACK v2.1.
+      Convert natural language to structured JSON intent.
+      Valid actions: add, modify, delete, query, deploy, test, migrate, refactor, configure
+      Valid target types: api_route, agent_tool, config, web_frontend, database, script, test, documentation
+      
+      Output ONLY valid JSON matching the intent schema.
+      If you cannot determine the intent clearly, output {"error": "ambiguous", "message": "..."}
+
+# ============================================================================
+# 规则引擎配置
+# ============================================================================
+rule_engine:
+  # 匹配阈值
+  exact_match_threshold: 0.95
+  min_match_threshold: 0.70
+  
+  # 模糊匹配处理
+  ambiguous_diff_threshold: 0.10
+  
+  # 无匹配时的行为
+  no_match_action: "escalate_to_human"
+  
+  # 模板选择策略
+  selection_strategy:
+    exact_match_weight: 2.0
+    field_weights:
+      action: 1.5
+      target.type: 1.5
+      target.path: 1.0
+      target.entity_name: 0.5
+
+# ============================================================================
+# 幻觉检测配置
+# ============================================================================
+hallucination_detection:
+  enabled: true
+  
+  # 验证级别
+  validations:
+    file_path: true
+    symbol_exists: true
+    config_key: true
+    route_registered: true
+    reserved_keywords: true
+  
+  # 保留关键字 (Python)
+  reserved_keywords:
+    - "False"
+    - "None"
+    - "True"
+    - "and"
+    - "as"
+    - "assert"
+    - "async"
+    - "await"
+    - "break"
+    - "class"
+    - "continue"
+    - "def"
+    - "del"
+    - "elif"
+    - "else"
+    - "except"
+    - "finally"
+    - "for"
+    - "from"
+    - "global"
+    - "if"
+    - "import"
+    - "in"
+    - "is"
+    - "lambda"
+    - "nonlocal"
+    - "not"
+    - "or"
+    - "pass"
+    - "raise"
+    - "return"
+    - "try"
+    - "while"
+    - "with"
+    - "yield"
+
+# ============================================================================
+# 沙箱配置
+# ============================================================================
+sandbox:
+  enabled: true
+  
+  # Docker 配置
+  docker:
+    image: "python:3.11-slim"
+    memory_limit: "512m"
+    cpu_limit: "1.0"
+    network_disabled: true
+    timeout: 300
+  
+  # 本地降级配置
+  local_fallback: true
+  
+  # 要复制的目录
+  copy_dirs:
+    - "scripts"
+    - "config"
+    - "api"
+    - "core"
+    - "tests"
+  
+  # 要复制的文件
+  copy_files:
+    - "requirements.txt"
+    - "Makefile"
+    - "pytest.ini"
+
+# ============================================================================
+# 原子执行配置
+# ============================================================================
+atomic_execution:
+  # 自动创建快照
+  auto_snapshot: true
+  
+  # 审计日志
+  audit_logging: true
+  audit_file: ".kaelis/audit/op-{date}.jsonl"
+  
+  # 自动回滚
+  auto_rollback_on_failure: true
+  
+  # 需要确认的操作
+  require_confirmation_for:
+    - "delete"
+    - "refactor"
+    - "migrate"
+    - "modify_production_config"
+
+# ============================================================================
+# 认知画像配置
+# ============================================================================
+cognitive_profile:
+  enabled: true
+  
+  # 数据源
+  data_sources:
+    - "audit_logs"
+    - "snapshots"
+    - "telemetry"
+  
+  # 更新频率
+  update_interval_hours: 24
+  
+  # 画像维度
+  dimensions:
+    - "work_patterns"
+    - "skill_matrix"
+    - "cognitive_load"
+    - "error_tendencies"
+
+# ============================================================================
+# 领域能力配置
+# ============================================================================
+domain_capabilities:
+  knowledge_graph:
+    enabled: true
+    template_id: "kg_extract"
+    
+  metabolomics:
+    enabled: true
+    template_id: "omics_metabolomics_analyze"
+    
+  rag:
+    enabled: true
+    template_id: "rag_retrieve"
+
+# ============================================================================
+# 安全策略
+# ============================================================================
+security:
+  # 路径限制
+  allowed_paths:
+    - "api/**"
+    - "config/**"
+    - "scripts/**"
+    - "tests/**"
+    - "core/**"
+    - "agent/**"
+    - "web/**"
+  
+  # 禁止的操作
+  blocked_patterns:
+    - pattern: "delete.*production.*config"
+      action: "block"
+      message: "Deleting production config is not allowed"
+    - pattern: 'modify.*\.env.*production'
+      action: "require_approval"
+      approvers: ["tech_lead"]
+
+# ============================================================================
+# 团队配置 (v2.0 新增)
+# ============================================================================
+team:
+  enabled: false
+  sync_remote: "origin"
+  sync_branch: "main"
+  
+  # 需要审批的操作
+  require_approval_for:
+    - "kaelis op file delete"
+    - "kaelis op db migrate"
+    - "kaelis op env set"
+  
+  # 审批者列表
+  approvers:
+    - "tech_lead"
+    - "architect"
+
+# ============================================================================
+# 规则学习配置 (v2.0 新增)
+# ============================================================================
+learning:
+  enabled: true
+  
+  # 学习阈值
+  min_frequency: 3              # 最少出现次数
+  min_success_rate: 0.9         # 最低成功率
+  auto_adopt_threshold: 0.95    # 自动采纳阈值 (成功率 > 95%)
+  
+  # 学习范围
+  lookback_days: 30             # 回顾天数
+  max_templates_pending: 10     # 最大待审模板数
+
+# ============================================================================
+# 符号索引配置 (v2.0 新增)
+# ============================================================================
+symbol_indexer:
+  enabled: true
+  auto_run_on_change: true
+  
+  # 监视路径
+  watch_paths:
+    - "api/**/*.py"
+    - "agent/**/*.py"
+    - "core/**/*.py"
+    - "scripts/**/*.py"
+    - "config/**/*.yaml"
+    - "config/**/*.yml"
+    - "config/**/*.json"
+  
+  # 忽略模式
+  ignore_patterns:
+    - "**/test_*.py"
+    - "**/__pycache__/**"
+    - "**/*.tmp"
+
+# ============================================================================
+# 日志配置
+# ============================================================================
+logging:
+  level: "INFO"  # DEBUG | INFO | WARN | ERROR
+  format: "[{timestamp}] [{level}] {component}: {message}"
+  
+  components:
+    intent_parser: true
+    rule_engine: true
+    hallucination_detector: true
+    sandbox_runner: true
+    atomic_executor: true
+    rule_learner: true
+    symbol_indexer: true
+    team_sync: true

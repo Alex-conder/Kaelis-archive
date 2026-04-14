@@ -1,0 +1,40 @@
+# Kaelis Adapter Contract
+# 定义第三方库适配层的版本锁定与自动校验规则
+
+version: "1.0"
+
+adapters:
+  n8n_node_adapter:
+    description: "n8n 节点格式到 Kaelis Action Templates 的适配器"
+    source_library: "n8n"
+    source_version: "1.0.0"
+    target_contract: "config/action_templates.yaml"
+    adapter_file: "scripts/adapters/n8n_adapter.py"
+    validation:
+      script: "scripts/validate_adapters.py"
+      subcommand: "n8n"
+      schedule: "pre-commit"
+    lock_file: ".kaelis/adapter_locks/n8n.lock"
+    package_json_dependency: null  # 当前未安装 n8n 前端包
+
+  reactflow_adapter:
+    description: "React Flow 组件到 Kaelis 工作流画布的适配器"
+    source_library: "reactflow"
+    source_version: "11.10.0"
+    target_component: "web/frontend/src/components/workflow/KaelisNode.tsx"
+    adapter_file: "scripts/adapters/reactflow_adapter.py"
+    validation:
+      script: "scripts/validate_adapters.py"
+      subcommand: "reactflow"
+      schedule: "pre-commit"
+    lock_file: ".kaelis/adapter_locks/reactflow.lock"
+    package_json_dependency: null  # 当前未安装 reactflow 包
+
+# 全局校验策略
+policy:
+  # 当 package.json 中依赖版本与契约声明不一致时的行为
+  version_mismatch_action: "warn"  # warn | block
+  # 当适配器文件缺失时的行为
+  missing_adapter_action: "warn"   # warn | block
+  # 是否强制要求每个声明的适配器都有单元测试
+  require_tests: false

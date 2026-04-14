@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>弹窗与对话框 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        
+        /* 组件展示区 */
+        .showcase-section { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 32px; 
+            margin-bottom: 32px;
+        }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 12px; }
+        
+        .btn { 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .btn-warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        
+        /* 遮罩层 */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.8); 
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show { display: flex; }
+        
+        /* 基础弹窗 */
+        .modal { 
+            background: #1a1a1a; 
+            border-radius: 16px; 
+            width: 100%; 
+            max-width: 480px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            animation: modalSlideIn 0.3s ease;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px 24px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .modal-title { font-size: 18px; font-weight: 600; }
+        .modal-close { 
+            width: 32px; 
+            height: 32px; 
+            border: none; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 8px; 
+            color: #6B7280; 
+            font-size: 18px; 
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modal-close:hover { background: rgba(255,255,255,0.1); color: white; }
+        .modal-body { padding: 24px; }
+        .modal-footer { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 12px; 
+            padding: 16px 24px; 
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* 大弹窗 */
+        .modal-lg { max-width: 720px; }
+        
+        /* 确认对话框 */
+        .confirm-modal { max-width: 400px; text-align: center; }
+        .confirm-icon { 
+            width: 64px; 
+            height: 64px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            margin: 0 auto 20px;
+        }
+        .confirm-icon.warning { background: rgba(245,158,11,0.15); }
+        .confirm-icon.danger { background: rgba(239,68,68,0.15); }
+        .confirm-icon.success { background: rgba(34,197,94,0.15); }
+        .confirm-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+        .confirm-desc { font-size: 14px; color: #6B7280; margin-bottom: 24px; }
+        .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+        
+        /* 抽屉 */
+        .drawer-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 1000;
+        }
+        .drawer-overlay.show { display: block; }
+        .drawer { 
+            position: fixed; 
+            top: 0; 
+            right: 0; 
+            bottom: 0; 
+            width: 100%; 
+            max-width: 480px; 
+            background: #1a1a1a; 
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .drawer.show { transform: translateX(0); }
+        .drawer-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px 24px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+        .drawer-footer { 
+            display: flex; 
+            gap: 12px; 
+            padding: 16px 24px; 
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* 底部弹窗 */
+        .bottom-sheet-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 1000;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .bottom-sheet-overlay.show { display: flex; }
+        .bottom-sheet { 
+            background: #1a1a1a; 
+            border-radius: 20px 20px 0 0; 
+            width: 100%; 
+            max-width: 600px;
+            max-height: 80vh;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+        .bottom-sheet.show { transform: translateY(0); }
+        .bottom-sheet-header { 
+            display: flex; 
+            justify-content: center; 
+            padding: 12px; 
+        }
+        .bottom-sheet-handle { 
+            width: 40px; 
+            height: 4px; 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 2px; 
+        }
+        .bottom-sheet-body { padding: 0 24px 24px; }
+        .sheet-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px; 
+            border-radius: 12px; 
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sheet-item:hover { background: rgba(255,255,255,0.05); }
+        .sheet-icon { font-size: 24px; }
+        .sheet-text { flex: 1; }
+        .sheet-title { font-size: 16px; font-weight: 500; }
+        .sheet-desc { font-size: 13px; color: #6B7280; }
+        
+        /* Toast 提示 */
+        .toast-container { 
+            position: fixed; 
+            top: 24px; 
+            right: 24px; 
+            z-index: 2000; 
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .toast { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 16px 20px; 
+            background: #1a1a1a; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            min-width: 300px;
+            animation: toastSlideIn 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .toast-icon { font-size: 20px; }
+        .toast-content { flex: 1; }
+        .toast-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+        .toast-desc { font-size: 13px; color: #6B7280; }
+        .toast-close { 
+            width: 24px; 
+            height: 24px; 
+            border: none; 
+            background: transparent; 
+            color: #6B7280; 
+            font-size: 16px; 
+            cursor: pointer;
+        }
+        
+        /* Tooltip */
+        .tooltip-wrapper { 
+            position: relative; 
+            display: inline-block; 
+        }
+        .tooltip { 
+            position: absolute; 
+            padding: 8px 12px; 
+            background: #374151; 
+            border-radius: 8px; 
+            font-size: 13px; 
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .tooltip.show { opacity: 1; visibility: visible; }
+        .tooltip.top { bottom: 100%; left: 50%; transform: translateX(-50%) translateY(-8px); }
+        .tooltip.bottom { top: 100%; left: 50%; transform: translateX(-50%) translateY(8px); }
+        
+        /* Popover */
+        .popover-wrapper { position: relative; display: inline-block; }
+        .popover { 
+            position: absolute; 
+            top: 100%; 
+            left: 50%; 
+            transform: translateX(-50%) translateY(8px);
+            background: #1a1a1a; 
+            border-radius: 12px; 
+            padding: 16px; 
+            min-width: 240px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .popover.show { opacity: 1; visibility: visible; }
+        .popover-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .popover-content { font-size: 13px; color: #A1A1AA; }
+        
+        /* 加载弹窗 */
+        .loading-modal { text-align: center; padding: 40px; }
+        .loading-spinner { 
+            width: 48px; 
+            height: 48px; 
+            border: 3px solid rgba(136,72,249,0.2); 
+            border-top-color: var(--primary); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 16px; font-weight: 500; }
+        .loading-desc { font-size: 14px; color: #6B7280; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <button class="menu-btn">?</button>
+        <span class="logo">?? 弹窗与对话框</span>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">弹窗与对话框</h1>
+        </div>
+        
+        <!-- 基础弹窗 -->
+        <div class="showcase-section">
+            <h2 class="section-title">基础弹窗</h2>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="showModal('modal1')">打开基础弹窗</button>
+                <button class="btn btn-primary" onclick="showModal('modal2')">打开大弹窗</button>
+            </div>
+        </div>
+        
+        <!-- 确认对话框 -->
+        <div class="showcase-section">
+            <h2 class="section-title">确认对话框</h2>
+            <div class="button-group">
+                <button class="btn btn-warning" onclick="showModal('confirm1')">警告确认</button>
+                <button class="btn btn-danger" onclick="showModal('confirm2')">危险操作</button>
+                <button class="btn btn-success" onclick="showModal('confirm3')">成功提示</button>
+            </div>
+        </div>
+        
+        <!-- 抽屉 -->
+        <div class="showcase-section">
+            <h2 class="section-title">抽屉</h2>
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="showDrawer()">打开抽屉</button>
+            </div>
+        </div>
+        
+        <!-- 底部弹窗 -->
+        <div class="showcase-section">
+            <h2 class="section-title">底部弹窗</h2>
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="showBottomSheet()">打开底部弹窗</button>
+            </div>
+        </div>
+        
+        <!-- Toast -->
+        <div class="showcase-section">
+            <h2 class="section-title">Toast 提示</h2>
+            <div class="button-group">
+                <button class="btn btn-success" onclick="showToast('success')">成功提示</button>
+                <button class="btn btn-warning" onclick="showToast('warning')">警告提示</button>
+                <button class="btn btn-danger" onclick="showToast('error')">错误提示</button>
+                <button class="btn btn-secondary" onclick="showToast('info')">信息提示</button>
+            </div>
+        </div>
+        
+        <!-- 加载弹窗 -->
+        <div class="showcase-section">
+            <h2 class="section-title">加载弹窗</h2>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="showLoading()">显示加载</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 基础弹窗 -->
+    <div class="modal-overlay" id="modal1" onclick="hideModal(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">弹窗标题</span>
+                <button class="modal-close" onclick="closeModal('modal1')">?</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #A1A1AA; line-height: 1.6;">这是一个基础弹窗组件，可以用于展示信息、表单或确认操作。弹窗支持点击遮罩层关闭，也可以通过关闭按钮关闭。</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal1')">取消</button>
+                <button class="btn btn-primary" onclick="closeModal('modal1')">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 大弹窗 -->
+    <div class="modal-overlay" id="modal2" onclick="hideModal(event)">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <span class="modal-title">大弹窗 - 表单示例</span>
+                <button class="modal-close" onclick="closeModal('modal2')">?</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; gap: 16px;">
+                    <div>
+                        <label style="display: block; font-size: 14px; margin-bottom: 8px;">项目名称</label>
+                        <input type="text" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;" placeholder="请输入项目名称">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 14px; margin-bottom: 8px;">项目描述</label>
+                        <textarea style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; min-height: 100px; resize: vertical;" placeholder="请输入项目描述"></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 14px; margin-bottom: 8px;">开始日期</label>
+                            <input type="date" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 14px; margin-bottom: 8px;">结束日期</label>
+                            <input type="date" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal2')">取消</button>
+                <button class="btn btn-primary" onclick="closeModal('modal2')">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 警告确认 -->
+    <div class="modal-overlay" id="confirm1" onclick="hideModal(event)">
+        <div class="modal confirm-modal">
+            <div class="modal-body">
+                <div class="confirm-icon warning">??</div>
+                <div class="confirm-title">确认操作</div>
+                <div class="confirm-desc">此操作可能需要一些时间，是否继续？</div>
+                <div class="confirm-actions">
+                    <button class="btn btn-secondary" onclick="closeModal('confirm1')">取消</button>
+                    <button class="btn btn-warning" onclick="closeModal('confirm1')">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 危险操作 -->
+    <div class="modal-overlay" id="confirm2" onclick="hideModal(event)">
+        <div class="modal confirm-modal">
+            <div class="modal-body">
+                <div class="confirm-icon danger">???</div>
+                <div class="confirm-title">删除确认</div>
+                <div class="confirm-desc">删除后数据将无法恢复，是否确认删除？</div>
+                <div class="confirm-actions">
+                    <button class="btn btn-secondary" onclick="closeModal('confirm2')">取消</button>
+                    <button class="btn btn-danger" onclick="closeModal('confirm2')">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 成功提示 -->
+    <div class="modal-overlay" id="confirm3" onclick="hideModal(event)">
+        <div class="modal confirm-modal">
+            <div class="modal-body">
+                <div class="confirm-icon success">?</div>
+                <div class="confirm-title">操作成功</div>
+                <div class="confirm-desc">您的更改已成功保存！</div>
+                <div class="confirm-actions">
+                    <button class="btn btn-success" onclick="closeModal('confirm3')">知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 抽屉 -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="hideDrawer()"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <span class="modal-title">设置</span>
+            <button class="modal-close" onclick="hideDrawer()">?</button>
+        </div>
+        <div class="drawer-body">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label style="display: block; font-size: 14px; margin-bottom: 8px;">主题设置</label>
+                    <select style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                        <option>深色模式</option>
+                        <option>浅色模式</option>
+                        <option>跟随系统</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 14px; margin-bottom: 8px;">语言</label>
+                    <select style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                        <option>简体中文</option>
+                        <option>English</option>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <span>接收通知</span>
+                    <div style="width: 44px; height: 24px; background: var(--primary); border-radius: 12px; position: relative;">
+                        <div style="position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; right: 2px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" onclick="hideDrawer()" style="flex: 1;">取消</button>
+            <button class="btn btn-primary" onclick="hideDrawer()" style="flex: 1;">保存</button>
+        </div>
+    </div>
+    
+    <!-- 底部弹窗 -->
+    <div class="bottom-sheet-overlay" id="bottomSheetOverlay" onclick="hideBottomSheet()">
+        <div class="bottom-sheet" id="bottomSheet" onclick="event.stopPropagation()">
+            <div class="bottom-sheet-header">
+                <div class="bottom-sheet-handle"></div>
+            </div>
+            <div class="bottom-sheet-body">
+                <div class="sheet-item">
+                    <span class="sheet-icon">??</span>
+                    <div class="sheet-text">
+                        <div class="sheet-title">拍照</div>
+                        <div class="sheet-desc">使用相机拍摄照片</div>
+                    </div>
+                </div>
+                <div class="sheet-item">
+                    <span class="sheet-icon">???</span>
+                    <div class="sheet-text">
+                        <div class="sheet-title">从相册选择</div>
+                        <div class="sheet-desc">选择已有照片</div>
+                    </div>
+                </div>
+                <div class="sheet-item">
+                    <span class="sheet-icon">??</span>
+                    <div class="sheet-text">
+                        <div class="sheet-title">浏览文件</div>
+                        <div class="sheet-desc">从文件管理器选择</div>
+                    </div>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 8px 0;"></div>
+                <div class="sheet-item" onclick="hideBottomSheet()">
+                    <span class="sheet-icon">?</span>
+                    <div class="sheet-text">
+                        <div class="sheet-title">取消</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载弹窗 -->
+    <div class="modal-overlay" id="loadingModal">
+        <div class="modal loading-modal">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">处理中...</div>
+            <div class="loading-desc">请稍候，正在保存您的更改</div>
+        </div>
+    </div>
+    
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        function showModal(id) {
+            document.getElementById(id).classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        
+        function hideModal(event) {
+            if (event.target === event.currentTarget) {
+                event.target.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function showDrawer() {
+            document.getElementById('drawerOverlay').classList.add('show');
+            setTimeout(() => document.getElementById('drawer').classList.add('show'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function hideDrawer() {
+            document.getElementById('drawer').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('drawerOverlay').classList.remove('show');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+        
+        function showBottomSheet() {
+            document.getElementById('bottomSheetOverlay').classList.add('show');
+            setTimeout(() => document.getElementById('bottomSheet').classList.add('show'), 10);
+        }
+        
+        function hideBottomSheet() {
+            document.getElementById('bottomSheet').classList.remove('show');
+            setTimeout(() => document.getElementById('bottomSheetOverlay').classList.remove('show'), 300);
+        }
+        
+        function showToast(type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            const configs = {
+                success: { icon: '?', title: '操作成功', desc: '您的更改已保存', color: '#22C55E' },
+                warning: { icon: '??', title: '警告', desc: '请检查您的输入', color: '#F59E0B' },
+                error: { icon: '?', title: '操作失败', desc: '请稍后重试', color: '#EF4444' },
+                info: { icon: '??', title: '提示', desc: '新功能已上线', color: 'var(--secondary)' }
+            };
+            
+            const config = configs[type];
+            toast.innerHTML = `
+                <span class="toast-icon" style="color: ${config.color}">${config.icon}</span>
+                <div class="toast-content">
+                    <div class="toast-title">${config.title}</div>
+                    <div class="toast-desc">${config.desc}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">?</button>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+        
+        function showLoading() {
+            showModal('loadingModal');
+            setTimeout(() => closeModal('loadingModal'), 3000);
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

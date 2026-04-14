@@ -1,0 +1,114 @@
+# Kaelis Desktop Application Packaging Contract
+# 桌面应用打包契约 - Phase 9 P2 确定性构建
+
+app:
+  name: "Kaelis AI Workbench"
+  appId: "io.kaelis.workbench"
+  version: "1.0.0"
+  module_type: commonjs  # 强制声明模块系统类型：commonjs | module
+
+main_process:
+  entry: "electron/main.cjs"
+  syntax: commonjs  # 与 app.module_type 联动校验
+  preload: "electron/preload.cjs"
+
+build:
+  builder: electron-builder
+  asar: true
+  targets:
+    - platform: win
+      target: nsis
+      arch: [x64]
+    - platform: mac
+      target: dmg
+      arch: [x64, arm64]
+    - platform: linux
+      target: AppImage
+      arch: [x64]
+  extra_resources:
+    - from: "api"
+      to: "api"
+      filter: ["**/*", "!__pycache__", "!*.pyc"]
+    - from: "core"
+      to: "core"
+      filter: ["**/*", "!__pycache__", "!*.pyc"]
+    - from: "launch.py"
+      to: "launch.py"
+    - from: "requirements.txt"
+      to: "requirements.txt"
+    - from: ".env.example"
+      to: ".env.example"
+    - from: "config"
+      to: "config"
+      filter: ["**/*"]
+    - from: "electron/resources/python"
+      to: "python"
+      filter: ["**/*"]
+    - from: "electron/resources/backend"
+      to: "backend"
+      filter: ["**/*"]
+    - from: "electron/resources/docker-compose.yml"
+      to: "docker-compose.yml"
+  directories:
+    output: "release"
+    buildResources: "electron/assets"
+  installer:
+    windows:
+      one_click: false                # 显示安装步骤向导
+      allow_directory_change: true    # 允许用户修改安装目录
+      per_machine: false              # 按用户安装（无需管理员），如需所有用户改为 true
+      create_desktop_shortcut: true   # 创建桌面快捷方式
+      create_start_menu_shortcut: true
+      shortcut_name: "Kaelis AI Workbench"
+
+build_environment:
+  docker_image: "electronuserland/builder:wine"
+  node_version: "20"
+  electron_version: "30.5.1"
+
+python_embed:
+  version: "3.11.9"
+  url: "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip"
+  extra_packages:
+    - pip
+    - setuptools
+    - wheel
+  required_pip_packages_from: "requirements.txt"
+
+# 服务健康检查配置（Electron 主进程轮询使用）
+serviceHealth:
+  backend:
+    endpoint: "http://localhost:5000/api/auth/health"
+    timeout: 30000
+    interval: 1000
+
+# Docker 启动健壮性配置（P0）
+dockerRobustness:
+  preFlightChecks:
+    dockerDaemon: true          # 检测 Docker Desktop 是否运行
+    portConflicts: [5432, 7474, 7687]  # 检测端口占用
+    diskSpace: false            # 未来实现：检测磁盘空间
+  progressUI:
+    showComposeLogs: true       # 在 Splash Screen 显示 docker-compose 日志
+    showPullProgress: true      # 显示镜像拉取信息
+  errorRecovery:
+    allowDegradedMode: true     # Docker 失败时允许进入受限模式
+    diagnosticExport: true      # 支持一键导出诊断报告
+    autoStartDockerDesktop: true # 尝试自动启动 Docker Desktop（Windows）
+
+# 启动配置
+launch:
+  splashTimeout: 120000
+  backendCommand: "python"
+  backendArgs: ["launch.py"]
+  backendExecutable: "backend/launch.exe"  # PyInstaller 产物路径（相对于 resourcesPath）
+  requiredPorts: [5000, 5432, 7474]
+
+# 契约校验规则
+validation:
+  pre_build:
+    - check_module_consistency
+    - check_entry_file_exists
+    - check_icons_exist
+  post_build:
+    - run_smoke_test

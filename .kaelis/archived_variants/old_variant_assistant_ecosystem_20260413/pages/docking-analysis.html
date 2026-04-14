@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分子对接分析系统 - Molecular Docking Analysis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif; background: #f8fafc; color: #1e293b; }
+        .header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+        .nav-links { display: flex; gap: 8px; }
+        .nav-link { padding: 10px 20px; background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.3); }
+        .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
+        .hero { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 20px; padding: 40px; color: white; margin-bottom: 32px; }
+        .hero h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+        .hero p { font-size: 16px; opacity: 0.9; margin-bottom: 24px; }
+        .hero-stats { display: flex; gap: 40px; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 36px; font-weight: 700; }
+        .hero-stat-label { font-size: 14px; opacity: 0.9; }
+        .section-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .methods-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+        .method-card { background: white; border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s; cursor: pointer; border: 2px solid transparent; }
+        .method-card:hover, .method-card.active { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); border-color: #0ea5e9; }
+        .method-icon { width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .method-icon.vina { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; }
+        .method-icon.gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .method-icon.glide { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+        .method-icon.leadit { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .method-icon.plants { background: linear-gradient(135deg, #ec4899, #db2777); color: white; }
+        .method-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .method-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+        .method-score { margin-top: 12px; padding: 8px 16px; background: #f0f9ff; border-radius: 20px; font-size: 14px; font-weight: 600; color: #0284c7; }
+        .drugs-section { margin-bottom: 32px; }
+        .drugs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .drug-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .drug-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(0,0,0,0.15); }
+        .drug-header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 24px; color: white; }
+        .drug-type { font-size: 12px; text-transform: uppercase; opacity: 0.8; margin-bottom: 8px; }
+        .drug-name { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .drug-formula { font-family: monospace; font-size: 14px; opacity: 0.9; }
+        .drug-body { padding: 24px; }
+        .drug-info { display: flex; gap: 24px; margin-bottom: 20px; }
+        .drug-info-item { text-align: center; }
+        .drug-info-value { font-size: 24px; font-weight: 700; color: #0ea5e9; }
+        .drug-info-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .drug-targets { margin-bottom: 20px; }
+        .target-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #374151; }
+        .target-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .target-tag { padding: 6px 12px; background: #f0f9ff; border-radius: 20px; font-size: 12px; color: #0284c7; }
+        .drug-actions { display: flex; gap: 12px; }
+        .drug-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .drug-btn.primary { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; }
+        .drug-btn.secondary { background: #f1f5f9; color: #64748b; }
+        .drug-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .targets-section { background: white; border-radius: 20px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .targets-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 20px; }
+        .target-card { padding: 20px; background: #f8fafc; border-radius: 12px; text-align: center; transition: all 0.3s; }
+        .target-card:hover { background: #f0f9ff; transform: translateY(-2px); }
+        .target-pdb { font-family: monospace; font-size: 18px; font-weight: 700; color: #0ea5e9; margin-bottom: 8px; }
+        .target-name { font-size: 14px; color: #374151; margin-bottom: 4px; }
+        .target-org { font-size: 12px; color: #64748b; }
+        .comparison-table { background: white; border-radius: 20px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 32px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 16px; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        tr:hover { background: #f8fafc; }
+        .score-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .score-excellent { background: #dcfce7; color: #16a34a; }
+        .score-good { background: #dbeafe; color: #2563eb; }
+        .score-moderate { background: #fef3c7; color: #d97706; }
+        .score-poor { background: #fee2e2; color: #dc2626; }
+    .brand-accent { color: var(--primary); }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 分子对接分析系统</h1>
+        <div class="nav-links">
+            <button class="nav-link active">对接分析</button>
+            <button class="nav-link">结果查看</button>
+            <button class="nav-link">3D可视化</button>
+            <button class="nav-link">报告导出</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="hero">
+            <h2>美罗培南 & 万古霉素 多靶点对接分析</h2>
+            <p>基于五种分子对接方法的高精度药物-靶点相互作用预测</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-value">5</div>
+                    <div class="hero-stat-label">对接方法</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">5</div>
+                    <div class="hero-stat-label">靶点蛋白</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">3</div>
+                    <div class="hero-stat-label">药物分子</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">75</div>
+                    <div class="hero-stat-label">对接组合</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section-title">?? 五种对接方法</div>
+        <div class="methods-grid">
+            <div class="method-card active">
+                <div class="method-icon vina">V</div>
+                <div class="method-name">AutoDock Vina</div>
+                <div class="method-desc">开源分子对接程序，采用迭代局部搜索全局优化算法</div>
+                <div class="method-score">评分: -9.2 ~ -6.8</div>
+            </div>
+            <div class="method-card">
+                <div class="method-icon gold">G</div>
+                <div class="method-name">GOLD</div>
+                <div class="method-desc">基于遗传算法的对接软件，擅长处理柔性配体</div>
+                <div class="method-score">评分: 87.3 ~ 62.1</div>
+            </div>
+            <div class="method-card">
+                <div class="method-icon glide">G</div>
+                <div class="method-name">Glide</div>
+                <div class="method-desc">Schr?dinger套件中的高精度对接程序</div>
+                <div class="method-score">评分: -11.5 ~ -7.2</div>
+            </div>
+            <div class="method-card">
+                <div class="method-icon leadit">L</div>
+                <div class="method-name">LeadIT</div>
+                <div class="method-desc">基于片段的药物设计对接工具</div>
+                <div class="method-score">评分: -8.9 ~ -5.4</div>
+            </div>
+            <div class="method-card">
+                <div class="method-icon plants">P</div>
+                <div class="method-name">PLANTS</div>
+                <div class="method-desc">基于蚁群优化的分子对接算法</div>
+                <div class="method-score">评分: -9.8 ~ -6.2</div>
+            </div>
+        </div>
+        
+        <div class="drugs-section">
+            <div class="section-title">?? 药物分子</div>
+            <div class="drugs-grid">
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-type">碳青霉烯类抗生素</div>
+                        <div class="drug-name">美罗培南</div>
+                        <div class="drug-formula">C17H25N3O5S</div>
+                    </div>
+                    <div class="drug-body">
+                        <div class="drug-info">
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">383.46</div>
+                                <div class="drug-info-label">分子量</div>
+                            </div>
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">2.3</div>
+                                <div class="drug-info-label">LogP</div>
+                            </div>
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">5</div>
+                                <div class="drug-info-label">H键供体</div>
+                            </div>
+                        </div>
+                        <div class="drug-targets">
+                            <div class="target-title">靶点结合亲和力</div>
+                            <div class="target-list">
+                                <span class="target-tag">PBP1A: -9.2</span>
+                                <span class="target-tag">PBP2B: -8.7</span>
+                                <span class="target-tag">PBP3: -8.4</span>
+                                <span class="target-tag">MRSA-PBP: -7.8</span>
+                                <span class="target-tag">L,D-Trans: -7.2</span>
+                            </div>
+                        </div>
+                        <div class="drug-actions">
+                            <button class="drug-btn primary" onclick="location.href='meropenem-docking.html'">查看对接结果</button>
+                            <button class="drug-btn secondary">3D结构</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-type">糖肽类抗生素</div>
+                        <div class="drug-name">万古霉素</div>
+                        <div class="drug-formula">C66H75Cl2N9O24</div>
+                    </div>
+                    <div class="drug-body">
+                        <div class="drug-info">
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">1449.25</div>
+                                <div class="drug-info-label">分子量</div>
+                            </div>
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">-0.8</div>
+                                <div class="drug-info-label">LogP</div>
+                            </div>
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">17</div>
+                                <div class="drug-info-label">H键供体</div>
+                            </div>
+                        </div>
+                        <div class="drug-targets">
+                            <div class="target-title">靶点结合亲和力</div>
+                            <div class="target-list">
+                                <span class="target-tag">D-Ala-D-Ala: -10.5</span>
+                                <span class="target-tag">Lipid II: -9.8</span>
+                                <span class="target-tag">PG-Bridge: -9.2</span>
+                                <span class="target-tag">MRSA-PBP: -8.6</span>
+                                <span class="target-tag">Cell Wall: -8.1</span>
+                            </div>
+                        </div>
+                        <div class="drug-actions">
+                            <button class="drug-btn primary" onclick="location.href='vancomycin-docking.html'">查看对接结果</button>
+                            <button class="drug-btn secondary">3D结构</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-type">联合用药</div>
+                        <div class="drug-name">美罗培南+万古霉素</div>
+                        <div class="drug-formula">组合疗法</div>
+                    </div>
+                    <div class="drug-body">
+                        <div class="drug-info">
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">协同</div>
+                                <div class="drug-info-label">作用机制</div>
+                            </div>
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">广谱</div>
+                                <div class="drug-info-label">抗菌范围</div>
+                            </div>
+                            <div class="drug-info-item">
+                                <div class="drug-info-value">1.8</div>
+                                <div class="drug-info-label">FICI指数</div>
+                            </div>
+                        </div>
+                        <div class="drug-targets">
+                            <div class="target-title">联合靶点效应</div>
+                            <div class="target-list">
+                                <span class="target-tag">细胞壁合成: 协同</span>
+                                <span class="target-tag">MRSA抑制: 增强</span>
+                                <span class="target-tag">生物膜: 破坏</span>
+                                <span class="target-tag">耐药预防: 有效</span>
+                            </div>
+                        </div>
+                        <div class="drug-actions">
+                            <button class="drug-btn primary" onclick="location.href='combination-docking.html'">查看联合分析</button>
+                            <button class="drug-btn secondary">协同效应</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="targets-section">
+            <div class="section-title">?? 五种靶点蛋白</div>
+            <div class="targets-grid">
+                <div class="target-card">
+                    <div class="target-pdb">1PBP</div>
+                    <div class="target-name">青霉素结合蛋白PBP1A</div>
+                    <div class="target-org">大肠杆菌</div>
+                </div>
+                <div class="target-card">
+                    <div class="target-pdb">2PBP</div>
+                    <div class="target-name">青霉素结合蛋白PBP2B</div>
+                    <div class="target-org">肺炎链球菌</div>
+                </div>
+                <div class="target-card">
+                    <div class="target-pdb">3PBP</div>
+                    <div class="target-name">青霉素结合蛋白PBP3</div>
+                    <div class="target-org">铜绿假单胞菌</div>
+                </div>
+                <div class="target-card">
+                    <div class="target-pdb">MRSA</div>
+                    <div class="target-name">MRSA PBP2a</div>
+                    <div class="target-org">耐甲氧西林金葡菌</div>
+                </div>
+                <div class="target-card">
+                    <div class="target-pdb">LDT</div>
+                    <div class="target-name">L,D-转肽酶</div>
+                    <div class="target-org">结核分枝杆菌</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="comparison-table">
+            <div class="section-title">?? 对接评分对比 (kcal/mol)</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>药物/靶点</th>
+                        <th>PBP1A</th>
+                        <th>PBP2B</th>
+                        <th>PBP3</th>
+                        <th>MRSA-PBP</th>
+                        <th>L,D-Trans</th>
+                        <th>平均</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>美罗培南 (Vina)</strong></td>
+                        <td><span class="score-badge score-excellent">-9.2</span></td>
+                        <td><span class="score-badge score-excellent">-8.7</span></td>
+                        <td><span class="score-badge score-excellent">-8.4</span></td>
+                        <td><span class="score-badge score-good">-7.8</span></td>
+                        <td><span class="score-badge score-good">-7.2</span></td>
+                        <td><strong>-8.26</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>万古霉素 (Vina)</strong></td>
+                        <td><span class="score-badge score-excellent">-8.9</span></td>
+                        <td><span class="score-badge score-excellent">-9.1</span></td>
+                        <td><span class="score-badge score-excellent">-8.6</span></td>
+                        <td><span class="score-badge score-excellent">-9.8</span></td>
+                        <td><span class="score-badge score-good">-7.5</span></td>
+                        <td><strong>-8.78</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>美罗培南 (GOLD)</strong></td>
+                        <td><span class="score-badge score-excellent">87.3</span></td>
+                        <td><span class="score-badge score-excellent">84.5</span></td>
+                        <td><span class="score-badge score-good">79.2</span></td>
+                        <td><span class="score-badge score-good">72.1</span></td>
+                        <td><span class="score-badge score-moderate">65.8</span></td>
+                        <td><strong>77.78</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>万古霉素 (GOLD)</strong></td>
+                        <td><span class="score-badge score-good">78.5</span></td>
+                        <td><span class="score-badge score-excellent">85.2</span></td>
+                        <td><span class="score-badge score-good">76.3</span></td>
+                        <td><span class="score-badge score-excellent">91.4</span></td>
+                        <td><span class="score-badge score-good">71.2</span></td>
+                        <td><strong>80.52</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>美罗培南 (Glide)</strong></td>
+                        <td><span class="score-badge score-excellent">-10.2</span></td>
+                        <td><span class="score-badge score-excellent">-9.8</span></td>
+                        <td><span class="score-badge score-excellent">-9.1</span></td>
+                        <td><span class="score-badge score-good">-8.4</span></td>
+                        <td><span class="score-badge score-good">-7.9</span></td>
+                        <td><strong>-9.08</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>万古霉素 (Glide)</strong></td>
+                        <td><span class="score-badge score-excellent">-9.7</span></td>
+                        <td><span class="score-badge score-excellent">-10.1</span></td>
+                        <td><span class="score-badge score-excellent">-9.4</span></td>
+                        <td><span class="score-badge score-excellent">-11.5</span></td>
+                        <td><span class="score-badge score-good">-8.2</span></td>
+                        <td><strong>-9.78</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

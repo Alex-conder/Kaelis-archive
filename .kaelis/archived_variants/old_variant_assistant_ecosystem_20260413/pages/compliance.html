@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合规审计 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .compliance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .compliance-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .audit-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .compliance-score { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .score-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .score-circle { width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(#16a34a 324deg, #e2e8f0 0deg); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; position: relative; }
+        .score-circle::before { content: ''; position: absolute; width: 64px; height: 64px; background: white; border-radius: 50%; }
+        .score-value { position: relative; font-size: 24px; font-weight: 700; color: #16a34a; }
+        .score-label { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .score-desc { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .compliance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .compliance-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .framework-item { display: flex; align-items: center; padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 12px; }
+        .framework-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 16px; }
+        .framework-info { flex: 1; }
+        .framework-name { font-size: 15px; font-weight: 600; color: #1e293b; }
+        .framework-status { font-size: 12px; color: #64748b; }
+        .framework-badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .framework-badge.pass { background: #dcfce7; color: #16a34a; }
+        .framework-badge.warn { background: #fef3c7; color: #d97706; }
+        .framework-badge.fail { background: #fee2e2; color: #dc2626; }
+        .audit-log { max-height: 400px; overflow-y: auto; }
+        .log-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+        .log-time { font-size: 12px; color: #64748b; width: 100px; }
+        .log-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 12px; }
+        .log-icon.success { background: #dcfce7; }
+        .log-icon.warning { background: #fef3c7; }
+        .log-icon.error { background: #fee2e2; }
+        .log-message { flex: 1; font-size: 14px; color: #374151; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">合规审计</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="compliance-header">
+            <h1>合规与审计中心</h1>
+            <button class="audit-btn">?? 开始审计</button>
+        </div>
+        <div class="compliance-score">
+            <div class="score-card">
+                <div class="score-circle"><span class="score-value">90%</span></div>
+                <div class="score-label">整体合规</div>
+                <div class="score-desc">18/20 项通过</div>
+            </div>
+            <div class="score-card">
+                <div class="score-circle" style="background:conic-gradient(#16a34a 342deg, #e2e8f0 0deg);"><span class="score-value" style="color:#16a34a;">95%</span></div>
+                <div class="score-label">数据安全</div>
+                <div class="score-desc">19/20 项通过</div>
+            </div>
+            <div class="score-card">
+                <div class="score-circle" style="background:conic-gradient(#d97706 288deg, #e2e8f0 0deg);"><span class="score-value" style="color:#d97706;">80%</span></div>
+                <div class="score-label">隐私保护</div>
+                <div class="score-desc">16/20 项通过</div>
+            </div>
+            <div class="score-card">
+                <div class="score-circle" style="background:conic-gradient(#16a34a 342deg, #e2e8f0 0deg);"><span class="score-value" style="color:#16a34a;">95%</span></div>
+                <div class="score-label">访问控制</div>
+                <div class="score-desc">19/20 项通过</div>
+            </div>
+        </div>
+        <div class="compliance-grid">
+            <div class="compliance-card">
+                <h2 class="card-title">合规框架</h2>
+                <div class="framework-item">
+                    <div class="framework-icon" style="background:#dbeafe;">??</div>
+                    <div class="framework-info"><div class="framework-name">ISO 27001</div><div class="framework-status">信息安全管理</div></div>
+                    <span class="framework-badge pass">? 合规</span>
+                </div>
+                <div class="framework-item">
+                    <div class="framework-icon" style="background:#dcfce7;">???</div>
+                    <div class="framework-info"><div class="framework-name">GDPR</div><div class="framework-status">欧盟数据保护</div></div>
+                    <span class="framework-badge pass">? 合规</span>
+                </div>
+                <div class="framework-item">
+                    <div class="framework-icon" style="background:#fef3c7;">????</div>
+                    <div class="framework-info"><div class="framework-name">网络安全法</div><div class="framework-status">中国网络安全</div></div>
+                    <span class="framework-badge warn">? 待改进</span>
+                </div>
+                <div class="framework-item">
+                    <div class="framework-icon" style="background:#dbeafe;">??</div>
+                    <div class="framework-info"><div class="framework-name">SOC 2</div><div class="framework-status">服务组织控制</div></div>
+                    <span class="framework-badge pass">? 合规</span>
+                </div>
+            </div>
+            <div class="compliance-card">
+                <h2 class="card-title">审计日志</h2>
+                <div class="audit-log">
+                    <div class="log-item">
+                        <span class="log-time">10:23:45</span>
+                        <div class="log-icon success">?</div>
+                        <span class="log-message">数据加密策略验证通过</span>
+                    </div>
+                    <div class="log-item">
+                        <span class="log-time">09:15:22</span>
+                        <div class="log-icon success">?</div>
+                        <span class="log-message">访问权限审查完成</span>
+                    </div>
+                    <div class="log-item">
+                        <span class="log-time">08:45:10</span>
+                        <div class="log-icon warning">?</div>
+                        <span class="log-message">发现3个过期证书</span>
+                    </div>
+                    <div class="log-item">
+                        <span class="log-time">08:30:00</span>
+                        <div class="log-icon success">?</div>
+                        <span class="log-message">自动审计任务启动</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

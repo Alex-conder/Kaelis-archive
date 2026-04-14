@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会话管理 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .sessions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .sessions-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .header-actions { display: flex; gap: 12px; }
+        .search-box { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; width: 280px; }
+        .new-session-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .sessions-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .sessions-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+        .sessions-sidebar { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .sidebar-title { font-size: 16px; font-weight: 600; color: #1e293b; }
+        .filter-btn { padding: 6px 12px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .session-list { max-height: 600px; overflow-y: auto; }
+        .session-item { padding: 16px; border-radius: 12px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px; }
+        .session-item:hover { background: #f8fafc; }
+        .session-item.active { background: #f3e8ff; border: 1px solid #c4b5fd; }
+        .session-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-meta { font-size: 12px; color: #64748b; display: flex; justify-content: space-between; }
+        .session-preview { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+        .preview-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .preview-actions { display: flex; gap: 8px; }
+        .action-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .action-btn.danger { color: #dc2626; border-color: #fecaca; }
+        .messages-list { max-height: 500px; overflow-y: auto; }
+        .message-item { display: flex; gap: 12px; margin-bottom: 16px; }
+        .message-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .message-avatar.user { background: #dbeafe; }
+        .message-avatar.ai { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; }
+        .message-content { flex: 1; background: #f8fafc; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: #374151; }
+        .message-time { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        .tags { display: flex; gap: 8px; margin-top: 16px; }
+        .tag { padding: 4px 10px; background: #f3e8ff; color: var(--primary); border-radius: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">会话管理</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="sessions-header">
+            <h1>?? 会话管理中心</h1>
+            <div class="header-actions">
+                <input type="text" class="search-box" placeholder="搜索会话...">
+                <button class="new-session-btn">+ 新会话</button>
+            </div>
+        </div>
+        <div class="sessions-stats">
+            <div class="stat-card"><div class="stat-value">1,234</div><div class="stat-label">总会话</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#16a34a;">56</div><div class="stat-label">今日活跃</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#2563eb;">8,432</div><div class="stat-label">总消息数</div></div>
+            <div class="stat-card"><div class="stat-value">4.8</div><div class="stat-label">平均评分</div></div>
+        </div>
+        <div class="sessions-layout">
+            <div class="sessions-sidebar">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">会话列表</span>
+                    <button class="filter-btn">筛选 ▼</button>
+                </div>
+                <div class="session-list">
+                    <div class="session-item active">
+                        <div class="session-title">Python数据分析咨询</div>
+                        <div class="session-meta"><span>今天 14:30</span><span>12 消息</span></div>
+                    </div>
+                    <div class="session-item">
+                        <div class="session-title">API接口设计讨论</div>
+                        <div class="session-meta"><span>今天 10:15</span><span>8 消息</span></div>
+                    </div>
+                    <div class="session-item">
+                        <div class="session-title">机器学习模型选型</div>
+                        <div class="session-meta"><span>昨天 16:45</span><span>24 消息</span></div>
+                    </div>
+                    <div class="session-item">
+                        <div class="session-title">前端性能优化建议</div>
+                        <div class="session-meta"><span>昨天 09:20</span><span>15 消息</span></div>
+                    </div>
+                    <div class="session-item">
+                        <div class="session-title">数据库架构设计</div>
+                        <div class="session-meta"><span>3天前</span><span>32 消息</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="session-preview">
+                <div class="preview-header">
+                    <div>
+                        <div class="preview-title">Python数据分析咨询</div>
+                        <div style="font-size:13px;color:#64748b;margin-top:4px;">创建于 2026-03-17 14:30 ? 模型: GPT-4</div>
+                    </div>
+                    <div class="preview-actions">
+                        <button class="action-btn">?? 导出</button>
+                        <button class="action-btn">?? 分享</button>
+                        <button class="action-btn danger">??? 删除</button>
+                    </div>
+                </div>
+                <div class="messages-list">
+                    <div class="message-item">
+                        <div class="message-avatar user">??</div>
+                        <div>
+                            <div class="message-content">如何使用pandas进行数据清洗？我有一个包含缺失值的CSV文件。</div>
+                            <div class="message-time">14:30:15</div>
+                        </div>
+                    </div>
+                    <div class="message-item">
+                        <div class="message-avatar ai">??</div>
+                        <div>
+                            <div class="message-content">使用pandas清洗数据非常简单！你可以使用以下方法处理缺失值：<br><br>1. <code>df.dropna()</code> - 删除包含缺失值的行<br>2. <code>df.fillna(value)</code> - 用指定值填充缺失值<br>3. <code>df.interpolate()</code> - 使用插值填充<br><br>需要我详细解释哪个方法吗？</div>
+                            <div class="message-time">14:30:22</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tags">
+                    <span class="tag">Python</span>
+                    <span class="tag">数据分析</span>
+                    <span class="tag">Pandas</span>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API自动化检索与填充 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        
+        .container { max-width: 1600px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #A1A1AA; }
+        
+        /* 自动化状态卡片 */
+        .auto-status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .status-card { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; }
+        .status-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        .status-card.scanning::before { background: linear-gradient(90deg, #F59E0B, #EF4444); animation: scanLine 2s linear infinite; }
+        @keyframes scanLine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .status-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+        .status-value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+        .status-label { font-size: 14px; color: #A1A1AA; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 12px; }
+        .status-badge.active { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .status-badge.scanning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .status-badge.idle { background: rgba(107,114,128,0.2); color: #6B7280; }
+        
+        /* 自动化控制面板 */
+        .control-panel { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .panel-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+        .panel-actions { display: flex; gap: 12px; }
+        .btn { padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: none; display: flex; align-items: center; gap: 8px; }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+        .btn-success { background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%); color: white; }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+        
+        /* 扫描进度 */
+        .scan-progress { display: none; margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .scan-progress.show { display: block; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .progress-title { font-size: 14px; font-weight: 600; }
+        .progress-percent { font-size: 14px; color: var(--primary); font-weight: 700; }
+        .progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 4px; width: 0; transition: width 0.3s; }
+        .progress-details { display: flex; gap: 24px; margin-top: 16px; font-size: 13px; color: #A1A1AA; }
+        
+        /* 平台选择 */
+        .platform-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
+        .platform-item { padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: all 0.3s; text-align: center; }
+        .platform-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(136,72,249,0.3); }
+        .platform-item.selected { border-color: var(--primary); background: rgba(136,72,249,0.1); }
+        .platform-item.auto-detected { border-color: #22C55E; background: rgba(34,197,94,0.1); }
+        .platform-icon { font-size: 32px; margin-bottom: 8px; }
+        .platform-name { font-size: 14px; font-weight: 600; }
+        .platform-status { font-size: 11px; color: #6B7280; margin-top: 4px; }
+        
+        /* 自动发现结果 */
+        .discovery-section { background: rgba(23,23,23,0.8); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+        .discovery-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; }
+        .discovery-tab { padding: 10px 20px; background: transparent; border: none; color: #A1A1AA; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .discovery-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .discovery-tab:hover:not(.active) { color: white; }
+        
+        /* 端点列表 */
+        .endpoint-table { width: 100%; border-collapse: collapse; }
+        .endpoint-table th { text-align: left; padding: 14px; font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+        .endpoint-table tr:hover { background: rgba(255,255,255,0.03); }
+        .endpoint-table tr.auto-filled { background: rgba(34,197,94,0.05); }
+        .method-tag { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; font-family: monospace; }
+        .method-tag.get { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .method-tag.post { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .method-tag.put { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .method-tag.delete { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .endpoint-path { font-family: monospace; color: #BD95FF; }
+        .endpoint-source { font-size: 12px; color: #6B7280; }
+        .endpoint-source.auto { color: #22C55E; }
+        .endpoint-source.manual { color: #F59E0B; }
+        .endpoint-actions { display: flex; gap: 8px; }
+        .action-icon { width: 32px; height: 32px; border: none; background: rgba(255,255,255,0.1); border-radius: 6px; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .action-icon:hover { background: var(--primary); }
+        .action-icon.fill { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .action-icon.fill:hover { background: #22C55E; color: white; }
+        
+        /* 参数自动填充 */
+        .param-panel { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 24px; margin-top: 24px; }
+        .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .param-title { font-size: 16px; font-weight: 600; }
+        .param-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .param-item { display: flex; flex-direction: column; gap: 8px; }
+        .param-label { font-size: 13px; color: #A1A1AA; display: flex; justify-content: space-between; }
+        .param-input { padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 13px; }
+        .param-input:focus { outline: none; border-color: var(--primary); }
+        .param-input.auto-filled { border-color: #22C55E; background: rgba(34,197,94,0.05); }
+        .param-suggest { font-size: 11px; color: #22C55E; }
+        
+        /* 智能提示 */
+        .smart-suggest { position: relative; }
+        .suggest-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #171717; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 100; display: none; }
+        .suggest-dropdown.show { display: block; }
+        .suggest-item { padding: 10px 14px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .suggest-item:hover { background: rgba(136,72,249,0.1); }
+        .suggest-item.selected { background: rgba(136,72,249,0.2); color: #BD95FF; }
+        
+        /* 批量操作 */
+        .batch-panel { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 24px; margin-top: 24px; }
+        .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .batch-title { font-size: 16px; font-weight: 600; }
+        .batch-actions { display: flex; gap: 12px; }
+        .batch-progress { margin-top: 16px; }
+        
+        /* 结果展示 */
+        .result-panel { background: rgba(0,0,0,0.5); border-radius: 12px; padding: 20px; margin-top: 24px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .result-item { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .result-time { color: #6B7280; margin-right: 12px; }
+        .result-action { padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-right: 12px; }
+        .result-action.discover { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .result-action.fill { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .result-action.test { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .result-message { color: #A1A1AA; }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; transform: translateX(150%); transition: transform 0.3s; z-index: 1000; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: #22C55E; }
+        .toast.error { background: #EF4444; }
+        .toast.info { background: var(--secondary); }
+        
+        @media (max-width: 1200px) {
+            .auto-status-grid { grid-template-columns: repeat(2, 1fr); }
+            .platform-grid { grid-template-columns: repeat(3, 1fr); }
+            .param-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .auto-status-grid { grid-template-columns: 1fr; }
+            .platform-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? API自动化检索与填充</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="startAutoDiscovery()">?? 开始自动发现</button>
+            <button class="nav-btn" onclick="batchFill()">? 批量填充</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">API自动化检索与填充</h1>
+            <p class="page-subtitle">智能发现API端点、自动填充配置参数、批量测试验证</p>
+        </div>
+        
+        <!-- 自动化状态 -->
+        <div class="auto-status-grid">
+            <div class="status-card" id="statusCard1">
+                <div class="status-icon">??</div>
+                <div class="status-value" id="discoveredCount">0</div>
+                <div class="status-label">已发现端点</div>
+                <span class="status-badge idle" id="discoverBadge">等待扫描</span>
+            </div>
+            <div class="status-card" id="statusCard2">
+                <div class="status-icon">??</div>
+                <div class="status-value" id="filledCount">0</div>
+                <div class="status-label">已填充参数</div>
+                <span class="status-badge idle" id="fillBadge">等待填充</span>
+            </div>
+            <div class="status-card" id="statusCard3">
+                <div class="status-icon">?</div>
+                <div class="status-value" id="testedCount">0</div>
+                <div class="status-label">已测试端点</div>
+                <span class="status-badge idle" id="testBadge">等待测试</span>
+            </div>
+            <div class="status-card" id="statusCard4">
+                <div class="status-icon">??</div>
+                <div class="status-value" id="successRate">0%</div>
+                <div class="status-label">成功率</div>
+                <span class="status-badge idle" id="successBadge">等待数据</span>
+            </div>
+        </div>
+        
+        <!-- 自动化控制面板 -->
+        <div class="control-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span>???</span> 自动化控制
+                </h2>
+                <div class="panel-actions">
+                    <button class="btn btn-secondary" onclick="pauseAuto()">?? 暂停</button>
+                    <button class="btn btn-danger" onclick="stopAuto()">?? 停止</button>
+                    <button class="btn btn-success" onclick="applyAll()">? 应用全部</button>
+                </div>
+            </div>
+            
+            <!-- 平台选择 -->
+            <div class="platform-grid">
+                <div class="platform-item selected" data-platform="github" onclick="selectPlatform(this, 'github')">
+                    <div class="platform-icon">??</div>
+                    <div class="platform-name">GitHub</div>
+                    <div class="platform-status">已选择</div>
+                </div>
+                <div class="platform-item" data-platform="gitlab" onclick="selectPlatform(this, 'gitlab')">
+                    <div class="platform-icon">??</div>
+                    <div class="platform-name">GitLab</div>
+                    <div class="platform-status">点击选择</div>
+                </div>
+                <div class="platform-item" data-platform="gitee" onclick="selectPlatform(this, 'gitee')">
+                    <div class="platform-icon">??</div>
+                    <div class="platform-name">Gitee</div>
+                    <div class="platform-status">点击选择</div>
+                </div>
+                <div class="platform-item" data-platform="bitbucket" onclick="selectPlatform(this, 'bitbucket')">
+                    <div class="platform-icon">??</div>
+                    <div class="platform-name">Bitbucket</div>
+                    <div class="platform-status">点击选择</div>
+                </div>
+                <div class="platform-item" data-platform="npm" onclick="selectPlatform(this, 'npm')">
+                    <div class="platform-icon">??</div>
+                    <div class="platform-name">NPM</div>
+                    <div class="platform-status">点击选择</div>
+                </div>
+                <div class="platform-item" data-platform="pypi" onclick="selectPlatform(this, 'pypi')">
+                    <div class="platform-icon">??</div>
+                    <div class="platform-name">PyPI</div>
+                    <div class="platform-status">点击选择</div>
+                </div>
+            </div>
+            
+            <!-- 扫描进度 -->
+            <div class="scan-progress" id="scanProgress">
+                <div class="progress-header">
+                    <span class="progress-title" id="progressTitle">正在扫描 API 端点...</span>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-details">
+                    <span>?? 当前平台: <strong id="currentPlatform">GitHub</strong></span>
+                    <span>?? 已发现: <strong id="foundEndpoints">0</strong> 个端点</span>
+                    <span>?? 预计剩余: <strong id="etaTime">--</strong></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 自动发现结果 -->
+        <div class="discovery-section">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span>??</span> 自动发现结果
+                </h2>
+                <div class="panel-actions">
+                    <button class="btn btn-secondary" onclick="filterResults('all')">全部</button>
+                    <button class="btn btn-secondary" onclick="filterResults('auto')">自动发现</button>
+                    <button class="btn btn-secondary" onclick="filterResults('manual')">手动添加</button>
+                </div>
+            </div>
+            
+            <div class="discovery-tabs">
+                <button class="discovery-tab active" onclick="switchTab(this, 'endpoints')">?? API端点</button>
+                <button class="discovery-tab" onclick="switchTab(this, 'params')">?? 参数配置</button>
+                <button class="discovery-tab" onclick="switchTab(this, 'schemas')">?? 数据模型</button>
+                <button class="discovery-tab" onclick="switchTab(this, 'docs')">?? 文档抓取</button>
+            </div>
+            
+            <!-- 端点列表 -->
+            <div class="tab-content" id="endpointsTab">
+                <table class="endpoint-table">
+                    <thead>
+                        <tr>
+                            <th style="width:80px">方法</th>
+                            <th>端点路径</th>
+                            <th>描述</th>
+                            <th style="width:120px">来源</th>
+                            <th style="width:150px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="endpointTableBody">
+                        <tr class="auto-filled">
+                            <td><span class="method-tag get">GET</span></td>
+                            <td class="endpoint-path">/user/repos</td>
+                            <td>获取当前用户的仓库列表</td>
+                            <td class="endpoint-source auto">?? 自动发现</td>
+                            <td class="endpoint-actions">
+                                <button class="action-icon fill" onclick="fillParams('/user/repos')" title="填充参数">??</button>
+                                <button class="action-icon" onclick="testEndpoint('/user/repos')" title="测试">??</button>
+                                <button class="action-icon" onclick="editEndpoint('/user/repos')" title="编辑">??</button>
+                            </td>
+                        </tr>
+                        <tr class="auto-filled">
+                            <td><span class="method-tag get">GET</span></td>
+                            <td class="endpoint-path">/repos/{owner}/{repo}</td>
+                            <td>获取指定仓库的详细信息</td>
+                            <td class="endpoint-source auto">?? 自动发现</td>
+                            <td class="endpoint-actions">
+                                <button class="action-icon fill" onclick="fillParams('/repos/{owner}/{repo}')" title="填充参数">??</button>
+                                <button class="action-icon" onclick="testEndpoint('/repos/{owner}/{repo}')" title="测试">??</button>
+                                <button class="action-icon" onclick="editEndpoint('/repos/{owner}/{repo}')" title="编辑">??</button>
+                            </td>
+                        </tr>
+                        <tr class="auto-filled">
+                            <td><span class="method-tag post">POST</span></td>
+                            <td class="endpoint-path">/user/repos</td>
+                            <td>创建新的代码仓库</td>
+                            <td class="endpoint-source auto">?? 自动发现</td>
+                            <td class="endpoint-actions">
+                                <button class="action-icon fill" onclick="fillParams('/user/repos')" title="填充参数">??</button>
+                                <button class="action-icon" onclick="testEndpoint('/user/repos')" title="测试">??</button>
+                                <button class="action-icon" onclick="editEndpoint('/user/repos')" title="编辑">??</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="method-tag get">GET</span></td>
+                            <td class="endpoint-path">/users/{username}/repos</td>
+                            <td>获取指定用户的公开仓库</td>
+                            <td class="endpoint-source manual">?? 手动添加</td>
+                            <td class="endpoint-actions">
+                                <button class="action-icon fill" onclick="fillParams('/users/{username}/repos')" title="填充参数">??</button>
+                                <button class="action-icon" onclick="testEndpoint('/users/{username}/repos')" title="测试">??</button>
+                                <button class="action-icon" onclick="editEndpoint('/users/{username}/repos')" title="编辑">??</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 参数自动填充 -->
+        <div class="discovery-section">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span>??</span> 智能参数填充
+                </h2>
+                <div class="panel-actions">
+                    <button class="btn btn-secondary" onclick="clearParams()">??? 清空</button>
+                    <button class="btn btn-primary" onclick="autoFillParams()">?? 自动填充</button>
+                </div>
+            </div>
+            
+            <div class="param-panel">
+                <div class="param-header">
+                    <span class="param-title">当前端点: <span style="color:#BD95FF">/repos/{owner}/{repo}</span></span>
+                    <span style="font-size:12px;color:#6B7280;">检测到 2 个路径参数</span>
+                </div>
+                <div class="param-grid">
+                    <div class="param-item">
+                        <label class="param-label">
+                            <span>owner (拥有者)</span>
+                            <span class="param-suggest">?? 建议: kaelis-team</span>
+                        </label>
+                        <div class="smart-suggest">
+                            <input type="text" class="param-input auto-filled" value="kaelis-team" placeholder="输入用户名或组织名" onfocus="showSuggestions(this)" onblur="hideSuggestions(this)">
+                            <div class="suggest-dropdown">
+                                <div class="suggest-item selected" onclick="selectSuggest(this)">kaelis-team</div>
+                                <div class="suggest-item" onclick="selectSuggest(this)">kaelis-dev</div>
+                                <div class="suggest-item" onclick="selectSuggest(this)">kaelis-ai</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <label class="param-label">
+                            <span>repo (仓库名)</span>
+                            <span class="param-suggest">?? 建议: kaelis-platform</span>
+                        </label>
+                        <div class="smart-suggest">
+                            <input type="text" class="param-input auto-filled" value="kaelis-platform" placeholder="输入仓库名称" onfocus="showSuggestions(this)" onblur="hideSuggestions(this)">
+                            <div class="suggest-dropdown">
+                                <div class="suggest-item selected" onclick="selectSuggest(this)">kaelis-platform</div>
+                                <div class="suggest-item" onclick="selectSuggest(this)">kaelis-ui</div>
+                                <div class="suggest-item" onclick="selectSuggest(this)">kaelis-api</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <label class="param-label">
+                            <span>per_page (每页数量)</span>
+                            <span class="param-suggest">?? 默认: 30</span>
+                        </label>
+                        <input type="number" class="param-input" value="30" placeholder="10-100">
+                    </div>
+                    <div class="param-item">
+                        <label class="param-label">
+                            <span>page (页码)</span>
+                            <span class="param-suggest">?? 默认: 1</span>
+                        </label>
+                        <input type="number" class="param-input" value="1" placeholder="从1开始">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 批量操作 -->
+        <div class="discovery-section">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span>?</span> 批量测试与验证
+                </h2>
+                <div class="panel-actions">
+                    <button class="btn btn-secondary" onclick="selectAll()">?? 全选</button>
+                    <button class="btn btn-primary" onclick="batchTest()">?? 批量测试</button>
+                    <button class="btn btn-success" onclick="batchApply()">? 批量应用</button>
+                </div>
+            </div>
+            
+            <div class="batch-panel">
+                <div class="batch-header">
+                    <span class="batch-title">测试队列</span>
+                    <span style="font-size:13px;color:#A1A1AA;">已选择 <strong id="selectedCount">3</strong> 个端点</span>
+                </div>
+                <div class="batch-progress" id="batchProgress" style="display:none;">
+                    <div class="progress-header">
+                        <span class="progress-title">批量测试中...</span>
+                        <span class="progress-percent" id="batchPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="batchFill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 结果展示 -->
+            <div class="result-panel" id="resultPanel">
+                <div class="result-item">
+                    <span class="result-time">10:23:45</span>
+                    <span class="result-action discover">DISCOVER</span>
+                    <span class="result-message">自动发现 GitHub API 端点: /user/repos</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-time">10:23:42</span>
+                    <span class="result-action discover">DISCOVER</span>
+                    <span class="result-message">自动发现 GitHub API 端点: /repos/{owner}/{repo}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-time">10:23:38</span>
+                    <span class="result-action fill">FILL</span>
+                    <span class="result-message">自动填充参数: owner=kaelis-team, repo=kaelis-platform</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-time">10:23:35</span>
+                    <span class="result-action test">TEST</span>
+                    <span class="result-message">测试成功: GET /repos/kaelis-team/kaelis-platform (200 OK, 145ms)</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-time">10:23:30</span>
+                    <span class="result-action test">TEST</span>
+                    <span class="result-message">测试成功: GET /user/repos (200 OK, 123ms)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 平台数据
+        const platformData = {
+            github: { name: 'GitHub', icon: '??', baseUrl: 'https://api.github.com' },
+            gitlab: { name: 'GitLab', icon: '??', baseUrl: 'https://gitlab.com/api/v4' },
+            gitee: { name: 'Gitee', icon: '??', baseUrl: 'https://gitee.com/api/v5' },
+            bitbucket: { name: 'Bitbucket', icon: '??', baseUrl: 'https://api.bitbucket.org/2.0' },
+            npm: { name: 'NPM', icon: '??', baseUrl: 'https://registry.npmjs.org' },
+            pypi: { name: 'PyPI', icon: '??', baseUrl: 'https://pypi.org/pypi' }
+        };
+        
+        let selectedPlatforms = ['github'];
+        let isScanning = false;
+        let discoveredEndpoints = [];
+        let filledParams = 0;
+        let testedEndpoints = 0;
+        
+        // 选择平台
+        function selectPlatform(element, platform) {
+            if (element.classList.contains('selected')) {
+                element.classList.remove('selected');
+                element.querySelector('.platform-status').textContent = '点击选择';
+                selectedPlatforms = selectedPlatforms.filter(p => p !== platform);
+            } else {
+                element.classList.add('selected');
+                element.querySelector('.platform-status').textContent = '已选择';
+                selectedPlatforms.push(platform);
+            }
+        }
+        
+        // 开始自动发现
+        function startAutoDiscovery() {
+            if (selectedPlatforms.length === 0) {
+                showToast('请至少选择一个平台', 'error');
+                return;
+            }
+            
+            isScanning = true;
+            document.getElementById('scanProgress').classList.add('show');
+            document.getElementById('statusCard1').classList.add('scanning');
+            document.getElementById('discoverBadge').textContent = '扫描中...';
+            document.getElementById('discoverBadge').className = 'status-badge scanning';
+            
+            showToast(`开始扫描 ${selectedPlatforms.length} 个平台...`, 'info');
+            addResult('DISCOVER', `开始自动发现: ${selectedPlatforms.map(p => platformData[p].name).join(', ')}`);
+            
+            let progress = 0;
+            let currentPlatformIndex = 0;
+            
+            const scanInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(scanInterval);
+                    
+                    setTimeout(() => {
+                        finishDiscovery();
+                    }, 500);
+                }
+                
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressPercent').textContent = Math.floor(progress) + '%';
+                document.getElementById('foundEndpoints').textContent = Math.floor(progress / 5);
+                
+                // 模拟发现端点
+                if (Math.random() > 0.7) {
+                    const platform = selectedPlatforms[currentPlatformIndex % selectedPlatforms.length];
+                    const endpoint = generateRandomEndpoint(platform);
+                    discoveredEndpoints.push(endpoint);
+                    addResult('DISCOVER', `发现端点: ${platformData[platform].name} ${endpoint}`);
+                }
+                
+                currentPlatformIndex++;
+            }, 200);
+        }
+        
+        // 生成随机端点
+        function generateRandomEndpoint(platform) {
+            const endpoints = [
+                '/user/repos', '/repos/{owner}/{repo}', '/users/{username}',
+                '/orgs/{org}/repos', '/repos/{owner}/{repo}/issues',
+                '/repos/{owner}/{repo}/pulls', '/search/repositories'
+            ];
+            return endpoints[Math.floor(Math.random() * endpoints.length)];
+        }
+        
+        // 完成发现
+        function finishDiscovery() {
+            isScanning = false;
+            document.getElementById('scanProgress').classList.remove('show');
+            document.getElementById('statusCard1').classList.remove('scanning');
+            document.getElementById('discoverBadge').textContent = '完成';
+            document.getElementById('discoverBadge').className = 'status-badge active';
+            document.getElementById('discoveredCount').textContent = discoveredEndpoints.length;
+            
+            showToast(`自动发现完成! 找到 ${discoveredEndpoints.length} 个端点`, 'success');
+            addResult('DISCOVER', `自动发现完成，共发现 ${discoveredEndpoints.length} 个端点`);
+            
+            // 自动开始填充
+            setTimeout(() => {
+                autoFillParams();
+            }, 1000);
+        }
+        
+        // 自动填充参数
+        function autoFillParams() {
+            document.getElementById('statusCard2').classList.add('scanning');
+            document.getElementById('fillBadge').textContent = '填充中...';
+            document.getElementById('fillBadge').className = 'status-badge scanning';
+            
+            showToast('正在自动填充参数...', 'info');
+            addResult('FILL', '开始自动填充参数');
+            
+            let fillProgress = 0;
+            const fillInterval = setInterval(() => {
+                fillProgress += 20;
+                if (fillProgress >= 100) {
+                    fillProgress = 100;
+                    clearInterval(fillInterval);
+                    
+                    filledParams = 8;
+                    document.getElementById('filledCount').textContent = filledParams;
+                    document.getElementById('statusCard2').classList.remove('scanning');
+                    document.getElementById('fillBadge').textContent = '完成';
+                    document.getElementById('fillBadge').className = 'status-badge active';
+                    
+                    showToast('参数填充完成!', 'success');
+                    addResult('FILL', `自动填充完成，共填充 ${filledParams} 个参数`);
+                    
+                    // 高亮自动填充的输入框
+                    document.querySelectorAll('.param-input').forEach(input => {
+                        input.classList.add('auto-filled');
+                    });
+                }
+            }, 300);
+        }
+        
+        // 批量测试
+        function batchTest() {
+            document.getElementById('batchProgress').style.display = 'block';
+            document.getElementById('statusCard3').classList.add('scanning');
+            document.getElementById('testBadge').textContent = '测试中...';
+            document.getElementById('testBadge').className = 'status-badge scanning';
+            
+            showToast('开始批量测试...', 'info');
+            addResult('TEST', '开始批量测试端点');
+            
+            let testProgress = 0;
+            const testInterval = setInterval(() => {
+                testProgress += 25;
+                if (testProgress >= 100) {
+                    testProgress = 100;
+                    clearInterval(testInterval);
+                    
+                    testedEndpoints = 4;
+                    document.getElementById('testedCount').textContent = testedEndpoints;
+                    document.getElementById('statusCard3').classList.remove('scanning');
+                    document.getElementById('testBadge').textContent = '完成';
+                    document.getElementById('testBadge').className = 'status-badge active';
+                    document.getElementById('successRate').textContent = '100%';
+                    document.getElementById('successBadge').textContent = '优秀';
+                    document.getElementById('successBadge').className = 'status-badge active';
+                    
+                    showToast('批量测试完成! 成功率 100%', 'success');
+                    addResult('TEST', '批量测试完成，成功率 100%');
+                    
+                    setTimeout(() => {
+                        document.getElementById('batchProgress').style.display = 'none';
+                    }, 1000);
+                }
+                
+                document.getElementById('batchFill').style.width = testProgress + '%';
+                document.getElementById('batchPercent').textContent = Math.floor(testProgress) + '%';
+                
+                // 模拟测试结果
+                if (Math.random() > 0.3) {
+                    const responseTime = Math.floor(Math.random() * 200 + 50);
+                    addResult('TEST', `测试成功: GET /user/repos (200 OK, ${responseTime}ms)`);
+                }
+            }, 400);
+        }
+        
+        // 批量填充
+        function batchFill() {
+            showToast('开始批量填充...', 'info');
+            autoFillParams();
+        }
+        
+        // 填充参数
+        function fillParams(endpoint) {
+            showToast(`正在填充 ${endpoint} 的参数...`, 'info');
+            addResult('FILL', `填充端点参数: ${endpoint}`);
+        }
+        
+        // 测试端点
+        function testEndpoint(endpoint) {
+            showToast(`正在测试 ${endpoint}...`, 'info');
+            const responseTime = Math.floor(Math.random() * 200 + 50);
+            setTimeout(() => {
+                addResult('TEST', `测试成功: ${endpoint} (200 OK, ${responseTime}ms)`);
+                showToast('测试成功!', 'success');
+            }, 500);
+        }
+        
+        // 编辑端点
+        function editEndpoint(endpoint) {
+            showToast(`编辑端点: ${endpoint}`, 'info');
+        }
+        
+        // 显示建议
+        function showSuggestions(input) {
+            const dropdown = input.nextElementSibling;
+            if (dropdown) dropdown.classList.add('show');
+        }
+        
+        // 隐藏建议
+        function hideSuggestions(input) {
+            setTimeout(() => {
+                const dropdown = input.nextElementSibling;
+                if (dropdown) dropdown.classList.remove('show');
+            }, 200);
+        }
+        
+        // 选择建议
+        function selectSuggest(item) {
+            const input = item.closest('.smart-suggest').querySelector('.param-input');
+            input.value = item.textContent;
+            item.closest('.suggest-dropdown').classList.remove('show');
+        }
+        
+        // 切换标签
+        function switchTab(tab, content) {
+            document.querySelectorAll('.discovery-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        }
+        
+        // 筛选结果
+        function filterResults(type) {
+            showToast(`筛选: ${type === 'all' ? '全部' : type === 'auto' ? '自动发现' : '手动添加'}`, 'info');
+        }
+        
+        // 全选
+        function selectAll() {
+            showToast('已全选所有端点', 'success');
+        }
+        
+        // 批量应用
+        function batchApply() {
+            showToast('批量应用成功!', 'success');
+            addResult('APPLY', '批量应用配置到系统');
+        }
+        
+        // 应用全部
+        function applyAll() {
+            showToast('所有配置已应用!', 'success');
+            addResult('APPLY', '应用所有自动化配置');
+        }
+        
+        // 暂停
+        function pauseAuto() {
+            showToast('已暂停自动化流程', 'info');
+        }
+        
+        // 停止
+        function stopAuto() {
+            showToast('已停止自动化流程', 'error');
+            document.getElementById('scanProgress').classList.remove('show');
+        }
+        
+        // 清空参数
+        function clearParams() {
+            document.querySelectorAll('.param-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('auto-filled');
+            });
+            showToast('参数已清空', 'success');
+        }
+        
+        // 添加结果
+        function addResult(action, message) {
+            const panel = document.getElementById('resultPanel');
+            const time = new Date().toLocaleTimeString('zh-CN');
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `
+                <span class="result-time">${time}</span>
+                <span class="result-action ${action.toLowerCase()}">${action}</span>
+                <span class="result-message">${message}</span>
+            `;
+            panel.insertBefore(item, panel.firstChild);
+        }
+        
+        // 显示Toast
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            addResult('INFO', 'API自动化检索与填充系统已启动');
+        });
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

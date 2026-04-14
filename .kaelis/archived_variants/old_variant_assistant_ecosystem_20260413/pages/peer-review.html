@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科研协作与审稿 - Kaelis Research</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css">
+    <link rel="stylesheet" href="../assets/styles/components.css">
+    <link rel="stylesheet" href="../assets/styles/animations.css">
+    <style>
+        body { position: relative; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            right: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-blue) 0%, transparent 70%);
+            filter: blur(64px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container { position: relative; z-index: 1; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .panel-title { font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .review-item { display: flex; gap: 16px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 12px; background: var(--bg-card); transition: all 0.3s; }
+        .review-item:hover { border-color: var(--border-color-hover); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .review-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 600; flex-shrink: 0; }
+        .review-content { flex: 1; }
+        .review-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary); }
+        .review-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .review-abstract { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .review-actions { display: flex; gap: 8px; }
+        .review-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s; }
+        .review-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; }
+        .review-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .review-btn.primary:hover { opacity: 0.9; }
+        .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .team-card { padding: 16px; background: var(--bg-input); border-radius: 12px; text-align: center; }
+        .team-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; }
+        .team-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
+        .team-role { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .team-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--success-bg); color: var(--success); border-radius: 20px; font-size: 12px; }
+        .progress-section { margin-top: 20px; }
+        .progress-item { margin-bottom: 16px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; color: var(--text-secondary); }
+        .progress-bar { height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; }
+        .progress-fill.green { background: linear-gradient(90deg, var(--success), #16a34a); }
+        .progress-fill.orange { background: linear-gradient(90deg, var(--warning), #d97706); }
+        .progress-fill.blue { background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        .annotation-panel { background: var(--bg-input); border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .annotation-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
+        .annotation-list { display: flex; flex-direction: column; gap: 12px; }
+        .annotation-item { display: flex; gap: 12px; padding: 12px; background: var(--bg-card); border-radius: 10px; border-left: 3px solid var(--primary-color); }
+        .annotation-author { font-size: 12px; font-weight: 600; color: var(--accent-purple-light); margin-bottom: 4px; }
+        .annotation-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+        .annotation-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .collab-tools { display: flex; gap: 12px; margin-top: 20px; }
+        .tool-btn { flex: 1; padding: 16px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s; color: var(--text-secondary); }
+        .tool-btn:hover { background: var(--bg-card); border-color: var(--primary-color); color: var(--text-primary); }
+        .tool-icon { font-size: 28px; margin-bottom: 8px; }
+        .tool-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .tool-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        @media (max-width: 1200px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="animate-fade-in">
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <div class="logo-icon float-animate">
+                    <img src="../assets/images/logo-precise.svg" alt="Kaelis" style="width: 40px; height: 40px;">
+                </div>
+                <div class="logo-text">Kaelis</div>
+            </div>
+        </div>
+        <div class="nav-center">
+            <a href="dashboard.html" class="nav-item">仪表盘</a>
+            <a href="chat.html" class="nav-item">对话</a>
+            <a href="research-data.html" class="nav-item">科研数据</a>
+            <a href="experiment-design.html" class="nav-item">实验设计</a>
+            <a href="paper-management.html" class="nav-item">论文管理</a>
+            <a href="peer-review.html" class="nav-item nav-item-animate active">科研协作</a>
+            <a href="data-visualization.html" class="nav-item">数据可视化</a>
+            <a href="research-resources.html" class="nav-item">资源库</a>
+        </div>
+        <div class="nav-right">
+            <button class="notification-btn btn-hover">??<span class="notification-badge badge-animate">5</span></button>
+            <div class="user-avatar">张</div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>?? 科研协作与同行评审</h1>
+                <p>团队协作、审稿管理与学术交流</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-hover">?? 邀请成员</button>
+                <button class="btn btn-primary btn-hover ripple">+ 新建项目</button>
+            </div>
+        </div>
+            <div class="tab active btn-hover">待审稿件</div>
+            <div class="tab btn-hover">我的审稿</div>
+            <div class="tab btn-hover">协作项目</div>
+            <div class="tab btn-hover">团队成员</div>
+            <div class="tab btn-hover">批注讨论</div>
+        </div>
+        <div class="main-grid">
+            <div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">?? 待审稿件 <span class="badge badge-new">3 新</span></div>
+                        <button style="padding: 8px 16px; background: var(--bg-input); border: none; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-secondary);">查看全部</button>
+                    </div>
+                    <div class="review-item">
+                        <div class="review-avatar">CV</div>
+                        <div class="review-content">
+                            <div class="review-title">基于Vision Transformer的医学图像分割新方法</div>
+                            <div class="review-meta">投稿期刊: IEEE TMI | 截止日期: 2026-03-25 | 审稿轮次: 第1轮</div>
+                            <div class="review-abstract">本文提出了一种改进的Vision Transformer架构，专门用于医学图像分割任务。通过引入多尺度注意力机制和边界感知损失函数，在多个公开数据集上取得了state-of-the-art性能...</div>
+                            <div class="review-actions">
+                                <button class="review-btn primary btn-hover ripple">开始审稿</button>
+                                <button class="review-btn btn-hover">查看PDF</button>
+                                <button class="review-btn btn-hover">补充材料</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-item">
+                        <div class="review-avatar">NL</div>
+                        <div class="review-content">
+                            <div class="review-title">大语言模型中的知识编辑与事实更新机制研究</div>
+                            <div class="review-meta">投稿期刊: ACL 2026 | 截止日期: 2026-03-28 | 审稿轮次: 第2轮</div>
+                            <div class="review-abstract">针对大语言模型中知识过时和错误信息的问题，本文系统研究了知识编辑技术，提出了一种新的模型编辑方法，能够在不重新训练的情况下更新模型中的特定事实知识...</div>
+                            <div class="review-actions">
+                                <button class="review-btn primary btn-hover ripple">继续审稿</button>
+                                <button class="review-btn btn-hover">查看PDF</button>
+                                <button class="review-btn btn-hover">审稿历史</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-top: 24px;">
+                    <div class="panel-header">
+                        <div class="panel-title">?? 最近批注</div>
+                        <span class="badge badge-pending">5 未读</span>
+                    </div>
+                    <div class="annotation-panel">
+                        <div class="annotation-list">
+                            <div class="annotation-item">
+                                <div>
+                                    <div class="annotation-author">张研究员</div>
+                                    <div class="annotation-text">实验部分的对比方法不够全面，建议增加与最新SOTA方法的比较。</div>
+                                    <div class="annotation-time">2小时前 · 论文第4.2节</div>
+                                </div>
+                            </div>
+                            <div class="annotation-item">
+                                <div>
+                                    <div class="annotation-author">李教授</div>
+                                    <div class="annotation-text">图3的可视化效果很好，但图例需要更清晰一些。</div>
+                                    <div class="annotation-time">5小时前 · 论文第3.5节</div>
+                                </div>
+                            </div>
+                            <div class="annotation-item">
+                                <div>
+                                    <div class="annotation-author">王博士</div>
+                                    <div class="annotation-text">这个实验设计很巧妙，但样本量是否足够支撑结论？</div>
+                                    <div class="annotation-time">昨天 · 论文第2.3节</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">?? 研究团队</div>
+                        <button style="padding: 8px 16px; background: var(--bg-input); border: none; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-secondary);">管理成员</button>
+                    </div>
+                    <div class="team-grid">
+                        <div class="team-card">
+                            <div class="team-avatar">张</div>
+                            <div class="team-name">张研究员</div>
+                            <div class="team-role">项目负责人</div>
+                            <span class="team-status">?? 在线</span>
+                        </div>
+                        <div class="team-card">
+                            <div class="team-avatar">李</div>
+                            <div class="team-name">李教授</div>
+                            <div class="team-role">资深顾问</div>
+                            <span class="team-status">?? 在线</span>
+                        </div>
+                        <div class="team-card">
+                            <div class="team-avatar">王</div>
+                            <div class="team-name">王博士</div>
+                            <div class="team-role">算法工程师</div>
+                            <span class="team-status">? 离线</span>
+                        </div>
+                        <div class="team-card">
+                            <div class="team-avatar">陈</div>
+                            <div class="team-name">陈助理</div>
+                            <div class="team-role">数据分析师</div>
+                            <span class="team-status">?? 忙碌</span>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>论文初稿完成度</span>
+                                <span>75%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-animate blue" style="width: 75%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>实验验证进度</span>
+                                <span>90%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-animate green" style="width: 90%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>审稿意见回复</span>
+                                <span>40%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-animate orange" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-top: 24px;">
+                    <div class="panel-header">
+                        <div class="panel-title">?? 协作工具</div>
+                    </div>
+                    <div class="collab-tools">
+                        <div class="tool-btn">
+                            <div class="tool-icon">??</div>
+                            <div class="tool-name">共享文档</div>
+                            <div class="tool-desc">实时协作编辑</div>
+                        </div>
+                        <div class="tool-btn">
+                            <div class="tool-icon">??</div>
+                            <div class="tool-name">数据看板</div>
+                            <div class="tool-desc">实验进度追踪</div>
+                        </div>
+                        <div class="tool-btn">
+                            <div class="tool-icon">??</div>
+                            <div class="tool-name">讨论区</div>
+                            <div class="tool-desc">团队交流</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="../assets/js/animations.js"></script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

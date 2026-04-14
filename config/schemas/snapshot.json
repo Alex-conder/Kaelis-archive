@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kaelis.dev/schemas/snapshot.json",
+  "title": "Kaelis Snapshot",
+  "description": "System state snapshot",
+  "type": "object",
+  "required": ["snapshot_id", "created_at", "type", "files"],
+  "properties": {
+    "snapshot_id": {"type": "string"},
+    "type": {"type": "string", "enum": ["pre_execution", "session", "checkpoint"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "targets": {"type": "array", "items": {"type": "string"}},
+    "files": {"type": "object"}
+  }
+}

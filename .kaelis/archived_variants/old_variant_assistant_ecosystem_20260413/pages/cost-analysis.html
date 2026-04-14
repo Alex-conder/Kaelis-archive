@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成本分析 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .cost-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .cost-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .period-selector { display: flex; gap: 8px; }
+        .period-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .period-btn.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .cost-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .cost-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .cost-label { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+        .cost-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .cost-change { font-size: 13px; margin-top: 4px; }
+        .cost-change.up { color: #ef4444; }
+        .cost-change.down { color: #16a34a; }
+        .cost-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .cost-chart { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .chart-placeholder { height: 300px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+        .cost-breakdown { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .breakdown-item { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
+        .breakdown-item:last-child { border-bottom: none; }
+        .breakdown-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px; }
+        .breakdown-info { flex: 1; }
+        .breakdown-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .breakdown-percent { font-size: 12px; color: #64748b; }
+        .breakdown-cost { font-size: 16px; font-weight: 700; color: #1e293b; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">成本分析</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="cost-header">
+            <h1>成本分析中心</h1>
+            <div class="period-selector">
+                <button class="period-btn">今日</button>
+                <button class="period-btn active">本周</button>
+                <button class="period-btn">本月</button>
+                <button class="period-btn">本年</button>
+            </div>
+        </div>
+        <div class="cost-overview">
+            <div class="cost-card">
+                <div class="cost-label">总成本</div>
+                <div class="cost-value">￥12,458</div>
+                <div class="cost-change up">↑ 8.5% 较上周</div>
+            </div>
+            <div class="cost-card">
+                <div class="cost-label">AI 调用成本</div>
+                <div class="cost-value">￥8,234</div>
+                <div class="cost-change up">↑ 12.3% 较上周</div>
+            </div>
+            <div class="cost-card">
+                <div class="cost-label">基础设施</div>
+                <div class="cost-value">￥3,456</div>
+                <div class="cost-change down">↓ 2.1% 较上周</div>
+            </div>
+            <div class="cost-card">
+                <div class="cost-label">存储成本</div>
+                <div class="cost-value">￥768</div>
+                <div class="cost-change down">↓ 5.4% 较上周</div>
+            </div>
+        </div>
+        <div class="cost-grid">
+            <div class="cost-chart">
+                <h2 class="chart-title">成本趋势</h2>
+                <div class="chart-placeholder">?? 成本趋势图表</div>
+            </div>
+            <div class="cost-breakdown">
+                <h2 class="chart-title">成本构成</h2>
+                <div class="breakdown-item">
+                    <div class="breakdown-icon" style="background:#f3e8ff;">??</div>
+                    <div class="breakdown-info"><div class="breakdown-name">AI 模型调用</div><div class="breakdown-percent">66%</div></div>
+                    <div class="breakdown-cost">￥8,234</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-icon" style="background:#dbeafe;">??</div>
+                    <div class="breakdown-info"><div class="breakdown-name">云服务</div><div class="breakdown-percent">18%</div></div>
+                    <div class="breakdown-cost">￥2,243</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-icon" style="background:#dcfce7;">??</div>
+                    <div class="breakdown-info"><div class="breakdown-name">数据存储</div><div class="breakdown-percent">6%</div></div>
+                    <div class="breakdown-cost">￥768</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-icon" style="background:#fef3c7;">??</div>
+                    <div class="breakdown-info"><div class="breakdown-name">网络流量</div><div class="breakdown-percent">5%</div></div>
+                    <div class="breakdown-cost">￥623</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-icon" style="background:#fee2e2;">??</div>
+                    <div class="breakdown-info"><div class="breakdown-name">其他</div><div class="breakdown-percent">5%</div></div>
+                    <div class="breakdown-cost">￥590</div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard,billing"></script>
+
+</body>
+</html>
+

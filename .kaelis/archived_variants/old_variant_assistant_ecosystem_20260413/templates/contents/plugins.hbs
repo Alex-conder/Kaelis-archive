@@ -1,0 +1,42 @@
+<!-- 插件市场内容 -->
+<div class="plugins-header">
+    <h1 class="page-title">插件市场</h1>
+    <div class="search-box">
+        <input type="text" class="form-input" placeholder="搜索插件...">
+        <button class="btn btn-primary">🔍</button>
+    </div>
+</div>
+
+<!-- 分类筛选 -->
+<div class="category-filter">
+    {{#each categories}}
+    <button class="category-btn {{#if active}}active{{/if}}">{{label}}</button>
+    {{/each}}
+</div>
+
+<!-- 插件列表 -->
+<div class="plugins-grid grid-3">
+    {{#each plugins}}
+    <div class="plugin-card card card-hover">
+        <div class="plugin-header">
+            <div class="plugin-icon">{{icon}}</div>
+            <div class="plugin-info">
+                <h3 class="plugin-name">{{name}}</h3>
+                <div class="plugin-meta">
+                    <span class="rating">⭐ {{rating}}</span>
+                    <span class="downloads">📥 {{downloads}}</span>
+                </div>
+            </div>
+        </div>
+        <p class="plugin-description">{{description}}</p>
+        <div class="plugin-actions">
+            {{#if installed}}
+            <button class="btn btn-secondary btn-sm">已安装</button>
+            {{else}}
+            <button class="btn btn-primary btn-sm">安装</button>
+            {{/if}}
+            <button class="btn btn-ghost btn-sm">详情</button>
+        </div>
+    </div>
+    {{/each}}
+</div>

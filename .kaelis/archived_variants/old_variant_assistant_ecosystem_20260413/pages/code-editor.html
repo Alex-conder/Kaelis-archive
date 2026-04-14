@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码编辑器 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace; 
+            background: #0A0A0A; 
+            height: 100vh; 
+            color: #E5E7EB; 
+            overflow: hidden;
+        }
+        
+        /* 顶部工具栏 */
+        .toolbar { 
+            background: rgba(23,23,23,0.95); 
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .toolbar-section { display: flex; align-items: center; gap: 8px; }
+        .toolbar-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 8px; }
+        .tool-btn { 
+            padding: 8px 12px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 6px; 
+            color: #A1A1AA; 
+            font-size: 13px; 
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tool-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .tool-btn.primary { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            color: white; 
+        }
+        .tool-btn.primary:hover { opacity: 0.9; }
+        
+        /* 文件路径 */
+        .breadcrumb { 
+            flex: 1;
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 8px 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .breadcrumb-item { color: #6B7280; }
+        .breadcrumb-item.active { color: #E5E7EB; }
+        .breadcrumb-separator { color: #4B5563; }
+        
+        /* 主布局 */
+        .main-layout { display: flex; height: calc(100vh - 60px); }
+        
+        /* 侧边栏 */
+        .sidebar { 
+            width: 260px; 
+            background: rgba(23,23,23,0.95); 
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header { 
+            padding: 12px 16px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-title { font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sidebar-actions { display: flex; gap: 8px; }
+        .sidebar-btn { 
+            width: 24px; 
+            height: 24px; 
+            border: none; 
+            background: transparent; 
+            color: #6B7280; 
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .sidebar-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* 文件树 */
+        .file-tree { flex: 1; overflow-y: auto; padding: 8px; }
+        .tree-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 6px 8px; 
+            border-radius: 4px; 
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .tree-item:hover { background: rgba(255,255,255,0.05); }
+        .tree-item.active { background: rgba(136,72,249,0.15); color: var(--primary); }
+        .tree-icon { font-size: 14px; width: 16px; }
+        .tree-arrow { font-size: 10px; color: #6B7280; transition: transform 0.2s; }
+        .tree-arrow.expanded { transform: rotate(90deg); }
+        .tree-children { padding-left: 20px; }
+        
+        /* 编辑器区域 */
+        .editor-area { flex: 1; display: flex; flex-direction: column; }
+        
+        /* 标签页 */
+        .tabs { 
+            display: flex; 
+            background: rgba(23,23,23,0.95); 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            overflow-x: auto;
+        }
+        .tab { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 10px 16px; 
+            font-size: 13px; 
+            color: #6B7280;
+            cursor: pointer;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            white-space: nowrap;
+        }
+        .tab:hover { background: rgba(255,255,255,0.03); color: #A1A1AA; }
+        .tab.active { 
+            background: #0A0A0A; 
+            color: #E5E7EB; 
+            border-top: 2px solid var(--primary);
+            margin-top: -1px;
+        }
+        .tab-close { 
+            width: 16px; 
+            height: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .tab-close:hover { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .tab-icon { font-size: 14px; }
+        
+        /* 代码编辑器 */
+        .code-editor { 
+            flex: 1; 
+            display: flex; 
+            overflow: hidden;
+        }
+        
+        /* 行号 */
+        .line-numbers { 
+            width: 60px; 
+            background: rgba(23,23,23,0.5); 
+            padding: 16px 12px; 
+            text-align: right; 
+            color: #4B5563; 
+            font-size: 13px; 
+            line-height: 1.6;
+            user-select: none;
+        }
+        
+        /* 代码区域 */
+        .code-area { 
+            flex: 1; 
+            padding: 16px; 
+            font-size: 14px; 
+            line-height: 1.6;
+            overflow: auto;
+            white-space: pre;
+            outline: none;
+        }
+        
+        /* 语法高亮 */
+        .keyword { color: #C084FC; }
+        .string { color: #22C55E; }
+        .comment { color: #6B7280; }
+        .function { color: #60A5FA; }
+        .number { color: #F59E0B; }
+        .operator { color: #F472B6; }
+        .tag { color: #F87171; }
+        .attribute { color: #FBBF24; }
+        
+        /* 底部状态栏 */
+        .status-bar { 
+            background: rgba(136,72,249,0.1); 
+            padding: 6px 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            font-size: 12px;
+            border-top: 1px solid rgba(136,72,249,0.2);
+        }
+        .status-left, .status-right { display: flex; gap: 16px; }
+        .status-item { display: flex; align-items: center; gap: 6px; color: #A1A1AA; }
+        .status-item.success { color: #22C55E; }
+        
+        /* 右侧面板 */
+        .right-panel { 
+            width: 300px; 
+            background: rgba(23,23,23,0.95); 
+            border-left: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header { 
+            padding: 12px 16px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .panel-content { flex: 1; padding: 16px; overflow-y: auto; }
+        
+        /* 大纲 */
+        .outline-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 6px 0; 
+            font-size: 13px; 
+            color: #A1A1AA;
+            cursor: pointer;
+        }
+        .outline-item:hover { color: #E5E7EB; }
+        .outline-icon { font-size: 12px; }
+        .outline-indent-1 { padding-left: 0; }
+        .outline-indent-2 { padding-left: 16px; }
+        .outline-indent-3 { padding-left: 32px; }
+        
+        /* 搜索框 */
+        .search-box { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 16px;
+        }
+        .search-input { 
+            flex: 1;
+            padding: 8px 12px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 6px; 
+            color: #E5E7EB; 
+            font-size: 13px;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        
+        /* 搜索结果 */
+        .search-result { 
+            padding: 10px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 6px; 
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .search-result:hover { background: rgba(255,255,255,0.05); }
+        .result-file { font-size: 12px; color: var(--primary); margin-bottom: 4px; }
+        .result-line { font-size: 12px; color: #6B7280; }
+        .result-match { background: rgba(136,72,249,0.3); padding: 0 2px; border-radius: 2px; }
+        
+        /* 终端面板 */
+        .terminal-panel { 
+            height: 200px; 
+            background: #0A0A0A; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .terminal-header { 
+            padding: 8px 16px; 
+            background: rgba(23,23,23,0.95);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .terminal-tabs { display: flex; gap: 4px; }
+        .terminal-tab { 
+            padding: 6px 12px; 
+            font-size: 12px; 
+            color: #6B7280;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .terminal-tab:hover { background: rgba(255,255,255,0.05); }
+        .terminal-tab.active { background: rgba(136,72,249,0.15); color: var(--primary); }
+        .terminal-content { 
+            flex: 1; 
+            padding: 12px 16px; 
+            font-size: 13px; 
+            overflow-y: auto;
+        }
+        .terminal-line { margin-bottom: 4px; }
+        .terminal-prompt { color: #22C55E; }
+        .terminal-command { color: #E5E7EB; }
+        .terminal-output { color: #A1A1AA; }
+        .terminal-error { color: #EF4444; }
+        .terminal-input { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+        }
+        .terminal-cursor { 
+            width: 8px; 
+            height: 18px; 
+            background: var(--primary); 
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <div class="toolbar-section">
+            <button class="tool-btn">?? 文件</button>
+            <button class="tool-btn">?? 编辑</button>
+            <button class="tool-btn">?? 查找</button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="breadcrumb">
+            <span class="breadcrumb-item">src</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item">components</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active">Button.tsx</span>
+        </div>
+        <div class="toolbar-section" style="margin-left: auto;">
+            <button class="tool-btn">??</button>
+            <button class="tool-btn">??</button>
+            <div class="toolbar-divider"></div>
+            <button class="tool-btn primary">? 运行</button>
+        </div>
+    </div>
+    
+    <!-- 主布局 -->
+    <div class="main-layout">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">资源管理器</span>
+                <div class="sidebar-actions">
+                    <button class="sidebar-btn">??</button>
+                    <button class="sidebar-btn">??</button>
+                    <button class="sidebar-btn">??</button>
+                </div>
+            </div>
+            <div class="file-tree">
+                <div class="tree-item">
+                    <span class="tree-arrow expanded">?</span>
+                    <span class="tree-icon">??</span>
+                    <span>src</span>
+                </div>
+                <div class="tree-children">
+                    <div class="tree-item">
+                        <span class="tree-arrow expanded">?</span>
+                        <span class="tree-icon">??</span>
+                        <span>components</span>
+                    </div>
+                    <div class="tree-children">
+                        <div class="tree-item active">
+                            <span class="tree-icon" style="color: #60A5FA;">??</span>
+                            <span>Button.tsx</span>
+                        </div>
+                        <div class="tree-item">
+                            <span class="tree-icon" style="color: #60A5FA;">??</span>
+                            <span>Input.tsx</span>
+                        </div>
+                        <div class="tree-item">
+                            <span class="tree-icon" style="color: #60A5FA;">??</span>
+                            <span>Modal.tsx</span>
+                        </div>
+                    </div>
+                    <div class="tree-item">
+                        <span class="tree-icon" style="color: #F59E0B;">??</span>
+                        <span>utils.ts</span>
+                    </div>
+                    <div class="tree-item">
+                        <span class="tree-icon" style="color: #22C55E;">??</span>
+                        <span>styles.css</span>
+                    </div>
+                </div>
+                <div class="tree-item">
+                    <span class="tree-arrow">?</span>
+                    <span class="tree-icon">??</span>
+                    <span>public</span>
+                </div>
+                <div class="tree-item">
+                    <span class="tree-icon" style="color: #EF4444;">??</span>
+                    <span>package.json</span>
+                </div>
+                <div class="tree-item">
+                    <span class="tree-icon">??</span>
+                    <span>tsconfig.json</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 编辑器区域 -->
+        <div class="editor-area">
+            <!-- 标签页 -->
+            <div class="tabs">
+                <div class="tab active">
+                    <span class="tab-icon" style="color: #60A5FA;">??</span>
+                    <span>Button.tsx</span>
+                    <span class="tab-close">?</span>
+                </div>
+                <div class="tab">
+                    <span class="tab-icon" style="color: #F59E0B;">??</span>
+                    <span>utils.ts</span>
+                    <span class="tab-close">?</span>
+                </div>
+                <div class="tab">
+                    <span class="tab-icon" style="color: #22C55E;">??</span>
+                    <span>styles.css</span>
+                    <span class="tab-close">?</span>
+                </div>
+            </div>
+            
+            <!-- 代码编辑器 -->
+            <div class="code-editor">
+                <div class="line-numbers">
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+                </div>
+                <div class="code-area" contenteditable="true" spellcheck="false"><span class="keyword">import</span> React, { <span class="function">useState</span> } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> <span class="string">'./Button.css'</span>;
+
+<span class="comment">// Button 组件属性接口</span>
+<span class="keyword">interface</span> <span class="function">ButtonProps</span> {
+  <span class="attribute">variant</span>?: <span class="string">'primary'</span> | <span class="string">'secondary'</span> | <span class="string">'danger'</span>;
+  <span class="attribute">size</span>?: <span class="string">'sm'</span> | <span class="string">'md'</span> | <span class="string">'lg'</span>;
+  <span class="attribute">disabled</span>?: <span class="keyword">boolean</span>;
+  <span class="attribute">onClick</span>?: () <span class="operator">=></span> <span class="keyword">void</span>;
+  <span class="attribute">children</span>: React.ReactNode;
+}
+
+<span class="comment">/**
+ * Button 组件
+ * 支持多种样式变体和尺寸
+ */</span>
+<span class="keyword">export const</span> <span class="function">Button</span>: React.FC&lt;<span class="function">ButtonProps</span>&gt; = ({
+  <span class="attribute">variant</span> = <span class="string">'primary'</span>,
+  <span class="attribute">size</span> = <span class="string">'md'</span>,
+  <span class="attribute">disabled</span> = <span class="keyword">false</span>,
+  <span class="attribute">onClick</span>,
+  <span class="attribute">children</span>
+}) <span class="operator">=></span> {
+  <span class="keyword">const</span> className = <span class="string">`btn btn-</span>${<span class="attribute">variant</span>}<span class="string"> btn-</span>${<span class="attribute">size</span>}<span class="string">`</span>;
+  
+  <span class="keyword">return</span> (
+    &lt;<span class="tag">button</span>
+      <span class="attribute">className</span>={className}
+      <span class="attribute">disabled</span>={disabled}
+      <span class="attribute">onClick</span>={onClick}
+    &gt;
+      {<span class="attribute">children</span>}
+    &lt;/<span class="tag">button</span>&gt;
+  );
+};</div>
+            </div>
+            
+            <!-- 终端面板 -->
+            <div class="terminal-panel">
+                <div class="terminal-header">
+                    <div class="terminal-tabs">
+                        <span class="terminal-tab active">终端</span>
+                        <span class="terminal-tab">输出</span>
+                        <span class="terminal-tab">调试控制台</span>
+                        <span class="terminal-tab">问题</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button style="background: transparent; border: none; color: #6B7280; cursor: pointer;">???</button>
+                        <button style="background: transparent; border: none; color: #6B7280; cursor: pointer;">??</button>
+                    </div>
+                </div>
+                <div class="terminal-content">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">?</span>
+                        <span class="terminal-command"> npm run build</span>
+                    </div>
+                    <div class="terminal-line terminal-output">
+                        &gt; kaelis@1.0.0 build<br>
+                        &gt; tsc && vite build
+                    </div>
+                    <div class="terminal-line terminal-output">
+                        vite v5.0.0 building for production...
+                    </div>
+                    <div class="terminal-line terminal-output" style="color: #22C55E;">
+                        ? 128 modules transformed.
+                    </div>
+                    <div class="terminal-line terminal-output">
+                        dist/                     0.50 kB │ gzip: 0.31 kB<br>
+                        dist/assets/index.js      156.78 kB │ gzip: 52.34 kB
+                    </div>
+                    <div class="terminal-line terminal-output" style="color: #22C55E;">
+                        ? built in 2.45s
+                    </div>
+                    <div class="terminal-line terminal-input">
+                        <span class="terminal-prompt">?</span>
+                        <span class="terminal-cursor"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <span class="status-item success">? 主分支</span>
+                    <span class="status-item">?? 0 错误，0 警告</span>
+                    <span class="status-item">?? TypeScript JSX</span>
+                </div>
+                <div class="status-right">
+                    <span class="status-item">Ln 12, Col 34</span>
+                    <span class="status-item">UTF-8</span>
+                    <span class="status-item">TypeScript</span>
+                    <span class="status-item">??</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧面板 -->
+        <div class="right-panel">
+            <div class="panel-header">大纲</div>
+            <div class="panel-content">
+                <div class="outline-item outline-indent-1">
+                    <span class="outline-icon">??</span>
+                    <span>导入</span>
+                </div>
+                <div class="outline-item outline-indent-1">
+                    <span class="outline-icon">??</span>
+                    <span>ButtonProps</span>
+                </div>
+                <div class="outline-item outline-indent-2">
+                    <span class="outline-icon">??</span>
+                    <span>variant</span>
+                </div>
+                <div class="outline-item outline-indent-2">
+                    <span class="outline-icon">??</span>
+                    <span>size</span>
+                </div>
+                <div class="outline-item outline-indent-2">
+                    <span class="outline-icon">??</span>
+                    <span>disabled</span>
+                </div>
+                <div class="outline-item outline-indent-2">
+                    <span class="outline-icon">??</span>
+                    <span>onClick</span>
+                </div>
+                <div class="outline-item outline-indent-1">
+                    <span class="outline-icon">??</span>
+                    <span>Button</span>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

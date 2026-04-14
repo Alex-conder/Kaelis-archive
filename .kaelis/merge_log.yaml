@@ -1,0 +1,97 @@
+# Kaelis 项目变体合并日志
+# 记录所有从其他变体合并到主项目的操作
+
+merges:
+  - date: "2026-04-13"
+    operator: "AI_Assistant"
+    description: "首次变体统一扫描与合并"
+    variants_identified: 5
+    variants_processed: 2
+    
+    archived_variants:
+      - source: ".assistant-ecosystem/kaelis"
+        archive_path: ".kaelis/archived_variants/old_variant_assistant_ecosystem_20260413"
+        file_count: 753
+        reason: "独立开发分支，含设计资产"
+        
+      - source: "Desktop/Kaelis-Marketing"
+        archive_path: ".kaelis/archived_variants/old_variant_marketing_20260413"
+        file_count: 3
+        reason: "营销材料变体"
+    
+    merged_assets:
+      # 来自 .assistant-ecosystem/kaelis
+      - path: "docs/06-references/animation-demo.html"
+        source: ".assistant-ecosystem/kaelis"
+        reason: "主项目缺失此设计演示文件"
+        type: "file"
+        
+      - path: "docs/06-references/COLOR_SCHEME.md"
+        source: ".assistant-ecosystem/kaelis"
+        reason: "设计规范文档"
+        type: "file"
+        
+      - path: "docs/06-references/DESIGN_SPEC.md"
+        source: ".assistant-ecosystem/kaelis"
+        reason: "设计规范文档"
+        type: "file"
+        
+      - path: "docs/06-references/design-assets/"
+        source: ".assistant-ecosystem/kaelis"
+        reason: "设计资源目录"
+        type: "directory"
+        
+      - path: "docs/06-references/design-source/"
+        source: ".assistant-ecosystem/kaelis"
+        reason: "设计源文件目录"
+        type: "directory"
+        
+      # 来自 Desktop/Kaelis-Marketing
+      - path: "docs/06-references/CHANGELOG.md"
+        source: "Desktop/Kaelis-Marketing"
+        reason: "项目更新日志"
+        type: "file"
+        
+      - path: "docs/06-references/MARKETING_PLAN.md"
+        source: "Desktop/Kaelis-Marketing"
+        reason: "营销计划文档"
+        type: "file"
+    
+    folder_reorganizations:
+      - type: "move_to_kaelis"
+        items:
+          - api/
+          - components/
+          - config/
+          - contracts/
+          - core/
+          - data/
+          - docking/
+          - docs/ (structured)
+          - e2e/
+          - electron/
+          - k8s/
+          - monitoring/
+          - pages/
+          - react-design/
+          - scripts/
+          - services/
+          - stores/
+          - templates/
+          - tests/
+          - web/
+          - launch.py
+          - Makefile
+          - README.md
+          - requirements.txt
+          - .env.example
+        reason: "桌面散落文件夹统一归档到主项目"
+
+post_merge_status:
+  total_files: 11494
+  doc_files: 189
+  archived_variants_count: 2
+  integrity_check: "passed"
+  
+next_review_date: "2026-04-20"
+notes: "归档区变体保留7天后可安全删除"

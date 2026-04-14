@@ -1,0 +1,33 @@
+{
+  "title": "系统监控",
+  "pageType": "data",
+  "loaderModules": "dashboard",
+  "assetsPath": "../assets",
+  "basePath": "",
+  "navItems": [
+    { "id": "dashboard", "label": "首页", "href": "dashboard.html", "active": false },
+    { "id": "chat", "label": "对话", "href": "chat.html", "active": false },
+    { "id": "plugins", "label": "插件", "href": "plugins.html", "active": false },
+    { "id": "settings", "label": "设置", "href": "settings.html", "active": false }
+  ],
+  "userAvatar": "张",
+  "notificationCount": 1,
+  "content": {
+    "metrics": [
+      { "label": "CPU 使用率", "value": "45%", "change": "+5%", "positive": false },
+      { "label": "内存使用", "value": "6.2GB", "change": "-2%", "positive": true },
+      { "label": "磁盘空间", "value": "128GB", "change": "+1%", "positive": false },
+      { "label": "网络流量", "value": "2.4MB/s", "change": "+12%", "positive": true }
+    ],
+    "alerts": [
+      { "type": "warning", "title": "CPU 使用率偏高", "message": "过去1小时内CPU使用率超过80%", "time": "10分钟前" },
+      { "type": "info", "title": "系统更新完成", "message": "Kaelis v2.1.0 已成功部署", "time": "2小时前" }
+    ],
+    "services": [
+      { "name": "API Gateway", "status": "running", "uptime": "99.9%" },
+      { "name": "AI Service", "status": "running", "uptime": "99.5%" },
+      { "name": "Database", "status": "running", "uptime": "99.9%" },
+      { "name": "Cache", "status": "warning", "uptime": "98.2%" }
+    ]
+  }
+}

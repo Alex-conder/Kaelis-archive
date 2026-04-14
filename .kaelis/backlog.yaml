@@ -1,0 +1,70 @@
+# Kaelis Backlog - User Value Driven Priority Queue
+# 用户价值积分驱动的需求管理契约
+
+version: "1.0"
+
+features:
+  - id: FEAT-001
+    name: "KG 飞轮可视化"
+    user_value_score: 90
+    dev_cost_days: 3
+    status: completed
+    tags: ["knowledge_graph", "visualization"]
+
+  - id: FEAT-002
+    name: "Web Scraper 节点"
+    user_value_score: 85
+    dev_cost_days: 1
+    status: todo
+    contract: "config/action_templates.yaml"
+    tags: ["workflow", "node"]
+
+  - id: FEAT-003
+    name: "Electron 自动更新"
+    user_value_score: 40
+    dev_cost_days: 2
+    status: postponed
+    tags: ["electron", "devops"]
+
+  - id: FEAT-004
+    name: "离线模式工作流导出"
+    user_value_score: 75
+    dev_cost_days: 1
+    status: todo
+    tags: ["offline", "workflow", "export"]
+
+  - id: FEAT-005
+    name: "n8n 节点导入适配器"
+    user_value_score: 60
+    dev_cost_days: 3
+    status: todo
+    contract: "contracts/adapters.yaml"
+    tags: ["adapter", "n8n", "integration"]
+
+  - id: FEAT-006
+    name: "React Flow 工作流画布"
+    user_value_score: 88
+    dev_cost_days: 4
+    status: todo
+    tags: ["frontend", "workflow", "canvas"]
+
+  - id: FEAT-007
+    name: "Windows Defender 白名单检测"
+    user_value_score: 55
+    dev_cost_days: 1
+    status: completed
+    tags: ["electron", "windows", "packaging"]
+
+  - id: FEAT-008
+    name: "多语言支持 (i18n)"
+    user_value_score: 50
+    dev_cost_days: 5
+    status: postponed
+    tags: ["frontend", "i18n"]
+
+# 优先级计算规则
+scoring:
+  formula: "user_value_score / dev_cost_days"
+  name: "value_per_day"
+  min_threshold: 10.0
+  sort_order: desc

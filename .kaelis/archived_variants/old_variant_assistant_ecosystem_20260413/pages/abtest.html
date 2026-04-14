@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A/B测试 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .abtest-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .abtest-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-experiment-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .experiments-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .experiment-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .experiment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .experiment-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .experiment-status { padding: 6px 14px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .variants { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .variant { padding: 16px; background: #f8fafc; border-radius: 12px; border: 2px solid transparent; }
+        .variant.active { border-color: var(--primary); background: #f5f3ff; }
+        .variant-name { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .variant-traffic { font-size: 24px; font-weight: 700; color: var(--primary); }
+        .variant-label { font-size: 12px; color: #64748b; }
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .metric { text-align: center; padding: 12px; background: #f8fafc; border-radius: 10px; }
+        .metric-value { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .metric-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .winner-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">A/B测试</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="abtest-header">
+            <h1>实验管理</h1>
+            <button class="new-experiment-btn">+ 新建实验</button>
+        </div>
+        <div class="experiments-grid">
+            <div class="experiment-card">
+                <div class="experiment-header">
+                    <span class="experiment-title">模型响应优化</span>
+                    <span class="experiment-status">运行中</span>
+                </div>
+                <div class="variants">
+                    <div class="variant">
+                        <div class="variant-name">对照组 (A)</div>
+                        <div class="variant-traffic">50%</div>
+                        <div class="variant-label">当前模型</div>
+                    </div>
+                    <div class="variant active">
+                        <div class="variant-name">实验组 (B)</div>
+                        <div class="variant-traffic">50%</div>
+                        <div class="variant-label">新模型 <span class="winner-badge">?? 领先</span></div>
+                    </div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="metric-value">+12.5%</div><div class="metric-label">响应速度</div></div>
+                    <div class="metric"><div class="metric-value">+8.3%</div><div class="metric-label">满意度</div></div>
+                    <div class="metric"><div class="metric-value">99.9%</div><div class="metric-label">置信度</div></div>
+                </div>
+            </div>
+            <div class="experiment-card">
+                <div class="experiment-header">
+                    <span class="experiment-title">UI主题测试</span>
+                    <span class="experiment-status" style="background:#dbeafe;color:#2563eb;">已结束</span>
+                </div>
+                <div class="variants">
+                    <div class="variant">
+                        <div class="variant-name">深色主题</div>
+                        <div class="variant-traffic">45%</div>
+                        <div class="variant-label">转化率 3.2%</div>
+                    </div>
+                    <div class="variant active">
+                        <div class="variant-name">浅色主题</div>
+                        <div class="variant-traffic">55%</div>
+                        <div class="variant-label">转化率 4.1% <span class="winner-badge">?? 胜出</span></div>
+                    </div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="metric-value">+28%</div><div class="metric-label">转化率提升</div></div>
+                    <div class="metric"><div class="metric-value">2,456</div><div class="metric-label">参与用户</div></div>
+                    <div class="metric"><div class="metric-value">14天</div><div class="metric-label">实验周期</div></div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

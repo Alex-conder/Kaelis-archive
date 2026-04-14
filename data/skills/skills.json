@@ -1,0 +1,1760 @@
+{
+  "updated_at": "2026-04-07T15:36:38.536279",
+  "skills": [
+    {
+      "id": "581b9c2c7a1385ec",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.185572",
+      "updated_at": "2026-04-06T17:33:09.185575",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "8f2523053c7ad2d8",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.188370",
+      "updated_at": "2026-04-06T17:33:09.188371",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "8b2ab90c6fe8e918",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.190631",
+      "updated_at": "2026-04-06T17:33:09.190632",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "83fce92c76c8b96b",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.192516",
+      "updated_at": "2026-04-06T17:33:09.192517",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "fc9d144ce26942bb",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.193497",
+      "updated_at": "2026-04-06T17:33:09.193498",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "fda14746d7f41874",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.194369",
+      "updated_at": "2026-04-06T17:33:09.194370",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "7890564569c1159d",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:33:09.213820",
+      "updated_at": "2026-04-06T17:33:09.213821",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    },
+    {
+      "id": "94b4d02dc9dd1d60",
+      "name": "PLS-DA 代谢组学分析",
+      "task_type": "metabolomics_pls_da",
+      "params": {
+        "n_components": 5,
+        "scale": true,
+        "method": "nipals"
+      },
+      "workflow": null,
+      "description": "针对代谢组学数据优化的PLS-DA参数",
+      "source": "manual",
+      "rating": 1.125,
+      "usage_count": 3,
+      "success_count": 2,
+      "created_by": "user",
+      "created_at": "2026-04-06T17:33:16.570846",
+      "updated_at": "2026-04-06T17:33:16.576482",
+      "version": "1.0.0",
+      "tags": [
+        "metabolomics",
+        "multivariate",
+        "optimized"
+      ],
+      "evolution_source": null
+    },
+    {
+      "id": "827694f2c796061f",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.719441",
+      "updated_at": "2026-04-06T17:46:22.719442",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "a86faa978055357a",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.722070",
+      "updated_at": "2026-04-06T17:46:22.722072",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "356ffb58fffcf882",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.724530",
+      "updated_at": "2026-04-06T17:46:22.724531",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "342df1478fbd3e02",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.728695",
+      "updated_at": "2026-04-06T17:46:22.728696",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "8d22c189a4cf7fdc",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.730765",
+      "updated_at": "2026-04-06T17:46:22.730766",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "d6b8aeb733bb5cb0",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.733484",
+      "updated_at": "2026-04-06T17:46:22.733485",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "20ee17b89511d421",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-06T17:46:22.753448",
+      "updated_at": "2026-04-06T17:46:22.753448",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    },
+    {
+      "id": "81e4f2a43ca38807",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.918533",
+      "updated_at": "2026-04-07T14:13:09.918534",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "ad3eb50ed7847205",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.922044",
+      "updated_at": "2026-04-07T14:13:09.922045",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "ea7f1e23ffb75ade",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.924223",
+      "updated_at": "2026-04-07T14:13:09.924224",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "8f53105ed8d6f416",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.926475",
+      "updated_at": "2026-04-07T14:13:09.926476",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "580c0f1cab06ca38",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.928122",
+      "updated_at": "2026-04-07T14:13:09.928123",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "8cc7779c313ae3f1",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.929802",
+      "updated_at": "2026-04-07T14:13:09.929803",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "9fd546ca7208282d",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:13:09.946108",
+      "updated_at": "2026-04-07T14:13:09.946109",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    },
+    {
+      "id": "8fc45ec4ba980811",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.403678",
+      "updated_at": "2026-04-07T14:33:35.403680",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "5badba1561aa5820",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.407499",
+      "updated_at": "2026-04-07T14:33:35.407500",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "dfbf36d786fca360",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.410230",
+      "updated_at": "2026-04-07T14:33:35.410231",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "9470f652077f7803",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.413470",
+      "updated_at": "2026-04-07T14:33:35.413471",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "a5b3a8599f177c4e",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.415325",
+      "updated_at": "2026-04-07T14:33:35.415327",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "e81ed880ed1ffaa8",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.417208",
+      "updated_at": "2026-04-07T14:33:35.417209",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "306b38eb5696bc80",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T14:33:35.441363",
+      "updated_at": "2026-04-07T14:33:35.441364",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    },
+    {
+      "id": "c8445073ae21193d",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.082757",
+      "updated_at": "2026-04-07T15:10:23.082758",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "a8d8fd448b5306c6",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.086385",
+      "updated_at": "2026-04-07T15:10:23.086386",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "e5fbcba3a3a17f6d",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.089329",
+      "updated_at": "2026-04-07T15:10:23.089330",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "d3e4b634e451bc85",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.092304",
+      "updated_at": "2026-04-07T15:10:23.092305",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "8114fc8e5710f469",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.094327",
+      "updated_at": "2026-04-07T15:10:23.094328",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "72ba11f0e0379be5",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.096931",
+      "updated_at": "2026-04-07T15:10:23.096932",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "e039080bddefad0c",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:10:23.122763",
+      "updated_at": "2026-04-07T15:10:23.122764",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    },
+    {
+      "id": "cb988b85b86df987",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.522611",
+      "updated_at": "2026-04-07T15:12:32.522613",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "3ffe33f7fd8e127b",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.526694",
+      "updated_at": "2026-04-07T15:12:32.526695",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "884b7e6f8dd3f71b",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.530106",
+      "updated_at": "2026-04-07T15:12:32.530107",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "f3a84fbb94fe9f71",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.533359",
+      "updated_at": "2026-04-07T15:12:32.533360",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "46f27926f03309c2",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.535529",
+      "updated_at": "2026-04-07T15:12:32.535530",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "971b8b20979d66d5",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.537746",
+      "updated_at": "2026-04-07T15:12:32.537747",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "a4ffe8f418bab35b",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:12:32.575009",
+      "updated_at": "2026-04-07T15:12:32.575010",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    },
+    {
+      "id": "6cb77e38c8fefdc0",
+      "name": "pls_da_analysis_进化_test_suc",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 4,
+        "scale": true
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "optimized_params": {
+          "n_components": 4,
+          "scale": true
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_success\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.495061",
+      "updated_at": "2026-04-07T15:36:38.495062",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_success"
+    },
+    {
+      "id": "225fee339c3bf1a0",
+      "name": "pls_da_analysis_进化_test_ini",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 1,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 1,
+          "scale": false
+        },
+        "evolution_iterations": 5,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_initial_failure\n迭代次数: 5\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.499181",
+      "updated_at": "2026-04-07T15:36:38.499183",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "test_initial_failure"
+    },
+    {
+      "id": "cb6d7c4bc8f94985",
+      "name": "test_进化_test_sta",
+      "task_type": "test",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_status\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.503176",
+      "updated_at": "2026-04-07T15:36:38.503177",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test"
+      ],
+      "evolution_source": "test_status"
+    },
+    {
+      "id": "db936c280b4b62c2",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 2
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2
+        },
+        "optimized_params": {
+          "n_components": 2
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_0\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.507407",
+      "updated_at": "2026-04-07T15:36:38.507408",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_0"
+    },
+    {
+      "id": "b11410f19ddf2bfb",
+      "name": "pls_da_进化_test_his",
+      "task_type": "pls_da",
+      "params": {
+        "n_components": 3
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 3
+        },
+        "optimized_params": {
+          "n_components": 3
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_1\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.510431",
+      "updated_at": "2026-04-07T15:36:38.510432",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da"
+      ],
+      "evolution_source": "test_history_1"
+    },
+    {
+      "id": "f605cb1def2f8fc0",
+      "name": "pca_进化_test_his",
+      "task_type": "pca",
+      "params": {
+        "n_components": 4
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 4
+        },
+        "optimized_params": {
+          "n_components": 4
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_history_2\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.513224",
+      "updated_at": "2026-04-07T15:36:38.513225",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pca"
+      ],
+      "evolution_source": "test_history_2"
+    },
+    {
+      "id": "9a4929cc9fa3af4a",
+      "name": "pls_da_analysis_进化_metabolo",
+      "task_type": "pls_da_analysis",
+      "params": {
+        "n_components": 2,
+        "scale": false
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "optimized_params": {
+          "n_components": 2,
+          "scale": false
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: metabolomics_workflow_test\n迭代次数: 1\n最终置信度: 1.000\n状态: success",
+      "source": "evolution",
+      "rating": 5.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-07T15:36:38.536276",
+      "updated_at": "2026-04-07T15:36:38.536277",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "pls_da_analysis"
+      ],
+      "evolution_source": "metabolomics_workflow_test"
+    }
+  ]
+}

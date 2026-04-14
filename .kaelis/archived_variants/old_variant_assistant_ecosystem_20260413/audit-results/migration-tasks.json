@@ -1,0 +1,3114 @@
+[
+  {
+    "file": "3d-visualization.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "3d-visualization.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "abtest.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "activity-logs.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "activity-logs.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "advanced-charts.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "advanced-charts.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ai-assistant.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ai-assistant.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ai-automation.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ai-automation.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "alerts.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "animation-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-auto-discovery.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-auto-discovery.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-docs.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-docs.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-integration.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-integration.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-management.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-monitor.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-monitor.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-performance.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-performance.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "api-sandbox.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "audit.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "backup-restore.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "backup-restore.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "batch-operations.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "batch-operations.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "billing.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "button-test.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "button-test.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "capacity.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "card-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "card-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "character-system.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "character-system.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "chart-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "chart-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "chat-sessions.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "cluster.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "code-editor.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "code-editor.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "collaboration.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "collaboration.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "combination-docking.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "combination-docking.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "compliance.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "component-docs.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "component-docs.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "component-playground.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "component-playground.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "cost-analysis.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "dashboard-designer.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-lineage.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-management.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-monitor-dashboard.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-monitor-dashboard.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-quality.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-sync.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-sync.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-transfer.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "data-transfer.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "disaster-recovery.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "docking-analysis.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "docking-analysis.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "docs-generator.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "encryption-audit.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "encryption-audit.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "experiment-tracking.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "feature-flags.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "file-manager.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "file-manager.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "form-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "form-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "global-search.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "global-search.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "help-center.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "help-center.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "help.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "import-export.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "integrations.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "knowledge-rag.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "knowledge-rag.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "knowledge.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ligand-protein-docking.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ligand-protein-docking.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "loading-animations.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "loading-animations.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "loading-optimization.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "loading-optimization.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "login.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "logs.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "meropenem-docking.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "meropenem-docking.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "micro-interactions.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "micro-interactions.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "mobile-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "mobile-forms.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "mobile-navigation.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "modal-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "modal-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "model-management.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "model-marketplace.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "models.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "nav-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "nav-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "notification-center.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "notification-center.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "notifications.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "oauth-manager.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "oauth-manager.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "offline.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "offline.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "page-transitions.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "page-transitions.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "performance-monitor.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "performance-monitor.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "pipeline.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "plugin-detail.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "plugin-import.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "plugin-import.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "plugin-store.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "plugin-store.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "profile.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "profiler.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "prompt-engineering.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "pwa-offline.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "rbac.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "register.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "scheduled-jobs.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "scheduled-jobs.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "scheduler.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "scroll-animations.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "scroll-animations.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "security-center.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "security-center.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "service-mesh.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "settings-new.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "settings-new.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "settings.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "settings.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "status.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "system-health.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "system-health.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "system-updates.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "system-updates.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "table-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "table-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "team.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "testing-center.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "testing-center.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "testing.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ticket-system.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "topology.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "touch-gestures.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ui-components.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "ui-components.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "vancomycin-docking.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "vancomycin-docking.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "voice.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "voice.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "webhook-management.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "webhook-management.html",
+    "issue": "Body 基础样式",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "webhooks.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "workflow-designer.html",
+    "issue": "基础 Reset",
+    "severity": "high",
+    "count": 1,
+    "action": "移除 - 已由 variables.css 提供",
+    "priority": 1
+  },
+  {
+    "file": "3d-visualization.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "abtest.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "activity-logs.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "activity-logs.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "advanced-charts.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "ai-assistant.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 18,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "ai-assistant.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "ai-automation.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "ai-automation.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "alerts.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "alerts.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-auto-discovery.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 17,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-auto-discovery.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 27,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-docs.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-docs.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 26,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-integration.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 15,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-integration.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 17,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-management.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-management.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 14,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-monitor.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 21,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-monitor.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 28,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-performance.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 23,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-performance.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 21,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "api-sandbox.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "api-sandbox.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 15,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "audit.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "audit.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "backup-restore.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 15,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "backup-restore.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "batch-operations.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 13,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "batch-operations.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "billing.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "billing.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "button-test.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 7,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "capacity.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "capacity.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "card-components.html",
+    "issue": "卡片样式",
+    "severity": "medium",
+    "count": 7,
+    "action": "替换为 .card 类",
+    "priority": 2
+  },
+  {
+    "file": "card-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 20,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "card-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 13,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "character-system.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 12,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "character-system.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "chart-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 13,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "chart-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "chat-sessions.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 12,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "chat-sessions.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "chat.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "cluster.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "cluster.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "code-editor.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 24,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "code-editor.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 33,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "collaboration.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 15,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "collaboration.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "combination-docking.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 14,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "combination-docking.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 24,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "compliance.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "compliance.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "component-docs.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 17,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "component-playground.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "component-playground.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "cost-analysis.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "cost-analysis.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "dashboard-designer.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "dashboard-designer.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-lineage.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "data-lineage.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 14,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-management.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "data-management.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-monitor-dashboard.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "data-monitor-dashboard.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-quality.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "data-quality.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-sync.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 12,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "data-sync.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-transfer.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 13,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "data-transfer.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "data-visualization.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 14,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "disaster-recovery.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "disaster-recovery.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "docking-analysis.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "docking-analysis.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 17,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "docs-generator.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "encryption-audit.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 16,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "encryption-audit.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 14,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "experiment-design.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "experiment-tracking.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "experiment-tracking.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "feature-flags.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "feature-flags.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "file-manager.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 18,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "file-manager.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 23,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "form-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 13,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "form-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "global-search.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 16,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "global-search.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "help-center.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "help-center.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "import-export.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "import-export.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "integrations.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "knowledge-rag.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 13,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "knowledge-rag.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "knowledge.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "knowledge.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 7,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "ligand-protein-docking.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "ligand-protein-docking.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 21,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "loading-animations.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "loading-optimization.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "login.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "login.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "logs.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "logs.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "meropenem-docking.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 16,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "meropenem-docking.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 22,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "micro-interactions.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "mobile-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 19,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "mobile-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "mobile-dashboard.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "mobile-dashboard.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "mobile-forms.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 19,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "mobile-forms.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 16,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "mobile-navigation.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 22,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "mobile-navigation.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "modal-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 15,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "modal-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "model-management.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "model-management.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "model-marketplace.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "model-marketplace.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "models.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "models.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 6,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "nav-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 21,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "nav-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "notification-center.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 12,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "notifications.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "oauth-manager.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 15,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "oauth-manager.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "paper-management.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 14,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "peer-review.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "performance-monitor.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "performance-monitor.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 15,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "pipeline.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "pipeline.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "plugin-detail.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "plugin-detail.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "plugin-import.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 13,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "plugin-import.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 13,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "plugin-store.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 12,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "profile.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "profile.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 7,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "profiler.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "profiler.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "prompt-engineering.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "prompt-engineering.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "pwa-offline.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "pwa-offline.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "rbac.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "register.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "research-data.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "research-resources.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 16,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "scheduled-jobs.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "scheduled-jobs.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "scheduler.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "scheduler.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "security-center.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "security-center.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "service-mesh.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "service-mesh.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 12,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "settings-new.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "settings.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "status.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 13,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "system-health.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 14,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "system-health.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "system-updates.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 11,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "system-updates.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "table-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 15,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "table-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "team.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "team.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 7,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "testing-center.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "testing-center.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 19,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "testing.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "testing.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "ticket-system.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 10,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "ticket-system.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 16,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "topology.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 7,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "touch-gestures.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 14,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "touch-gestures.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 9,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "ui-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "ui-components.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 13,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "vancomycin-docking.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 16,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "vancomycin-docking.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 23,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "voice.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 6,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "webhook-management.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 12,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "webhook-management.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 11,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "webhooks.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 8,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "webhooks.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 8,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "workflow-designer.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 9,
+    "action": "如常用可提取为工具类",
+    "priority": 2
+  },
+  {
+    "file": "workflow-designer.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 10,
+    "action": "使用 CSS 变量",
+    "priority": 2
+  },
+  {
+    "file": "abtest.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 5,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "animation-components.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 4,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "api-integration.html",
+    "issue": "主按钮样式",
+    "severity": "medium",
+    "count": 4,
+    "action": "替换为 .btn-primary 类",
+    "priority": 3
+  },
+  {
+    "file": "api-monitor.html",
+    "issue": "网格布局",
+    "severity": "low",
+    "count": 4,
+    "action": "考虑使用统一网格类",
+    "priority": 3
+  },
+  {
+    "file": "button-test.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 5,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "component-docs.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 4,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "docs-generator.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "help.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 4,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "help.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 4,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "integrations.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "loading-animations.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "loading-optimization.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 5,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "notification-center.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 4,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "notifications.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "offline.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 4,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "offline.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 4,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "page-transitions.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 4,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "plugin-store.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "rbac.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "register.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 5,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "research-resources.html",
+    "issue": "网格布局",
+    "severity": "low",
+    "count": 4,
+    "action": "考虑使用统一网格类",
+    "priority": 3
+  },
+  {
+    "file": "scroll-animations.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 5,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  },
+  {
+    "file": "scroll-animations.html",
+    "issue": "硬编码颜色",
+    "severity": "medium",
+    "count": 5,
+    "action": "使用 CSS 变量",
+    "priority": 3
+  },
+  {
+    "file": "status.html",
+    "issue": "Flex 布局",
+    "severity": "low",
+    "count": 5,
+    "action": "如常用可提取为工具类",
+    "priority": 3
+  }
+]

@@ -1,0 +1,71 @@
+<!-- 设置页面内容 -->
+<div class="settings-layout">
+    <!-- 侧边导航 -->
+    <aside class="settings-sidebar card">
+        <h2 class="sidebar-title">设置</h2>
+        <nav class="settings-nav">
+            {{#each sections}}
+            <a href="#{{id}}" class="settings-nav-item {{#if @first}}active{{/if}}">
+                <span class="nav-icon">{{icon}}</span>
+                <span class="nav-label">{{title}}</span>
+            </a>
+            {{/each}}
+        </nav>
+    </aside>
+
+    <!-- 设置内容 -->
+    <main class="settings-content">
+        {{#each sections}}
+        <section id="{{id}}" class="settings-section card">
+            <div class="section-header">
+                <span class="section-icon">{{icon}}</span>
+                <h3 class="section-title">{{title}}</h3>
+            </div>
+            
+            <div class="settings-list">
+                {{#each settings}}
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label class="setting-label">{{label}}</label>
+                    </div>
+                    <div class="setting-control">
+                        {{#if (eq type "select")}}
+                        <select class="form-select" id="{{id}}">
+                            {{#each options}}
+                            <option value="{{value}}" {{#if (eq ../value value)}}selected{{/if}}>{{label}}</option>
+                            {{/each}}
+                        </select>
+                        {{/if}}
+                        
+                        {{#if (eq type "radio")}}
+                        <div class="radio-group">
+                            {{#each options}}
+                            <label class="radio-label">
+                                <input type="radio" name="{{../id}}" value="{{value}}" {{#if (eq ../value value)}}checked{{/if}}>
+                                <span>{{label}}</span>
+                            </label>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                        
+                        {{#if (eq type "toggle")}}
+                        <div class="toggle {{#if value}}active{{/if}}" id="{{id}}"></div>
+                        {{/if}}
+                        
+                        {{#if (eq type "number")}}
+                        <input type="number" class="form-input" id="{{id}}" value="{{value}}" min="{{min}}" max="{{max}}">
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </section>
+        {{/each}}
+        
+        <!-- 保存按钮 -->
+        <div class="settings-actions">
+            <button class="btn btn-secondary">重置</button>
+            <button class="btn btn-primary">保存设置</button>
+        </div>
+    </main>
+</div>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>容量规划 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .capacity-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .capacity-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .forecast-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .capacity-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .capacity-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .capacity-label { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+        .capacity-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .capacity-bar { height: 8px; background: #e2e8f0; border-radius: 4px; margin-top: 12px; overflow: hidden; }
+        .capacity-fill { height: 100%; border-radius: 4px; }
+        .capacity-fill.safe { background: #16a34a; }
+        .capacity-fill.warning { background: #d97706; }
+        .capacity-fill.danger { background: #dc2626; }
+        .capacity-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .forecast-chart { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .chart-placeholder { height: 300px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+        .recommendations { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .rec-item { display: flex; align-items: flex-start; padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 12px; }
+        .rec-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px; }
+        .rec-content { flex: 1; }
+        .rec-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .rec-desc { font-size: 12px; color: #64748b; }
+        .rec-action { padding: 6px 14px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">容量规划</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="capacity-header">
+            <h1>容量规划与预测</h1>
+            <button class="forecast-btn">?? 生成预测</button>
+        </div>
+        <div class="capacity-overview">
+            <div class="capacity-card">
+                <div class="capacity-label">CPU 使用率</div>
+                <div class="capacity-value">68%</div>
+                <div class="capacity-bar"><div class="capacity-fill safe" style="width:68%"></div></div>
+            </div>
+            <div class="capacity-card">
+                <div class="capacity-label">内存使用率</div>
+                <div class="capacity-value">82%</div>
+                <div class="capacity-bar"><div class="capacity-fill warning" style="width:82%"></div></div>
+            </div>
+            <div class="capacity-card">
+                <div class="capacity-label">存储使用率</div>
+                <div class="capacity-value">91%</div>
+                <div class="capacity-bar"><div class="capacity-fill danger" style="width:91%"></div></div>
+            </div>
+            <div class="capacity-card">
+                <div class="capacity-label">网络带宽</div>
+                <div class="capacity-value">45%</div>
+                <div class="capacity-bar"><div class="capacity-fill safe" style="width:45%"></div></div>
+            </div>
+        </div>
+        <div class="capacity-grid">
+            <div class="forecast-chart">
+                <h2 class="chart-title">容量预测 (未来30天)</h2>
+                <div class="chart-placeholder">?? 容量预测图表</div>
+            </div>
+            <div class="recommendations">
+                <h2 class="chart-title">优化建议</h2>
+                <div class="rec-item">
+                    <div class="rec-icon" style="background:#fee2e2;">??</div>
+                    <div class="rec-content">
+                        <div class="rec-title">存储扩容</div>
+                        <div class="rec-desc">预计7天内达到100%，建议扩容至2TB</div>
+                    </div>
+                    <button class="rec-action">执行</button>
+                </div>
+                <div class="rec-item">
+                    <div class="rec-icon" style="background:#fef3c7;">??</div>
+                    <div class="rec-content">
+                        <div class="rec-title">内存优化</div>
+                        <div class="rec-desc">Redis缓存命中率偏低，建议优化缓存策略</div>
+                    </div>
+                    <button class="rec-action">查看</button>
+                </div>
+                <div class="rec-item">
+                    <div class="rec-icon" style="background:#dbeafe;">?</div>
+                    <div class="rec-content">
+                        <div class="rec-title">自动扩容</div>
+                        <div class="rec-desc">建议开启CPU>80%时自动扩容</div>
+                    </div>
+                    <button class="rec-action">配置</button>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

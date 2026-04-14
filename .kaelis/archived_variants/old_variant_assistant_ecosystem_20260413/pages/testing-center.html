@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试中心 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* 测试概览 */
+        .test-overview { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .overview-card  { @extend .card; }
+        .overview-value { 
+            font-size: 36px; 
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .overview-value.success { color: #22C55E; }
+        .overview-value.warning { color: #F59E0B; }
+        .overview-value.danger { color: #EF4444; }
+        .overview-value.info { color: var(--secondary); }
+        .overview-label { font-size: 14px; color: #6B7280; }
+        
+        /* 测试套件 */
+        .test-suites { margin-bottom: 40px; }
+        .section-title { 
+            font-size: 20px; 
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .suite-card  { @extend .card; }
+        .suite-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .suite-info { display: flex; align-items: center; gap: 16px; }
+        .suite-icon { 
+            width: 48px; 
+            height: 48px; 
+            background: rgba(136,72,249,0.2); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+        }
+        .suite-title { font-size: 18px; font-weight: 600; }
+        .suite-meta { font-size: 13px; color: #6B7280; margin-top: 4px; }
+        .suite-status { 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 600;
+        }
+        .suite-status.passed { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .suite-status.failed { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .suite-status.running { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        
+        /* 测试进度 */
+        .test-progress { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px;
+        }
+        .progress-bar { 
+            flex: 1; 
+            height: 8px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 4px; 
+            overflow: hidden;
+        }
+        .progress-fill { 
+            height: 100%; 
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .progress-fill.success { background: #22C55E; }
+        .progress-fill.warning { background: #F59E0B; }
+        .progress-fill.danger { background: #EF4444; }
+        .progress-text { font-size: 14px; color: #6B7280; min-width: 60px; }
+        
+        /* 测试结果列表 */
+        .test-list { margin-top: 20px; }
+        .test-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .test-status { 
+            width: 24px; 
+            height: 24px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .test-status.pass { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .test-status.fail { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .test-status.skip { background: rgba(107,114,128,0.2); color: #6B7280; }
+        .test-name { flex: 1; font-size: 14px; }
+        .test-time { font-size: 12px; color: #6B7280; }
+        
+        /* 性能测试 */
+        .performance-metrics { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px;
+        }
+        .metric-card { 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 12px; 
+            padding: 20px;
+            text-align: center;
+        }
+        .metric-value { 
+            font-size: 28px; 
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .metric-value.good { color: #22C55E; }
+        .metric-value.warning { color: #F59E0B; }
+        .metric-value.bad { color: #EF4444; }
+        .metric-label { font-size: 13px; color: #6B7280; }
+        .metric-change { 
+            font-size: 12px; 
+            margin-top: 8px;
+        }
+        
+        /* 操作按钮 */
+        .action-bar { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 32px;
+        }
+        .btn { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        
+        /* 测试报告 */
+        .report-card  { @extend .card; }
+        .report-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .report-title { font-size: 18px; font-weight: 600; }
+        .report-date { font-size: 13px; color: #6B7280; }
+        
+        /* 代码覆盖率 */
+        .coverage-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .coverage-item { text-align: center; }
+        .coverage-ring { 
+            width: 80px; 
+            height: 80px; 
+            margin: 0 auto 12px;
+            position: relative;
+        }
+        .coverage-ring svg { transform: rotate(-90deg); }
+        .coverage-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+        .coverage-fill { 
+            fill: none; 
+            stroke: #22C55E; 
+            stroke-width: 8; 
+            stroke-linecap: round;
+            stroke-dasharray: 220;
+            stroke-dashoffset: 22;
+            transition: stroke-dashoffset 1s;
+        }
+        .coverage-text { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 18px; 
+            font-weight: 700;
+        }
+        .coverage-label { font-size: 13px; color: #6B7280; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 测试中心</h1>
+        <p>自动化测试与质量保障</p>
+    </div>
+    
+    <div class="container">
+        <!-- 操作栏 -->
+        <div class="action-bar">
+            <button class="btn btn-primary" onclick="runAllTests()">? 运行全部测试</button>
+            <button class="btn btn-secondary">?? 重新运行失败</button>
+            <button class="btn btn-secondary">?? 导出报告</button>
+        </div>
+        
+        <!-- 测试概览 -->
+        <div class="test-overview">
+            <div class="overview-card">
+                <div class="overview-value success" id="totalPassed">156</div>
+                <div class="overview-label">通过</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-value danger" id="totalFailed">3</div>
+                <div class="overview-label">失败</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-value warning" id="totalSkipped">12</div>
+                <div class="overview-label">跳过</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-value info" id="totalCoverage">94%</div>
+                <div class="overview-label">覆盖率</div>
+            </div>
+        </div>
+        
+        <!-- 测试套件 -->
+        <div class="test-suites">
+            <h2 class="section-title">?? 测试套件</h2>
+            
+            <div class="suite-card">
+                <div class="suite-header">
+                    <div class="suite-info">
+                        <div class="suite-icon">?</div>
+                        <div>
+                            <div class="suite-title">单元测试</div>
+                            <div class="suite-meta">组件 · 工具函数 · 48 个测试</div>
+                        </div>
+                    </div>
+                    <span class="suite-status passed">? 通过</span>
+                </div>
+                <div class="test-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill success" style="width: 100%"></div>
+                    </div>
+                    <span class="progress-text">48/48</span>
+                </div>
+                <div class="test-list">
+                    <div class="test-item">
+                        <span class="test-status pass">?</span>
+                        <span class="test-name">Button 组件渲染测试</span>
+                        <span class="test-time">12ms</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-status pass">?</span>
+                        <span class="test-name">Input 表单验证测试</span>
+                        <span class="test-time">18ms</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-status pass">?</span>
+                        <span class="test-name">utils/formatDate 测试</span>
+                        <span class="test-time">8ms</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="suite-card">
+                <div class="suite-header">
+                    <div class="suite-info">
+                        <div class="suite-icon">??</div>
+                        <div>
+                            <div class="suite-title">集成测试</div>
+                            <div class="suite-meta">API · 数据库 · 36 个测试</div>
+                        </div>
+                    </div>
+                    <span class="suite-status passed">? 通过</span>
+                </div>
+                <div class="test-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill success" style="width: 100%"></div>
+                    </div>
+                    <span class="progress-text">36/36</span>
+                </div>
+            </div>
+            
+            <div class="suite-card">
+                <div class="suite-header">
+                    <div class="suite-info">
+                        <div class="suite-icon">??</div>
+                        <div>
+                            <div class="suite-title">E2E 测试</div>
+                            <div class="suite-meta">用户流程 · 24 个测试</div>
+                        </div>
+                    </div>
+                    <span class="suite-status failed">? 失败</span>
+                </div>
+                <div class="test-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill danger" style="width: 87.5%"></div>
+                    </div>
+                    <span class="progress-text">21/24</span>
+                </div>
+                <div class="test-list">
+                    <div class="test-item">
+                        <span class="test-status fail">?</span>
+                        <span class="test-name">用户登录流程</span>
+                        <span class="test-time">2.3s</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-status fail">?</span>
+                        <span class="test-name">支付流程测试</span>
+                        <span class="test-time">1.8s</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-status fail">?</span>
+                        <span class="test-name">文件上传测试</span>
+                        <span class="test-time">3.1s</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="suite-card">
+                <div class="suite-header">
+                    <div class="suite-info">
+                        <div class="suite-icon">?</div>
+                        <div>
+                            <div class="suite-title">性能测试</div>
+                            <div class="suite-meta">加载速度 · 响应时间 · 60 个测试</div>
+                        </div>
+                    </div>
+                    <span class="suite-status running">? 运行中</span>
+                </div>
+                <div class="test-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill warning" style="width: 65%"></div>
+                    </div>
+                    <span class="progress-text">39/60</span>
+                </div>
+                <div class="performance-metrics" style="margin-top: 20px;">
+                    <div class="metric-card">
+                        <div class="metric-value good">1.2s</div>
+                        <div class="metric-label">首屏加载</div>
+                        <div class="metric-change" style="color: #22C55E;">↓ 15%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value good">45ms</div>
+                        <div class="metric-label">API 响应</div>
+                        <div class="metric-change" style="color: #22C55E;">↓ 8%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value warning">78</div>
+                        <div class="metric-label">Lighthouse</div>
+                        <div class="metric-change" style="color: #F59E0B;">↑ 3%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试报告 -->
+        <div class="report-card">
+            <div class="report-header">
+                <h3 class="report-title">?? 代码覆盖率报告</h3>
+                <span class="report-date">生成于 2026-03-18 10:30:00</span>
+            </div>
+            <div class="coverage-grid">
+                <div class="coverage-item">
+                    <div class="coverage-ring">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="coverage-bg" cx="40" cy="40" r="35"/>
+                            <circle class="coverage-fill" cx="40" cy="40" r="35" style="stroke-dashoffset: 22;"/>
+                        </svg>
+                        <span class="coverage-text">90%</span>
+                    </div>
+                    <div class="coverage-label">语句覆盖</div>
+                </div>
+                <div class="coverage-item">
+                    <div class="coverage-ring">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="coverage-bg" cx="40" cy="40" r="35"/>
+                            <circle class="coverage-fill" cx="40" cy="40" r="35" style="stroke-dashoffset: 33; stroke: var(--secondary);"/>
+                        </svg>
+                        <span class="coverage-text">85%</span>
+                    </div>
+                    <div class="coverage-label">分支覆盖</div>
+                </div>
+                <div class="coverage-item">
+                    <div class="coverage-ring">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="coverage-bg" cx="40" cy="40" r="35"/>
+                            <circle class="coverage-fill" cx="40" cy="40" r="35" style="stroke-dashoffset: 11; stroke: #22C55E;"/>
+                        </svg>
+                        <span class="coverage-text">95%</span>
+                    </div>
+                    <div class="coverage-label">函数覆盖</div>
+                </div>
+                <div class="coverage-item">
+                    <div class="coverage-ring">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="coverage-bg" cx="40" cy="40" r="35"/>
+                            <circle class="coverage-fill" cx="40" cy="40" r="35" style="stroke-dashoffset: 22; stroke: #F59E0B;"/>
+                        </svg>
+                        <span class="coverage-text">90%</span>
+                    </div>
+                    <div class="coverage-label">行覆盖</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function runAllTests() {
+            // 模拟运行测试
+            const btn = event.target;
+            btn.innerHTML = '? 运行中...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '? 运行全部测试';
+                btn.disabled = false;
+                alert('测试完成！通过率: 98.4%');
+            }, 3000);
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

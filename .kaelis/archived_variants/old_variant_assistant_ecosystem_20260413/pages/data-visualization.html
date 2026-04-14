@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化与分析 - Kaelis Research</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css">
+    <link rel="stylesheet" href="../assets/styles/components.css">
+    <link rel="stylesheet" href="../assets/styles/animations.css">
+    <style>
+        body { position: relative; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            left: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-purple) 0%, transparent 70%);
+            filter: blur(64px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container { position: relative; z-index: 1; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: var(--bg-card); border: 1px solid var(--border-color); padding: 16px 24px; border-radius: 12px; }
+        .dataset-selector { display: flex; align-items: center; gap: 12px; }
+        .dataset-selector select { padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; min-width: 240px; background: var(--bg-input); color: var(--text-primary); }
+        .viz-tools { display: flex; gap: 8px; }
+        .tool-btn { padding: 10px 16px; border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s; }
+        .tool-btn:hover, .tool-btn.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .main-grid { display: grid; grid-template-columns: 280px 1fr 320px; gap: 24px; }
+        .sidebar { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; height: fit-content; }
+        .sidebar-title { font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
+        .chart-type { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px; }
+        .chart-type:hover, .chart-type.active { background: var(--bg-input); }
+        .chart-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+        .chart-info { flex: 1; }
+        .chart-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .chart-desc { font-size: 12px; color: var(--text-muted); }
+        .viz-canvas { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; min-height: 600px; }
+        .canvas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .canvas-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .canvas-actions { display: flex; gap: 8px; }
+        .canvas-btn { padding: 8px 16px; border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s; }
+        .canvas-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .chart-placeholder { background: linear-gradient(135deg, var(--bg-input) 0%, var(--bg-card) 100%); border-radius: 12px; height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--border-color); }
+        .chart-demo { width: 100%; height: 100%; padding: 40px; }
+        .bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 300px; padding: 20px; }
+        .bar-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .bar { width: 60px; background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 8px 8px 0 0; transition: all 0.3s; }
+        .bar:hover { opacity: 0.8; }
+        .bar-label { font-size: 12px; color: var(--text-muted); }
+        .stats-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; }
+        .stat-card { padding: 16px; background: var(--bg-input); border-radius: 12px; margin-bottom: 12px; }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .stat-name { font-size: 13px; color: var(--text-muted); }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .stat-change { font-size: 12px; padding: 4px 8px; border-radius: 6px; }
+        .stat-change.positive { background: var(--success-bg); color: var(--success); }
+        .stat-change.negative { background: var(--error-bg); color: var(--error); }
+        .analysis-section { margin-top: 20px; }
+        .analysis-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+        .insight-item { display: flex; gap: 12px; padding: 12px; background: var(--bg-input); border-radius: 10px; margin-bottom: 8px; border-left: 3px solid var(--primary-color); }
+        .insight-icon { font-size: 20px; }
+        .insight-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+        .export-panel { background: linear-gradient(135deg, rgba(136,72,249,0.1) 0%, rgba(59,130,246,0.1) 100%); border-radius: 12px; padding: 20px; margin-top: 20px; border: 1px solid var(--border-color); }
+        .export-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+        .export-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .export-btn { padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+        .export-btn:hover { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .config-section { margin-top: 20px; }
+        .config-item { margin-bottom: 16px; }
+        .config-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-primary); }
+        .config-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-input); color: var(--text-primary); }
+        .color-picker { display: flex; gap: 8px; margin-top: 8px; }
+        .color-option { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+        .color-option:hover, .color-option.active { border-color: var(--text-primary); transform: scale(1.1); }
+        @media (max-width: 1200px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="animate-fade-in">
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <div class="logo-icon float-animate">
+                    <img src="../assets/images/logo-precise.svg" alt="Kaelis" style="width: 40px; height: 40px;">
+                </div>
+                <div class="logo-text">Kaelis</div>
+            </div>
+        </div>
+        <div class="nav-center">
+            <a href="dashboard.html" class="nav-item">仪表盘</a>
+            <a href="chat.html" class="nav-item">对话</a>
+            <a href="research-data.html" class="nav-item">科研数据</a>
+            <a href="experiment-design.html" class="nav-item">实验设计</a>
+            <a href="paper-management.html" class="nav-item">论文管理</a>
+            <a href="peer-review.html" class="nav-item">科研协作</a>
+            <a href="data-visualization.html" class="nav-item nav-item-animate active">数据可视化</a>
+            <a href="research-resources.html" class="nav-item">资源库</a>
+        </div>
+        <div class="nav-right">
+            <button class="notification-btn btn-hover">??</button>
+            <div class="user-avatar">张</div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>?? 科研数据可视化与分析</h1>
+                <p>强大的数据可视化工具和统计分析</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-hover">?? 导出图表</button>
+                <button class="btn btn-primary btn-hover ripple">?? 保存分析</button>
+            </div>
+        </div>
+            <div class="dataset-selector">
+                <span style="font-size: 14px; color: var(--text-secondary);">数据集:</span>
+                <select>
+                    <option>ImageNet-1K 训练结果</option>
+                    <option>BERT 微调实验数据</option>
+                    <option>蛋白质结构预测对比</option>
+                    <option>气候数据时间序列</option>
+                </select>
+            </div>
+            <div class="viz-tools">
+                <button class="tool-btn active btn-hover">?? 图表</button>
+                <button class="tool-btn btn-hover">?? 统计</button>
+                <button class="tool-btn btn-hover">?? 探索</button>
+                <button class="tool-btn btn-hover">?? AI分析</button>
+            </div>
+        </div>
+        <div class="main-grid">
+            <div class="sidebar card-hover scroll-animate">
+                <div class="sidebar-title">图表类型</div>
+                <div class="chart-type active btn-hover">
+                    <div class="chart-icon">??</div>
+                    <div class="chart-info">
+                        <div class="chart-name">柱状图</div>
+                        <div class="chart-desc">比较不同类别的数值</div>
+                    </div>
+                </div>
+                <div class="chart-type btn-hover">
+                    <div class="chart-icon">??</div>
+                    <div class="chart-info">
+                        <div class="chart-name">折线图</div>
+                        <div class="chart-desc">展示趋势变化</div>
+                    </div>
+                </div>
+                <div class="chart-type btn-hover">
+                    <div class="chart-icon">??</div>
+                    <div class="chart-info">
+                        <div class="chart-name">饼图</div>
+                        <div class="chart-desc">显示占比分布</div>
+                    </div>
+                </div>
+                <div class="chart-type btn-hover">
+                    <div class="chart-icon">?</div>
+                    <div class="chart-info">
+                        <div class="chart-name">散点图</div>
+                        <div class="chart-desc">观察相关性</div>
+                    </div>
+                </div>
+                <div class="chart-type btn-hover">
+                    <div class="chart-icon">??</div>
+                    <div class="chart-info">
+                        <div class="chart-name">热力图</div>
+                        <div class="chart-desc">矩阵数据可视化</div>
+                    </div>
+                </div>
+                <div class="chart-type btn-hover">
+                    <div class="chart-icon">??</div>
+                    <div class="chart-info">
+                        <div class="chart-name">雷达图</div>
+                        <div class="chart-desc">多维度对比</div>
+                    </div>
+                </div>
+                <div class="config-section">
+                    <div class="sidebar-title">图表配置</div>
+                    <div class="config-item">
+                        <label class="config-label">图表标题</label>
+                        <input type="text" class="config-input" value="模型准确率对比">
+                    </div>
+                    <div class="config-item">
+                        <label class="config-label">配色方案</label>
+                        <div class="color-picker">
+                            <div class="color-option active" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                            <div class="color-option" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                            <div class="color-option" style="background: linear-gradient(135deg, #4facfe, #00f2fe);"></div>
+                            <div class="color-option" style="background: linear-gradient(135deg, #43e97b, #38f9d7);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="viz-canvas card-hover scroll-animate">
+                <div class="canvas-header">
+                    <div class="canvas-title">模型准确率对比分析</div>
+                    <div class="canvas-actions">
+                        <button class="canvas-btn btn-hover">?? 配置</button>
+                        <button class="canvas-btn btn-hover">?? 复制</button>
+                        <button class="canvas-btn btn-hover">?? 清空</button>
+                    </div>
+                </div>
+                <div class="chart-placeholder">
+                    <div class="chart-demo">
+                        <div class="bar-chart">
+                            <div class="bar-item">
+                                <div class="bar" style="height: 85%;"></div>
+                                <div class="bar-label">ResNet-50</div>
+                            </div>
+                            <div class="bar-item">
+                                <div class="bar" style="height: 92%;"></div>
+                                <div class="bar-label">ResNet-101</div>
+                            </div>
+                            <div class="bar-item">
+                                <div class="bar" style="height: 88%;"></div>
+                                <div class="bar-label">ViT-B/16</div>
+                            </div>
+                            <div class="bar-item">
+                                <div class="bar" style="height: 94%;"></div>
+                                <div class="bar-label">ViT-L/16</div>
+                            </div>
+                            <div class="bar-item">
+                                <div class="bar" style="height: 96%;"></div>
+                                <div class="bar-label">Swin-T</div>
+                            </div>
+                            <div class="bar-item">
+                                <div class="bar" style="height: 98%;"></div>
+                                <div class="bar-label">Swin-B</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
+                            <p style="font-size: 14px;">ImageNet-1K 验证集 Top-1 准确率 (%)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="stats-panel card-hover scroll-animate">
+                    <div class="sidebar-title">统计摘要</div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">平均值</span>
+                            <span class="stat-change positive">+2.3%</span>
+                        </div>
+                        <div class="stat-value">92.17%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">最高值</span>
+                            <span class="stat-change positive">Swin-B</span>
+                        </div>
+                        <div class="stat-value">98.2%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">标准差</span>
+                            <span class="stat-change negative">较高</span>
+                        </div>
+                        <div class="stat-value">4.56</div>
+                    </div>
+                    <div class="analysis-section">
+                        <div class="analysis-title">?? AI 洞察</div>
+                        <div class="insight-item">
+                            <span class="insight-icon">??</span>
+                            <div class="insight-text">Swin Transformer 系列模型表现最佳，比传统CNN架构平均高出 8.5%</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-icon">?</span>
+                            <div class="insight-text">ResNet-50 与最佳模型差距较大，建议考虑升级架构</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-icon">?</span>
+                            <div class="insight-text">所有模型准确率均超过 85%，数据集质量良好</div>
+                        </div>
+                    </div>
+                    <div class="export-panel">
+                        <div class="export-title">导出选项</div>
+                        <div class="export-options">
+                            <button class="export-btn">PNG</button>
+                            <button class="export-btn">SVG</button>
+                            <button class="export-btn">PDF</button>
+                            <button class="export-btn">CSV</button>
+                            <button class="export-btn">JSON</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="../assets/js/animations.js"></script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

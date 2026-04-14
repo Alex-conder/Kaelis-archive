@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡片组件 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        
+        /* 展示区 */
+        .showcase-section { margin-bottom: 48px; }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        
+        /* 基础卡片 */
+        .card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .card:hover { 
+            transform: translateY(-4px); 
+            border-color: rgba(136,72,249,0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .card-header { padding: 24px 24px 0; }
+        .card-cover { 
+            width: 100%; 
+            height: 180px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 64px;
+        }
+        .card-body { padding: 24px; }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .card-desc { font-size: 14px; color: #A1A1AA; line-height: 1.6; }
+        .card-footer { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px 24px; 
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* 统计卡片 */
+        .stat-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 24px;
+        }
+        .stat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .stat-icon { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 12px; 
+            background: rgba(136,72,249,0.15); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+        }
+        .stat-trend { 
+            padding: 4px 10px; 
+            background: rgba(34,197,94,0.15); 
+            border-radius: 6px; 
+            font-size: 12px; 
+            color: #22C55E; 
+            font-weight: 500;
+        }
+        .stat-trend.down { background: rgba(239,68,68,0.15); color: #EF4444; }
+        .stat-value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 14px; color: #6B7280; }
+        
+        /* 用户卡片 */
+        .user-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 24px;
+            text-align: center;
+        }
+        .user-avatar { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            font-weight: 600;
+            margin: 0 auto 16px;
+        }
+        .user-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .user-role { font-size: 14px; color: var(--primary); margin-bottom: 16px; }
+        .user-stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 20px; }
+        .user-stat { text-align: center; }
+        .user-stat-value { font-size: 20px; font-weight: 600; }
+        .user-stat-label { font-size: 12px; color: #6B7280; }
+        .user-actions { display: flex; gap: 12px; }
+        .user-btn { 
+            flex: 1;
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none;
+        }
+        .user-btn-primary  { @extend .btn-primary; }
+        .user-btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* 价格卡片 */
+        .pricing-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 32px;
+            position: relative;
+        }
+        .pricing-card.featured { 
+            border-color: var(--primary); 
+            background: linear-gradient(180deg, rgba(136,72,249,0.1) 0%, rgba(23,23,23,0.8) 100%);
+        }
+        .pricing-badge { 
+            position: absolute; 
+            top: -12px; 
+            right: 24px; 
+            padding: 6px 16px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 600;
+        }
+        .pricing-name { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .pricing-desc { font-size: 14px; color: #6B7280; margin-bottom: 24px; }
+        .pricing-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 24px; }
+        .pricing-currency { font-size: 24px; font-weight: 600; }
+        .pricing-amount { font-size: 48px; font-weight: 700; }
+        .pricing-period { font-size: 14px; color: #6B7280; }
+        .pricing-features { list-style: none; margin-bottom: 24px; }
+        .pricing-features li { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 10px 0; 
+            font-size: 14px; 
+            color: #A1A1AA;
+        }
+        .pricing-features li.included { color: white; }
+        .pricing-btn { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            border: none;
+            transition: all 0.2s;
+        }
+        .pricing-btn-primary  { @extend .btn-primary; }
+        .pricing-btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* 任务卡片 */
+        .task-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .task-checkbox { 
+            width: 20px; 
+            height: 20px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            border-radius: 6px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .task-checkbox.checked { background: var(--primary); border-color: var(--primary); }
+        .task-content { flex: 1; }
+        .task-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+        .task-title.completed { text-decoration: line-through; color: #6B7280; }
+        .task-meta { display: flex; gap: 16px; font-size: 12px; color: #6B7280; }
+        .task-tag { 
+            padding: 2px 8px; 
+            background: rgba(136,72,249,0.15); 
+            border-radius: 4px; 
+            font-size: 11px; 
+            color: var(--primary);
+        }
+        .task-avatar { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        /* 媒体卡片 */
+        .media-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            overflow: hidden;
+        }
+        .media-image { 
+            width: 100%; 
+            height: 200px; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            position: relative;
+        }
+        .media-play { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            background: rgba(255,255,255,0.9); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .media-play:hover { transform: scale(1.1); }
+        .media-duration { 
+            position: absolute; 
+            bottom: 12px; 
+            right: 12px; 
+            padding: 4px 8px; 
+            background: rgba(0,0,0,0.8); 
+            border-radius: 4px; 
+            font-size: 12px;
+        }
+        .media-body { padding: 20px; }
+        .media-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .media-desc { font-size: 14px; color: #A1A1AA; margin-bottom: 16px; }
+        .media-footer { display: flex; justify-content: space-between; align-items: center; }
+        .media-author { display: flex; align-items: center; gap: 10px; }
+        .media-author-avatar { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px;
+        }
+        .media-author-name { font-size: 13px; }
+        .media-stats { display: flex; gap: 16px; font-size: 13px; color: #6B7280; }
+        
+        /* 折叠卡片 */
+        .collapse-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            overflow: hidden;
+        }
+        .collapse-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px 24px; 
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .collapse-header:hover { background: rgba(255,255,255,0.02); }
+        .collapse-title { font-size: 15px; font-weight: 500; }
+        .collapse-icon { 
+            font-size: 12px; 
+            transition: transform 0.3s;
+        }
+        .collapse-icon.expanded { transform: rotate(180deg); }
+        .collapse-body { 
+            padding: 0 24px 20px; 
+            font-size: 14px; 
+            color: #A1A1AA; 
+            line-height: 1.6;
+            display: none;
+        }
+        .collapse-body.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">?? 卡片组件</h1>
+        </div>
+        
+        <!-- 基础卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">基础卡片</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-cover">??</div>
+                    <div class="card-body">
+                        <h3 class="card-title">UI 设计系统</h3>
+                        <p class="card-desc">一套完整的设计系统，包含颜色、字体、间距、组件等设计规范。</p>
+                    </div>
+                    <div class="card-footer">
+                        <span style="font-size: 13px; color: #6B7280;">2026-01-20</span>
+                        <button style="padding: 8px 16px; background: rgba(136,72,249,0.15); border: none; border-radius: 6px; color: var(--primary); font-size: 13px; cursor: pointer;">了解更多</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span style="padding: 6px 12px; background: rgba(34,197,94,0.15); border-radius: 6px; font-size: 12px; color: #22C55E; font-weight: 500;">已完成</span>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">API 接口开发</h3>
+                        <p class="card-desc">完成用户管理、权限控制、数据接口的开发与测试工作。</p>
+                    </div>
+                    <div class="card-footer">
+                        <div style="display: flex; gap: -8px;">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: 11px; border: 2px solid #1a1a1a;">张</div>
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%); display: flex; align-items: center; justify-content: center; font-size: 11px; border: 2px solid #1a1a1a; margin-left: -8px;">李</div>
+                        </div>
+                        <span style="font-size: 13px; color: #6B7280;">3 个成员</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(136,72,249,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px;">??</div>
+                            <div>
+                                <h3 class="card-title">数据分析</h3>
+                                <p style="font-size: 13px; color: #6B7280;">实时数据监控</p>
+                            </div>
+                        </div>
+                        <p class="card-desc">通过数据可视化工具，实时监控业务指标，发现潜在问题。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">统计卡片</h2>
+            <div class="card-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">??</div>
+                        <span class="stat-trend">↑ 12%</span>
+                    </div>
+                    <div class="stat-value">12,450</div>
+                    <div class="stat-label">总用户数</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background: rgba(34,197,94,0.15);">??</div>
+                        <span class="stat-trend">↑ 8.5%</span>
+                    </div>
+                    <div class="stat-value">￥128,450</div>
+                    <div class="stat-label">本月收入</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background: rgba(239,68,68,0.15);">??</div>
+                        <span class="stat-trend down">↓ 2.3%</span>
+                    </div>
+                    <div class="stat-value">3.2%</div>
+                    <div class="stat-label">跳出率</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">用户卡片</h2>
+            <div class="card-grid" style="max-width: 400px;">
+                <div class="user-card">
+                    <div class="user-avatar">张</div>
+                    <div class="user-name">张经理</div>
+                    <div class="user-role">产品经理</div>
+                    <div class="user-stats">
+                        <div class="user-stat">
+                            <div class="user-stat-value">128</div>
+                            <div class="user-stat-label">项目</div>
+                        </div>
+                        <div class="user-stat">
+                            <div class="user-stat-value">4.9</div>
+                            <div class="user-stat-label">评分</div>
+                        </div>
+                        <div class="user-stat">
+                            <div class="user-stat-value">2.5k</div>
+                            <div class="user-stat-label">粉丝</div>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="user-btn user-btn-primary">关注</button>
+                        <button class="user-btn user-btn-secondary">私信</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 价格卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">价格卡片</h2>
+            <div class="card-grid">
+                <div class="pricing-card">
+                    <div class="pricing-name">基础版</div>
+                    <div class="pricing-desc">适合个人用户</div>
+                    <div class="pricing-price">
+                        <span class="pricing-currency">￥</span>
+                        <span class="pricing-amount">0</span>
+                        <span class="pricing-period">/月</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li class="included">? 最多 3 个项目</li>
+                        <li class="included">? 基础分析功能</li>
+                        <li class="included">? 社区支持</li>
+                        <li>? 高级报表</li>
+                        <li>? API 访问</li>
+                    </ul>
+                    <button class="pricing-btn pricing-btn-secondary">免费开始</button>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <div class="pricing-badge">推荐</div>
+                    <div class="pricing-name">专业版</div>
+                    <div class="pricing-desc">适合小型团队</div>
+                    <div class="pricing-price">
+                        <span class="pricing-currency">￥</span>
+                        <span class="pricing-amount">99</span>
+                        <span class="pricing-period">/月</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li class="included">? 无限项目</li>
+                        <li class="included">? 高级分析功能</li>
+                        <li class="included">? 优先支持</li>
+                        <li class="included">? 高级报表</li>
+                        <li>? API 访问</li>
+                    </ul>
+                    <button class="pricing-btn pricing-btn-primary">立即升级</button>
+                </div>
+                
+                <div class="pricing-card">
+                    <div class="pricing-name">企业版</div>
+                    <div class="pricing-desc">适合大型企业</div>
+                    <div class="pricing-price">
+                        <span class="pricing-currency">￥</span>
+                        <span class="pricing-amount">299</span>
+                        <span class="pricing-period">/月</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li class="included">? 无限项目</li>
+                        <li class="included">? 全部功能</li>
+                        <li class="included">? 24/7 专属支持</li>
+                        <li class="included">? 自定义报表</li>
+                        <li class="included">? API 访问</li>
+                    </ul>
+                    <button class="pricing-btn pricing-btn-secondary">联系销售</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 任务卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">任务卡片</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px; max-width: 600px;">
+                <div class="task-card">
+                    <div class="task-checkbox checked">?</div>
+                    <div class="task-content">
+                        <div class="task-title completed">完成首页设计稿</div>
+                        <div class="task-meta">
+                            <span>?? 截止: 2026-01-20</span>
+                            <span class="task-tag">设计</span>
+                        </div>
+                    </div>
+                    <div class="task-avatar">李</div>
+                </div>
+                
+                <div class="task-card">
+                    <div class="task-checkbox"></div>
+                    <div class="task-content">
+                        <div class="task-title">API 接口联调</div>
+                        <div class="task-meta">
+                            <span>?? 截止: 2026-01-22</span>
+                            <span class="task-tag" style="background: rgba(34,197,94,0.15); color: #22C55E;">开发</span>
+                        </div>
+                    </div>
+                    <div class="task-avatar" style="background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);">王</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 媒体卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">媒体卡片</h2>
+            <div class="card-grid">
+                <div class="media-card">
+                    <div class="media-image">
+                        <div class="media-play">?</div>
+                        <span class="media-duration">12:34</span>
+                    </div>
+                    <div class="media-body">
+                        <h3 class="media-title">Kaelis 快速入门教程</h3>
+                        <p class="media-desc">了解如何使用 Kaelis 构建您的第一个项目</p>
+                        <div class="media-footer">
+                            <div class="media-author">
+                                <div class="media-author-avatar">张</div>
+                                <span class="media-author-name">张经理</span>
+                            </div>
+                            <div class="media-stats">
+                                <span>? 1.2k</span>
+                                <span>? 256</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 折叠卡片 -->
+        <div class="showcase-section">
+            <h2 class="section-title">折叠卡片</h2>
+            <div style="max-width: 600px;">
+                <div class="collapse-card">
+                    <div class="collapse-header" onclick="toggleCollapse(this)">
+                        <span class="collapse-title">什么是 Kaelis？</span>
+                        <span class="collapse-icon">▼</span>
+                    </div>
+                    <div class="collapse-body show">
+                        Kaelis 是一个现代化的企业级管理平台，提供用户管理、API 集成、数据分析等一站式解决方案。它采用最新的技术栈，具有高性能、高可用性和良好的扩展性。
+                    </div>
+                </div>
+                
+                <div class="collapse-card" style="margin-top: 12px;">
+                    <div class="collapse-header" onclick="toggleCollapse(this)">
+                        <span class="collapse-title">如何开始使用？</span>
+                        <span class="collapse-icon">▼</span>
+                    </div>
+                    <div class="collapse-body">
+                        您可以通过以下步骤开始使用 Kaelis：1. 注册账号；2. 创建您的第一个项目；3. 邀请团队成员；4. 开始协作。我们也提供了详细的文档和教程帮助您快速上手。
+                    </div>
+                </div>
+                
+                <div class="collapse-card" style="margin-top: 12px;">
+                    <div class="collapse-header" onclick="toggleCollapse(this)">
+                        <span class="collapse-title">支持哪些支付方式？</span>
+                        <span class="collapse-icon">▼</span>
+                    </div>
+                    <div class="collapse-body">
+                        我们支持多种支付方式，包括：支付宝、微信支付、银行卡、企业转账等。对于企业用户，我们还提供月结和年结的付款方式。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleCollapse(header) {
+            const body = header.nextElementSibling;
+            const icon = header.querySelector('.collapse-icon');
+            body.classList.toggle('show');
+            icon.classList.toggle('expanded');
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

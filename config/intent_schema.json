@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kaelis.dev/schemas/intent-schema.json",
+  "title": "Kaelis Intent Schema",
+  "description": "Structured intent representation for ACK v2.1 forward-deterministic processing",
+  "type": "object",
+  "required": ["action", "target", "version"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["2.1"],
+      "description": "Schema version"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "add",
+        "modify",
+        "delete",
+        "query",
+        "deploy",
+        "test",
+        "migrate",
+        "refactor",
+        "configure"
+      ],
+      "description": "High-level action type"
+    },
+    "target": {
+      "type": "object",
+      "required": ["type", "path"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "api_route",
+            "agent_tool",
+            "config",
+            "web_frontend",
+            "database",
+            "script",
+            "test",
+            "documentation"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_/.-]+$",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "entity_name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+          "description": "Function/class/variable name if applicable"
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Action-specific parameters",
+      "additionalProperties": true,
+      "properties": {
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "default": 60
+        },
+        "force": {
+          "type": "boolean",
+          "default": false
+        },
+        "backup": {
+          "type": "boolean",
+          "default": true
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "description": "Constraints and requirements",
+      "items": {
+        "type": "object",
+        "required": ["type", "value"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "architecture_compliance",
+              "security_level",
+              "performance_requirement",
+              "test_coverage",
+              "no_breaking_change"
+            ]
+          },
+          "value": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["must", "should", "nice_to_have"],
+            "default": "should"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "original_query": {
+          "type": "string",
+          "description": "Original natural language input"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "session_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9-]+$"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "description": "Validation requirements",
+      "properties": {
+        "required_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "syntax_check": {
+          "type": "boolean",
+          "default": true
+        },
+        "test_execution": {
+          "type": "boolean",
+          "default": true
+        },
+        "sandbox_prerun": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": "2.1",
+      "action": "add",
+      "target": {
+        "type": "api_route",
+        "path": "api/routes/auth.py",
+        "entity_name": "login_endpoint"
+      },
+      "parameters": {
+        "timeout": 30,
+        "backup": true
+      },
+      "constraints": [
+        {
+          "type": "security_level",
+          "value": "high",
+          "severity": "must"
+        }
+      ],
+      "metadata": {
+        "original_query": "添加用户登录API",
+        "timestamp": "2026-04-12T12:00:00Z",
+        "session_id": "sess-001",
+        "confidence": 0.95
+      }
+    }
+  ]
+}

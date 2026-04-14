@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelis 智流 - 屏幕录制</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        header h1 {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+        }
+        
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        
+        /* Recording Status */
+        .recording-status {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .status-indicator {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.3s;
+        }
+        
+        .status-idle {
+            background: var(--bg-color);
+            color: var(--text-secondary);
+        }
+        
+        .status-recording {
+            background: var(--danger-color);
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        .recording-timer {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'Monaco', monospace;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .recording-info {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Recordings List */
+        .recordings-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-header h2 {
+            font-size: 1.25rem;
+        }
+        
+        .recording-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+        
+        .recording-item:hover {
+            background: var(--bg-color);
+        }
+        
+        .recording-icon {
+            width: 48px;
+            height: 48px;
+            background: #fee2e2;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .recording-info-main {
+            flex: 1;
+        }
+        
+        .recording-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .recording-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .recording-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Info Box */
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box ul {
+            margin-left: 1.25rem;
+            color: #1e40af;
+            font-size: 0.875rem;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .recording-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .recording-actions {
+                margin-top: 1rem;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎥 屏幕录制</h1>
+            <p>录制鼠标和键盘操作，保存为可回放的自动化脚本</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="alert" class="alert"></div>
+        
+        <!-- 使用说明 -->
+        <div class="info-box">
+            <h4>💡 使用提示</h4>
+            <ul>
+                <li>点击「开始录制」后，系统会记录你的鼠标点击、移动和键盘输入</li>
+                <li>将鼠标快速移到屏幕角落可触发安全停止</li>
+                <li>录制完成后可以转换为技能，在自进化流程中使用</li>
+            </ul>
+        </div>
+        
+        <!-- 录制控制 -->
+        <div class="recording-status">
+            <div id="statusIndicator" class="status-indicator status-idle">
+                ⏸️
+            </div>
+            <div id="recordingTimer" class="recording-timer" style="display: none;">
+                00:00
+            </div>
+            <div class="recording-info">
+                <span id="statusText">准备就绪</span>
+            </div>
+            <div class="control-buttons">
+                <button id="startBtn" class="btn btn-danger" onclick="showStartModal()">
+                    🔴 开始录制
+                </button>
+                <button id="stopBtn" class="btn btn-primary" onclick="stopRecording()" disabled>
+                    ⏹️ 停止录制
+                </button>
+            </div>
+        </div>
+        
+        <!-- 录制列表 -->
+        <div class="recordings-section">
+            <div class="section-header">
+                <h2>📋 录制列表</h2>
+                <button class="btn btn-secondary btn-small" onclick="loadRecordings()">🔄 刷新</button>
+            </div>
+            <div id="recordingsList">
+                <div class="empty-state">加载中...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 开始录制模态框 -->
+    <div id="startModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>开始录制</h2>
+            </div>
+            <form onsubmit="startRecording(event)">
+                <div class="form-group">
+                    <label>录制名称</label>
+                    <input type="text" name="name" required placeholder="如：数据录入流程">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea name="description" rows="2" placeholder="描述这个录制的用途..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="screenshots"> 截取屏幕锚点
+                    </label>
+                </div>
+                <div class="control-buttons">
+                    <button type="submit" class="btn btn-danger">开始录制</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideStartModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/recorder';
+        let recordingTimer = null;
+        let recordingStartTime = null;
+        
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 3000);
+        }
+        
+        function showStartModal() {
+            document.getElementById('startModal').classList.add('show');
+        }
+        
+        function hideStartModal() {
+            document.getElementById('startModal').classList.remove('show');
+        }
+        
+        async function startRecording(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                capture_screenshots: formData.get('screenshots') === 'on'
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                
+                if (result.success) {
+                    hideStartModal();
+                    showAlert('录制已开始');
+                    
+                    // 更新UI
+                    document.getElementById('statusIndicator').className = 'status-indicator status-recording';
+                    document.getElementById('statusIndicator').textContent = '🔴';
+                    document.getElementById('statusText').textContent = '正在录制: ' + data.name;
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    document.getElementById('recordingTimer').style.display = 'block';
+                    
+                    // 启动计时器
+                    recordingStartTime = Date.now();
+                    recordingTimer = setInterval(updateTimer, 1000);
+                } else {
+                    showAlert(result.error || '启动失败', 'error');
+                }
+            } catch (e) {
+                showAlert('启动失败: ' + e.message, 'error');
+            }
+        }
+        
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('recordingTimer').textContent = `${minutes}:${seconds}`;
+        }
+        
+        async function stopRecording() {
+            try {
+                const res = await fetch(`${API_BASE}/stop`, { method: 'POST' });
+                const result = await res.json();
+                
+                if (result.success) {
+                    clearInterval(recordingTimer);
+                    showAlert(`录制完成！共 ${result.data.actions_count} 个动作`);
+                    
+                    // 重置UI
+                    document.getElementById('statusIndicator').className = 'status-indicator status-idle';
+                    document.getElementById('statusIndicator').textContent = '⏸️';
+                    document.getElementById('statusText').textContent = '准备就绪';
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    document.getElementById('recordingTimer').style.display = 'none';
+                    
+                    loadRecordings();
+                } else {
+                    showAlert(result.error || '停止失败', 'error');
+                }
+            } catch (e) {
+                showAlert('停止失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadRecordings() {
+            try {
+                const res = await fetch(`${API_BASE}/recordings`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderRecordings(data.data.recordings);
+                }
+            } catch (e) {
+                document.getElementById('recordingsList').innerHTML = `
+                    <div class="empty-state">
+                        <p>无法加载录制列表</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderRecordings(recordings) {
+            const container = document.getElementById('recordingsList');
+            
+            if (recordings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>暂无录制</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = recordings.map(rec => `
+                <div class="recording-item">
+                    <div class="recording-icon">🎥</div>
+                    <div class="recording-info-main">
+                        <div class="recording-name">${rec.name}</div>
+                        <div class="recording-meta">
+                            ${rec.actions_count} 个动作 · ${formatDuration(rec.duration)} · ${formatDate(rec.created_at)}
+                        </div>
+                    </div>
+                    <div class="recording-actions">
+                        <button class="btn btn-primary btn-small" onclick='convertToSkill("${rec.id}")'>
+                            转技能
+                        </button>
+                        <button class="btn btn-secondary btn-small" onclick='deleteRecording("${rec.id}")'>
+                            删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}分${secs}秒`;
+        }
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('zh-CN');
+        }
+        
+        async function convertToSkill(recordingId) {
+            try {
+                const res = await fetch(`${API_BASE}/convert-to-skill/${recordingId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await res.json();
+                
+                if (result.success) {
+                    showAlert(`已转换为技能: ${result.data.skill_id}`);
+                } else {
+                    showAlert(result.error || '转换失败', 'error');
+                }
+            } catch (e) {
+                showAlert('转换失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteRecording(recordingId) {
+            if (!confirm('确定要删除这个录制吗？')) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/recordings/${recordingId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res.ok) {
+                    showAlert('录制已删除');
+                    loadRecordings();
+                }
+            } catch (e) {
+                showAlert('删除失败', 'error');
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecordings();
+        });
+    </script>
+</body>
+</html>

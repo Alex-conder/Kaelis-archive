@@ -1,0 +1,50 @@
+{
+  "title": "插件市场",
+  "pageType": "data",
+  "loaderModules": "standard",
+  "assetsPath": "../assets",
+  "basePath": "",
+  "navItems": [
+    { "id": "dashboard", "label": "首页", "href": "dashboard.html", "active": false },
+    { "id": "chat", "label": "对话", "href": "chat.html", "active": false },
+    { "id": "plugins", "label": "插件", "href": "plugins.html", "active": true },
+    { "id": "settings", "label": "设置", "href": "settings.html", "active": false }
+  ],
+  "userAvatar": "张",
+  "notificationCount": 2,
+  "content": {
+    "categories": [
+      { "id": "all", "label": "全部", "active": true },
+      { "id": "ai", "label": "AI 工具", "active": false },
+      { "id": "data", "label": "数据处理", "active": false },
+      { "id": "dev", "label": "开发工具", "active": false },
+      { "id": "design", "label": "设计创意", "active": false }
+    ],
+    "plugins": [
+      {
+        "name": "DeepSeek Chat",
+        "description": "强大的中文AI对话模型",
+        "icon": "🤖",
+        "rating": 4.9,
+        "downloads": "128K",
+        "installed": true
+      },
+      {
+        "name": "Code Assistant",
+        "description": "智能代码补全和调试",
+        "icon": "💻",
+        "rating": 4.8,
+        "downloads": "89K",
+        "installed": false
+      },
+      {
+        "name": "Data Visualizer",
+        "description": "数据可视化图表生成",
+        "icon": "📊",
+        "rating": 4.7,
+        "downloads": "56K",
+        "installed": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+# Documentation Contract
+# 文档自动生成契约 - 定义文档与源代码的绑定关系
+
+version: "1.0"
+description: "文档自动生成契约，确保文档与代码同步"
+
+# 生成器定义
+generators:
+  - name: api_reference
+    description: "从 OpenAPI 契约生成 API 参考文档"
+    source: contracts/openapi.yaml
+    target: docs/06-references/api_reference.md
+    script: scripts/generate_api_docs.py
+    trigger:
+      - contracts/openapi.yaml
+      - api/routes/*.py
+
+  - name: arch_diagram
+    description: "从体验契约生成架构部署拓扑图"
+    source: .kaelis/experience.yaml
+    target: docs/02-architecture/deployment_topology.md
+    script: scripts/generate_arch_diagram.py
+    trigger:
+      - .kaelis/experience.yaml
+      - k8s/*.yaml
+
+  - name: test_plan
+    description: "从测试用例生成测试计划文档"
+    source: tests/
+    target: docs/07-status/auto_test_plan.md
+    script: scripts/generate_test_plan.py
+    trigger:
+      - tests/test_*.py
+      - tests/**/*_test.py
+
+  - name: changelog
+    description: "从 Git 历史生成更新日志"
+    source: .git/
+    target: docs/06-references/CHANGELOG.md
+    script: scripts/generate_changelog.py
+    trigger:
+      - daily
+
+# 契约规则
+rules:
+  - id: doc_must_exist
+    description: "契约文件变更必须同步文档"
+    condition: "contracts/*.yaml changed"
+    action: "require docs update"
+    error_message: "文档契约过期，请运行 `make docs`"
+
+  - id: doc_freshness
+    description: "文档必须与源代码保持同步"
+    max_age: "24h"
+    action: "warn if stale"
+
+# 验证脚本
+validation:
+  script: scripts/validate_doc_contract.py
+  on_failure: block_commit

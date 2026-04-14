@@ -1,0 +1,282 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-container { display: grid; grid-template-columns: 1fr 1fr; max-width: 1000px; width: 100%; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .login-left { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); padding: 60px; display: flex; flex-direction: column; justify-content: center; color: white; }
+        .brand-logo { font-size: 48px; font-weight: 800; margin-bottom: 24px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .brand-tagline { font-size: 24px; font-weight: 600; margin-bottom: 16px; }
+        .brand-desc { font-size: 16px; line-height: 1.6; opacity: 0.9; }
+        .features { margin-top: 40px; }
+        .feature-item { display: flex; align-items: center; margin-bottom: 16px; font-size: 14px; animation: slideInLeft 0.5s ease-out; animation-fill-mode: both; }
+        .feature-item:nth-child(1) { animation-delay: 0.1s; }
+        .feature-item:nth-child(2) { animation-delay: 0.2s; }
+        .feature-item:nth-child(3) { animation-delay: 0.3s; }
+        .feature-item:nth-child(4) { animation-delay: 0.4s; }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .feature-icon { width: 24px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; }
+        .login-right { padding: 60px; display: flex; flex-direction: column; justify-content: center; }
+        .login-header { text-align: center; margin-bottom: 32px; }
+        .login-title { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .login-subtitle { font-size: 14px; color: #64748b; }
+        .social-login { display: flex; gap: 12px; margin-bottom: 24px; }
+        .social-btn { flex: 1; padding: 12px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; }
+        .social-btn:hover { background: #f8fafc; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(136,72,249,0.15); }
+        .social-btn:active { transform: translateY(0); }
+        .social-btn::after { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: rgba(136,72,249,0.1); border-radius: 50%; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s; }
+        .social-btn:active::after { width: 200px; height: 200px; }
+        .divider { display: flex; align-items: center; margin-bottom: 24px; color: #94a3b8; font-size: 14px; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+        .divider span { padding: 0 16px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; transition: all 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(136,72,249,0.1); }
+        .form-input.error { border-color: #ef4444; background: #fef2f2; }
+        .error-message { color: #ef4444; font-size: 12px; margin-top: 6px; display: none; }
+        .error-message.show { display: block; animation: shake 0.3s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .form-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 14px; }
+        .remember-me { display: flex; align-items: center; gap: 8px; color: #64748b; cursor: pointer; }
+        .remember-me input { cursor: pointer; }
+        .forgot-password { color: var(--primary); text-decoration: none; font-weight: 500; transition: all 0.2s; }
+        .forgot-password:hover { text-decoration: underline; }
+        
+        /* 登录按钮 */
+        .login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+        .login-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        .login-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .login-btn.loading { color: transparent; }
+        .login-btn .btn-text { transition: opacity 0.2s; }
+        .login-btn.loading .btn-text { opacity: 0; }
+        .login-btn .spinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+        .login-btn.loading .spinner { display: block; }
+        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .login-btn .success-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 24px; transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .login-btn.success .success-icon { transform: translate(-50%, -50%) scale(1); }
+        .login-btn.success .btn-text { opacity: 0; }
+        
+        .register-link { text-align: center; margin-top: 24px; font-size: 14px; color: #64748b; }
+        .register-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .register-link a:hover { text-decoration: underline; }
+        
+        /* 提示消息 */
+        .toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; transform: translateX(150%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: #22c55e; }
+        .toast.error { background: #ef4444; }
+        .toast.info { background: var(--secondary); }
+        
+        @media (max-width: 768px) { .login-container { grid-template-columns: 1fr; } .login-left { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="brand-logo">🚀 Kaelis</div>
+            <div class="brand-tagline">企业级 AI 平台</div>
+            <div class="brand-desc">智能化、自动化、可扩展的 AI 解决方案，助力企业数字化转型</div>
+            <div class="features">
+                <div class="feature-item"><div class="feature-icon">🤖</div>强大的 AI 对话能力</div>
+                <div class="feature-item"><div class="feature-icon">🔌</div>丰富的插件生态</div>
+                <div class="feature-item"><div class="feature-icon">🛡️</div>企业级安全保障</div>
+                <div class="feature-item"><div class="feature-icon">📊</div>深度数据分析</div>
+            </div>
+        </div>
+        <div class="login-right">
+            <div class="login-header">
+                <h1 class="login-title">欢迎回来</h1>
+                <p class="login-subtitle">登录您的 Kaelis 账户</p>
+            </div>
+            
+            <div class="social-login">
+                <button class="social-btn" onclick="handleSocialLogin('google')">
+                    <span>🔍</span><span>Google</span>
+                </button>
+                <button class="social-btn" onclick="handleSocialLogin('github')">
+                    <span>💼</span><span>GitHub</span>
+                </button>
+                <button class="social-btn" onclick="handleSocialLogin('wechat')">
+                    <span>💬</span><span>微信</span>
+                </button>
+            </div>
+            
+            <div class="divider"><span>或使用邮箱登录</span></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">邮箱地址</label>
+                    <input type="email" class="form-input" id="email" name="email" placeholder="your@email.com" required>
+                    <div class="error-message" id="emailError">请输入有效的邮箱地址</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-input" id="password" name="password" placeholder="••••••••" required>
+                    <div class="error-message" id="passwordError">请输入密码</div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span>记住我</span>
+                    </label>
+                    <a href="#" class="forgot-password" onclick="handleForgotPassword()">忘记密码?</a>
+                </div>
+                
+                <button type="submit" class="login-btn" id="submitBtn">
+                    <span class="btn-text">登 录</span>
+                    <div class="spinner"></div>
+                    <span class="success-icon">✓</span>
+                </button>
+            </form>
+            
+            <div class="register-link">还没有账户? <a href="register.html">立即注册</a></div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const toast = document.getElementById('toast');
+        
+        // 表单提交
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // 重置错误状态
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+            
+            let isValid = true;
+            
+            // 验证邮箱
+            const email = document.getElementById('email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value)) {
+                showError(email, 'emailError');
+                isValid = false;
+            }
+            
+            // 验证密码
+            const password = document.getElementById('password');
+            if (!password.value) {
+                showError(password, 'passwordError');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // 设置加载状态
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            // 模拟登录API
+            try {
+                await simulateLogin();
+                
+                // 成功状态
+                submitBtn.classList.remove('loading');
+                submitBtn.classList.add('success');
+                showToast('登录成功! 欢迎回来', 'success');
+                
+                // 保存记住我状态
+                const rememberMe = document.getElementById('rememberMe');
+                if (rememberMe.checked) {
+                    localStorage.setItem('rememberEmail', email.value);
+                }
+                
+                // 1.5秒后跳转
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                showToast('登录失败: ' + error.message, 'error');
+            }
+        });
+        
+        function showError(input, errorId) {
+            input.classList.add('error');
+            document.getElementById(errorId).classList.add('show');
+        }
+        
+        function showToast(message, type) {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function simulateLogin() {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // 模拟验证
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if (email === 'demo@kaelis.ai' && password === 'demo123') {
+                        resolve({ success: true });
+                    } else if (Math.random() > 0.3) {
+                        resolve({ success: true });
+                    } else {
+                        reject(new Error('邮箱或密码错误'));
+                    }
+                }, 1500);
+            });
+        }
+        
+        function handleSocialLogin(provider) {
+            showToast(`正在使用 ${provider} 登录...`, 'info');
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1500);
+        }
+        
+        function handleForgotPassword() {
+            showToast('密码重置链接已发送到您的邮箱', 'info');
+        }
+        
+        // 页面加载时检查记住的邮箱
+        window.addEventListener('load', function() {
+            const rememberedEmail = localStorage.getItem('rememberEmail');
+            if (rememberedEmail) {
+                document.getElementById('email').value = rememberedEmail;
+                document.getElementById('rememberMe').checked = true;
+            }
+        });
+    </script>
+    <!-- Kaelis 统一加载器 -->
+    <script src="../assets/js/kaelis-loader.js" data-modules="basic,auth"></script>
+    <script>
+        // 使用新的认证模块
+        document.addEventListener('DOMContentLoaded', function() {
+            // 等待模块加载完成
+            window.addEventListener('kaelis:module-loaded', function(e) {
+                if (e.detail.module === 'auth') {
+                    console.log('认证模块已加载，可以使用 Kaelis.WebSocketAuth');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+

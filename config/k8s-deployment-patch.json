@@ -1,0 +1,23 @@
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "app",
+            "resources": {
+              "requests": {
+                "cpu": "3566m",
+                "memory": "1922Mi"
+              },
+              "limits": {
+                "cpu": "7132m",
+                "memory": "3844Mi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

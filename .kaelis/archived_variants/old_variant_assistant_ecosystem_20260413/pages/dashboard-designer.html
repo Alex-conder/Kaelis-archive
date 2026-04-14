@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>看板设计器 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .designer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .designer-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .header-actions { display: flex; gap: 12px; }
+        .action-btn { padding: 10px 20px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; font-size: 14px; cursor: pointer; }
+        .action-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .designer-workspace { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
+        .widgets-panel { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel-title { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
+        .widget-category { margin-bottom: 20px; }
+        .category-title { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+        .widget-item { display: flex; align-items: center; padding: 12px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px; cursor: grab; transition: all 0.2s; }
+        .widget-item:hover { background: #f3e8ff; }
+        .widget-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 10px; }
+        .widget-name { font-size: 13px; font-weight: 500; color: #1e293b; }
+        .canvas-area { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 24px; min-height: 600px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+        .dashboard-widget { background: #f8fafc; border-radius: 12px; padding: 20px; border: 2px dashed #e2e8f0; }
+        .dashboard-widget.occupied { background: white; border: 1px solid #e2e8f0; border-style: solid; }
+        .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .widget-title { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .widget-actions { display: flex; gap: 4px; }
+        .widget-action { width: 24px; height: 24px; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .widget-action:hover { background: #f1f5f9; }
+        .widget-content { height: 120px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 13px; }
+        .widget-content.chart { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 8px; color: white; }
+        .col-3 { grid-column: span 3; }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+        .col-12 { grid-column: span 12; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">看板设计器</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="designer-header">
+            <h1>?? 看板设计器</h1>
+            <div class="header-actions">
+                <button class="action-btn">?? 预览</button>
+                <button class="action-btn">?? 保存</button>
+                <button class="action-btn primary">?? 发布</button>
+            </div>
+        </div>
+        <div class="designer-workspace">
+            <div class="widgets-panel">
+                <h2 class="panel-title">?? 组件库</h2>
+                <div class="widget-category">
+                    <div class="category-title">图表组件</div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#dbeafe;">??</div>
+                        <span class="widget-name">折线图</span>
+                    </div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#dcfce7;">??</div>
+                        <span class="widget-name">柱状图</span>
+                    </div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#fef3c7;">??</div>
+                        <span class="widget-name">饼图</span>
+                    </div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#f3e8ff;">??</div>
+                        <span class="widget-name">指标卡</span>
+                    </div>
+                </div>
+                <div class="widget-category">
+                    <div class="category-title">数据组件</div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#f1f5f9;">??</div>
+                        <span class="widget-name">数据表格</span>
+                    </div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#f1f5f9;">??</div>
+                        <span class="widget-name">文本卡片</span>
+                    </div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#f1f5f9;">???</div>
+                        <span class="widget-name">图片展示</span>
+                    </div>
+                </div>
+                <div class="widget-category">
+                    <div class="category-title">AI组件</div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#f3e8ff;">??</div>
+                        <span class="widget-name">AI洞察</span>
+                    </div>
+                    <div class="widget-item">
+                        <div class="widget-icon" style="background:#f3e8ff;">??</div>
+                        <span class="widget-name">智能问答</span>
+                    </div>
+                </div>
+            </div>
+            <div class="canvas-area">
+                <div class="dashboard-grid">
+                    <div class="dashboard-widget occupied col-3">
+                        <div class="widget-header">
+                            <span class="widget-title">总用户数</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content chart">12,458<br><small style="opacity:0.8">↑ 12.5%</small></div>
+                    </div>
+                    <div class="dashboard-widget occupied col-3">
+                        <div class="widget-header">
+                            <span class="widget-title">AI调用量</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content chart">856,234<br><small style="opacity:0.8">↑ 23.8%</small></div>
+                    </div>
+                    <div class="dashboard-widget occupied col-3">
+                        <div class="widget-header">
+                            <span class="widget-title">平均响应</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content chart">245ms<br><small style="opacity:0.8">↓ 8.2%</small></div>
+                    </div>
+                    <div class="dashboard-widget occupied col-3">
+                        <div class="widget-header">
+                            <span class="widget-title">满意度</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content chart">4.8/5<br><small style="opacity:0.8">↑ 0.3</small></div>
+                    </div>
+                    <div class="dashboard-widget occupied col-6">
+                        <div class="widget-header">
+                            <span class="widget-title">调用趋势</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content">?? 折线图区域</div>
+                    </div>
+                    <div class="dashboard-widget occupied col-6">
+                        <div class="widget-header">
+                            <span class="widget-title">模型分布</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content">?? 饼图区域</div>
+                    </div>
+                    <div class="dashboard-widget occupied col-12">
+                        <div class="widget-header">
+                            <span class="widget-title">最近活动</span>
+                            <div class="widget-actions">
+                                <button class="widget-action">??</button>
+                                <button class="widget-action">???</button>
+                            </div>
+                        </div>
+                        <div class="widget-content">?? 数据表格区域</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

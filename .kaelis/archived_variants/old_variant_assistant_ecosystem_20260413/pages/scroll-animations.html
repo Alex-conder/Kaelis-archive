@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滚动动画 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            overflow-x: hidden;
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0A0A0A; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        
+        .header { 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header-bg {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(136,72,249,0.1) 0%, rgba(59,130,246,0.1) 100%);
+            z-index: -1;
+        }
+        .header h1 { 
+            font-size: 64px; 
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 1s ease-out;
+        }
+        .header p { 
+            font-size: 20px; 
+            color: #6B7280;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            animation: bounce 2s infinite;
+        }
+        .scroll-indicator span {
+            display: block;
+            width: 30px;
+            height: 50px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 15px;
+            position: relative;
+        }
+        .scroll-indicator span::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            animation: scrollWheel 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes scrollWheel {
+            0% { opacity: 1; top: 8px; }
+            100% { opacity: 0; top: 30px; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .content { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+        
+        .section-title { 
+            font-size: 32px; 
+            margin-bottom: 48px;
+            text-align: center;
+        }
+        
+        /* ===== 淡入动画 ===== */
+        .fade-in { 
+            opacity: 0; 
+            transform: translateY(30px); 
+            transition: all 0.8s ease-out;
+        }
+        .fade-in.visible { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
+        
+        /* ===== 从左侧滑入 ===== */
+        .slide-left { 
+            opacity: 0; 
+            transform: translateX(-100px); 
+            transition: all 0.8s ease-out;
+        }
+        .slide-left.visible { 
+            opacity: 1; 
+            transform: translateX(0); 
+        }
+        
+        /* ===== 从右侧滑入 ===== */
+        .slide-right { 
+            opacity: 0; 
+            transform: translateX(100px); 
+            transition: all 0.8s ease-out;
+        }
+        .slide-right.visible { 
+            opacity: 1; 
+            transform: translateX(0); 
+        }
+        
+        /* ===== 缩放进入 ===== */
+        .scale-in { 
+            opacity: 0; 
+            transform: scale(0.5); 
+            transition: all 0.8s ease-out;
+        }
+        .scale-in.visible { 
+            opacity: 1; 
+            transform: scale(1); 
+        }
+        
+        /* ===== 旋转进入 ===== */
+        .rotate-in { 
+            opacity: 0; 
+            transform: rotate(-180deg) scale(0.5); 
+            transition: all 0.8s ease-out;
+        }
+        .rotate-in.visible { 
+            opacity: 1; 
+            transform: rotate(0) scale(1); 
+        }
+        
+        /* ===== 翻转进入 ===== */
+        .flip-in { 
+            opacity: 0; 
+            transform: perspective(1000px) rotateX(90deg); 
+            transition: all 0.8s ease-out;
+        }
+        .flip-in.visible { 
+            opacity: 1; 
+            transform: perspective(1000px) rotateX(0); 
+        }
+        
+        /* ===== 卡片网格 ===== */
+        .card-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+        .card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 32px;
+            transition: all 0.3s;
+        }
+        .card:hover { 
+            transform: translateY(-10px); 
+            box-shadow: 0 20px 40px rgba(136,72,249,0.2);
+            border-color: rgba(136,72,249,0.3);
+        }
+        .card-icon { 
+            width: 64px; 
+            height: 64px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            margin-bottom: 20px;
+        }
+        .card h3 { font-size: 20px; margin-bottom: 12px; }
+        .card p { color: #6B7280; line-height: 1.6; }
+        
+        /* ===== 时间轴 ===== */
+        .timeline { 
+            position: relative; 
+            padding-left: 40px;
+            margin-bottom: 80px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        .timeline-item { 
+            position: relative; 
+            padding-bottom: 40px;
+        }
+        .timeline-dot { 
+            position: absolute; 
+            left: -33px; 
+            top: 0;
+            width: 16px; 
+            height: 16px; 
+            background: var(--primary); 
+            border-radius: 50%; 
+            border: 3px solid #0A0A0A;
+            box-shadow: 0 0 0 3px var(--primary);
+        }
+        .timeline-content { 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px; 
+            padding: 24px;
+        }
+        .timeline-content h4 { font-size: 18px; margin-bottom: 8px; }
+        .timeline-content p { color: #6B7280; }
+        
+        /* ===== 视差效果 ===== */
+        .parallax-section { 
+            height: 400px; 
+            background: linear-gradient(135deg, rgba(136,72,249,0.2) 0%, rgba(59,130,246,0.2) 100%); 
+            border-radius: 24px;
+            margin-bottom: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .parallax-layer { 
+            position: absolute; 
+            font-size: 120px; 
+            opacity: 0.3;
+            transition: transform 0.1s ease-out;
+        }
+        .parallax-layer:nth-child(1) { top: 10%; left: 10%; }
+        .parallax-layer:nth-child(2) { top: 50%; right: 10%; }
+        .parallax-layer:nth-child(3) { bottom: 10%; left: 30%; }
+        .parallax-text { 
+            font-size: 48px; 
+            font-weight: 700;
+            z-index: 1;
+        }
+        
+        /* ===== 数字计数器 ===== */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+        .stat-item { 
+            text-align: center; 
+            padding: 32px;
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px;
+        }
+        .stat-number { 
+            font-size: 48px; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label { color: #6B7280; margin-top: 8px; }
+        
+        /* ===== 图片画廊 ===== */
+        .gallery { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 16px;
+            margin-bottom: 80px;
+        }
+        .gallery-item { 
+            aspect-ratio: 1; 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        .gallery-item::before {
+            content: '???';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            opacity: 0.5;
+        }
+        .gallery-item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        .gallery-item:hover img { transform: scale(1.1); }
+        .gallery-item:nth-child(2) { grid-row: span 2; }
+        
+        /* ===== 文字揭示 ===== */
+        .text-reveal { 
+            font-size: 48px; 
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 80px;
+        }
+        .text-reveal span { 
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease-out;
+        }
+        .text-reveal span.visible { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* ===== 进度条 ===== */
+        .progress-section { margin-bottom: 80px; }
+        .progress-item { margin-bottom: 24px; }
+        .progress-header { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px;
+        }
+        .progress-bar { 
+            height: 8px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 4px; 
+            overflow: hidden;
+        }
+        .progress-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1.5s ease-out;
+        }
+        
+        /* ===== 粘性导航 ===== */
+        .sticky-nav { 
+            position: sticky; 
+            top: 20px; 
+            background: rgba(23,23,23,0.9); 
+            backdrop-filter: blur(20px);
+            border-radius: 50px;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 60px;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .sticky-nav a { 
+            color: #6B7280; 
+            text-decoration: none; 
+            font-size: 14px;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .sticky-nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .sticky-nav a:hover, .sticky-nav a.active { color: white; }
+        .sticky-nav a:hover::after, .sticky-nav a.active::after { width: 100%; }
+        
+        /* 返回顶部 */
+        .back-to-top { 
+            position: fixed; 
+            bottom: 30px; 
+            right: 30px; 
+            width: 50px; 
+            height: 50px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 50%; 
+            color: white; 
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        .back-to-top.visible { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
+        .back-to-top:hover { transform: translateY(-5px); }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 36px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .gallery { grid-template-columns: repeat(2, 1fr); }
+            .gallery-item:nth-child(2) { grid-row: span 1; }
+            .text-reveal { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-bg"></div>
+        <h1>滚动动画</h1>
+        <p>向下滚动查看各种滚动触发动画效果</p>
+        <div class="scroll-indicator">
+            <span></span>
+        </div>
+    </div>
+    
+    <div class="content">
+        <!-- 粘性导航 -->
+        <nav class="sticky-nav">
+            <a href="#cards" class="active">卡片</a>
+            <a href="#timeline">时间轴</a>
+            <a href="#parallax">视差</a>
+            <a href="#stats">数据</a>
+            <a href="#gallery">画廊</a>
+        </nav>
+        
+        <!-- 卡片网格 -->
+        <section id="cards">
+            <h2 class="section-title fade-in">? 卡片动画</h2>
+            <div class="card-grid">
+                <div class="card fade-in">
+                    <div class="card-icon">??</div>
+                    <h3>快速启动</h3>
+                    <p>优化的性能让应用启动速度提升 300%，用户体验更加流畅。</p>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-icon">??</div>
+                    <h3>精美设计</h3>
+                    <p>现代化的 UI 设计，支持深色模式和自定义主题。</p>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-icon">??</div>
+                    <h3>安全可靠</h3>
+                    <p>企业级安全防护，端到端加密保护您的数据。</p>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-icon">?</div>
+                    <h3>闪电速度</h3>
+                    <p>基于最新的技术栈构建，响应速度极快。</p>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-icon">??</div>
+                    <h3>全球部署</h3>
+                    <p>CDN 加速，全球节点覆盖，随时随地快速访问。</p>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-icon">??</div>
+                    <h3>多端同步</h3>
+                    <p>支持 Web、iOS、Android 多平台数据实时同步。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 时间轴 -->
+        <section id="timeline">
+            <h2 class="section-title slide-left">?? 发展历程</h2>
+            <div class="timeline">
+                <div class="timeline-item slide-left">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h4>2024年 - 项目启动</h4>
+                        <p>Kaelis 项目正式启动，确立了产品愿景和技术架构。</p>
+                    </div>
+                </div>
+                <div class="timeline-item slide-left">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h4>2025年 - 首个版本</h4>
+                        <p>发布 1.0 版本，获得首批 10000+ 用户。</p>
+                    </div>
+                </div>
+                <div class="timeline-item slide-left">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h4>2026年 - 功能完善</h4>
+                        <p>推出 AI 助手、数据分析等核心功能，用户突破 100万。</p>
+                    </div>
+                </div>
+                <div class="timeline-item slide-left">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h4>未来 - 持续创新</h4>
+                        <p>继续探索新技术，为用户带来更好的体验。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 视差效果 -->
+        <section id="parallax">
+            <h2 class="section-title scale-in">?? 视差滚动</h2>
+            <div class="parallax-section">
+                <div class="parallax-layer" data-speed="0.5">?</div>
+                <div class="parallax-layer" data-speed="-0.3">??</div>
+                <div class="parallax-layer" data-speed="0.8">??</div>
+                <div class="parallax-text">Parallax Effect</div>
+            </div>
+        </section>
+        
+        <!-- 数据统计 -->
+        <section id="stats">
+            <h2 class="section-title rotate-in">?? 数据统计</h2>
+            <div class="stats-grid">
+                <div class="stat-item scale-in">
+                    <div class="stat-number" data-target="100">0</div>
+                    <div class="stat-label">万+ 用户</div>
+                </div>
+                <div class="stat-item scale-in">
+                    <div class="stat-number" data-target="50">0</div>
+                    <div class="stat-label">+ 国家</div>
+                </div>
+                <div class="stat-item scale-in">
+                    <div class="stat-number" data-target="99">0</div>
+                    <div class="stat-label">% 满意度</div>
+                </div>
+                <div class="stat-item scale-in">
+                    <div class="stat-number" data-target="24">0</div>
+                    <div class="stat-label">/7 支持</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 技能进度 -->
+        <section class="progress-section">
+            <h2 class="section-title flip-in">?? 技能掌握</h2>
+            <div class="progress-item flip-in">
+                <div class="progress-header">
+                    <span>前端开发</span>
+                    <span>95%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" data-width="95"></div>
+                </div>
+            </div>
+            <div class="progress-item flip-in">
+                <div class="progress-header">
+                    <span>后端架构</span>
+                    <span>88%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" data-width="88"></div>
+                </div>
+            </div>
+            <div class="progress-item flip-in">
+                <div class="progress-header">
+                    <span>UI/UX 设计</span>
+                    <span>92%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" data-width="92"></div>
+                </div>
+            </div>
+            <div class="progress-item flip-in">
+                <div class="progress-header">
+                    <span>数据分析</span>
+                    <span>85%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" data-width="85"></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 图片画廊 -->
+        <section id="gallery">
+            <h2 class="section-title fade-in">??? 作品展示</h2>
+            <div class="gallery">
+                <div class="gallery-item scale-in"></div>
+                <div class="gallery-item scale-in"></div>
+                <div class="gallery-item scale-in"></div>
+                <div class="gallery-item scale-in"></div>
+                <div class="gallery-item scale-in"></div>
+                <div class="gallery-item scale-in"></div>
+            </div>
+        </section>
+        
+        <!-- 文字揭示 -->
+        <section>
+            <h2 class="section-title slide-right">?? 逐字显示</h2>
+            <p class="text-reveal" id="textReveal">
+                让每一次滚动都充满惊喜
+            </p>
+        </section>
+    </div>
+    
+    <button class="back-to-top" onclick="scrollToTop()">↑</button>
+
+    <script>
+        // 滚动动画观察器
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    // 数字计数动画
+                    if (entry.target.classList.contains('stat-item')) {
+                        animateNumber(entry.target.querySelector('.stat-number'));
+                    }
+                    
+                    // 进度条动画
+                    if (entry.target.classList.contains('progress-item')) {
+                        const fill = entry.target.querySelector('.progress-fill');
+                        fill.style.width = fill.dataset.width + '%';
+                    }
+                }
+            });
+        }, observerOptions);
+        
+        // 观察所有动画元素
+        document.querySelectorAll('.fade-in, .slide-left, .slide-right, .scale-in, .rotate-in, .flip-in, .stat-item, .progress-item').forEach(el => {
+            observer.observe(el);
+        });
+        
+        // 数字计数动画
+        function animateNumber(element) {
+            const target = parseInt(element.dataset.target);
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+            
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current);
+            }, 16);
+        }
+        
+        // 视差效果
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            
+            // 视差层
+            document.querySelectorAll('.parallax-layer').forEach(layer => {
+                const speed = parseFloat(layer.dataset.speed);
+                layer.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+            
+            // 返回顶部按钮
+            const backToTop = document.querySelector('.back-to-top');
+            if (scrolled > 500) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+            
+            // 导航高亮
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.sticky-nav a');
+            
+            sections.forEach((section, index) => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    navLinks.forEach(link => link.classList.remove('active'));
+                    navLinks[index]?.classList.add('active');
+                }
+            });
+        });
+        
+        // 返回顶部
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // 文字逐字显示
+        const textReveal = document.getElementById('textReveal');
+        const text = textReveal.textContent;
+        textReveal.innerHTML = '';
+        text.split('').forEach((char, i) => {
+            const span = document.createElement('span');
+            span.textContent = char === ' ' ? '\u00A0' : char;
+            span.style.transitionDelay = `${i * 0.05}s`;
+            textReveal.appendChild(span);
+        });
+        
+        // 观察文字揭示
+        const textObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('span').forEach(span => {
+                        span.classList.add('visible');
+                    });
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        textObserver.observe(textReveal);
+        
+        // 平滑滚动
+        document.querySelectorAll('.sticky-nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

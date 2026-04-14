@@ -1,0 +1,253 @@
+# Kaelis Experience Contract Language (KECL)
+# 用户体验契约 - MVP 提测版本
+
+journeys:
+  # 首次启动引导旅程
+  first_time_onboarding:
+    description: "新用户首次启动应用的引导流程"
+    trigger: "first_launch"
+    phases:
+      - name: "welcome_card"
+        type: "contract"
+        description: "显示欢迎卡片"
+        ui: 
+          component: "OnboardingCard"
+          props:
+            title: "欢迎来到 Kaelis"
+            steps: ["配置 LLM", "创建工作流", "开始提取"]
+        validation:
+          - selector: "[data-testid='onboarding-card']"
+            condition: "visible"
+        
+      - name: "llm_setup_prompt"
+        type: "command"
+        command: "kaelis config prompt --for=llm"
+        description: "提示用户配置 LLM"
+        
+      - name: "mark_complete"
+        type: "contract"
+        contract: 
+          action: "set_flag"
+          key: "onboarding_completed"
+          value: true
+        on_failure: "continue"
+
+  # LLM 配置旅程
+  llm_configuration:
+    description: "LLM 提供商配置流程"
+    trigger: "user_action"
+    entry_point: "/settings/llm"
+    phases:
+      - name: "select_provider"
+        type: "contract"
+        description: "选择 LLM 提供商"
+        ui:
+          component: "ProviderSelector"
+          options: ["openai", "deepseek", "custom"]
+        
+      - name: "input_api_key"
+        type: "contract"
+        description: "输入 API Key"
+        ui:
+          component: "SecureInput"
+          props:
+            mask: true
+            validation: "test_connection"
+            
+      - name: "test_connection"
+        type: "command"
+        command: "kaelis llm test --provider={{selected_provider}}"
+        description: "测试连接"
+        validation:
+          - condition: "exit_code == 0"
+            on_failure: "retry"
+            max_retries: 3
+            
+      - name: "save_config"
+        type: "contract"
+        contract:
+          action: "persist"
+          scope: "local"
+          encrypt: true
+
+  # 工作流执行旅程
+  workflow_execution:
+    description: "执行知识提取工作流"
+    trigger: "user_action"
+    entry_point: "/workflow"
+    phases:
+      - name: "input_source"
+        type: "contract"
+        description: "输入数据源"
+        ui:
+          component: "DataSourceInput"
+          accept: ["text", "url", "file"]
+          
+      - name: "validate_input"
+        type: "sandbox"
+        description: "验证输入有效性"
+        validation:
+          - rule: "input.length > 0"
+          - rule: "input.length <= 10000"
+            on_failure: "warn"
+            
+      - name: "execute_extraction"
+        type: "command"
+        command: "kaelis kg extract --source={{input}} --workflow={{workflow_id}}"
+        description: "执行 KG 提取"
+        timeout: 300  # 5分钟超时
+        
+      - name: "display_results"
+        type: "contract"
+        description: "显示结果"
+        ui:
+          component: "ResultsPanel"
+          sections: ["summary", "entities", "relations"]
+
+  # 测试环境生成器
+  qa_env_setup:
+    description: "从零构建符合契约的 QA 测试环境"
+    trigger: "manual"
+    entry_point: "setup"
+    phases:
+      - name: "system_check"
+        type: "contract"
+        description: "系统环境检查"
+        contract:
+          action: "validate_system"
+          requirements:
+            python: ">=3.11"
+            node: ">=20"
+            docker: "available"
+        
+      - name: "frontend_ci_install"
+        type: "command"
+        command: "cd web/frontend && npm ci"
+        description: "前端依赖安装"
+        depends_on: ["system_check"]
+        
+      - name: "env_template_check"
+        type: "command"
+        command: "python scripts/inject_env.py --validate"
+        description: "环境模板验证"
+        
+      - name: "docker_services"
+        type: "command"
+        command: "docker-compose up -d"
+        description: "启动 Docker 服务"
+        health_check:
+          endpoint: "http://localhost:5000/api/health"
+          timeout: 60
+          retries: 5
+          
+      - name: "backend_start"
+        type: "command"
+        command: "python launch.py --daemon"
+        description: "启动后端服务"
+        health_check:
+          endpoint: "http://localhost:5000/api/auth/health"
+          timeout: 30
+          
+      - name: "frontend_build"
+        type: "command"
+        command: "cd web/frontend && npm run build"
+        description: "前端生产构建"
+        
+      - name: "snapshot_create"
+        type: "command"
+        command: "python scripts/kaelis.py converge snapshot create qa-baseline"
+        description: "创建环境快照"
+        on_failure: "continue"
+
+# 全局错误处理
+global:
+  error_handling:
+    default: "show_friendly_message"
+    message_template: 
+      zh: "操作遇到问题: {{error}}。请重试或联系支持。"
+      en: "Something went wrong: {{error}}. Please try again or contact support."
+      
+# 遥测配置
+telemetry:
+  enabled: true
+  events:
+    - journey_start
+    - phase_complete
+    - phase_error
+    - journey_complete
+
+  # 零依赖一键打包旅程
+  zero_dependency_startup:
+    description: "构建零依赖 Electron 安装包，用户双击即可启动"
+    trigger: "manual"
+    entry_point: "build"
+    phases:
+      - name: "python_embed"
+        type: "command"
+        command: "python scripts/download_python_embed.py"
+        description: "下载并配置 Python 嵌入式运行时"
+        
+      - name: "generate_compose"
+        type: "command"
+        command: "python scripts/generate_compose.py"
+        description: "生成 Docker Compose 文件"
+        
+      - name: "build_backend"
+        type: "command"
+        command: "pyinstaller launch.spec --distpath electron/resources/backend --workpath build --noconfirm"
+        description: "使用 PyInstaller 打包后端为独立可执行文件"
+        on_failure: "continue"
+        
+      - name: "electron_contract_gate"
+        type: "command"
+        command: "python scripts/kaelis_guardian.py --electron-check"
+        description: "Electron 契约一致性门禁检查"
+        
+      - name: "generate_electron_config"
+        type: "command"
+        command: "python scripts/generate_electron_config.py"
+        description: "根据契约生成 Electron 配置文件"
+        
+      - name: "frontend_build"
+        type: "command"
+        command: "cd web/frontend && npm run build"
+        description: "前端生产构建"
+        
+      - name: "build_electron"
+        type: "command"
+        command: "cd web/frontend && npx electron-builder --config ../../electron-builder.json --win --publish never"
+        description: "打包 Windows Electron 安装包"
+        
+      - name: "smoke_test"
+        type: "command"
+        command: "python scripts/smoke_test_electron.py"
+        description: "打包后烟雾测试"
+        on_failure: "continue"
+
+  # 需求优先级自动排序旅程
+  prioritize:
+    description: "基于用户价值积分自动计算 backlog 优先级"
+    trigger: "manual"
+    entry_point: "backlog"
+    phases:
+      - name: "load_backlog"
+        type: "command"
+        command: "python -c \"import yaml; data=yaml.safe_load(open('.kaelis/backlog.yaml')); print('Backlog loaded:', len(data['features']), 'features')\""
+        description: "加载 backlog 契约"
+        
+      - name: "calculate_priority"
+        type: "command"
+        command: "python -c \"
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path('.kaelis/backlog.yaml').read_text(encoding='utf-8'))
+features = [f for f in data['features'] if f['status'] == 'todo']
+for f in features:
+    f['value_per_day'] = round(f['user_value_score'] / f['dev_cost_days'], 2)
+features.sort(key=lambda x: x['value_per_day'], reverse=True)
+print('\\n=== Priority Ranking ===')
+for i, f in enumerate(features, 1):
+    print('{}. {} (vpd={}, score={}, cost={}d)'.format(i, f['name'], f['value_per_day'], f['user_value_score'], f['dev_cost_days']))
+print('\\nRecommended next sprint:', features[0]['name'] if features else 'None')
+\""
+        description: "计算并输出价值/成本优先级排序"

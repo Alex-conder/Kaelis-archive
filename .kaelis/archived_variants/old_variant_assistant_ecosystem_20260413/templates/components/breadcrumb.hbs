@@ -1,0 +1,17 @@
+<!-- 面包屑组件 -->
+<nav class="breadcrumb" aria-label="面包屑导航">
+  <ol class="breadcrumb-list">
+    {{#each items}}
+    <li class="breadcrumb-item {{#if active}}active{{/if}}">
+      {{#if href}}
+      <a href="{{href}}">{{label}}</a>
+      {{else}}
+      <span>{{label}}</span>
+      {{/if}}
+    </li>
+    {{#unless @last}}
+    <li class="breadcrumb-separator">/</li>
+    {{/unless}}
+    {{/each}}
+  </ol>
+</nav>

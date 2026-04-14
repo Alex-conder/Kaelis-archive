@@ -1,0 +1,36 @@
+apiVersion: kaelis.io/v1
+kind: ServiceLevelObjective
+metadata:
+  name: kaelis-api-slo
+  generated_at: '2026-04-13T01:39:17.488515'
+  source: contracts/openapi.yaml
+spec:
+  service: kaelis-api
+  objectives:
+  - name: healthCheck
+    endpoint: /api/health
+    method: GET
+    indicators:
+      availability:
+        target: 0.9990000000000001
+        window: 30d
+      latency:
+        p95:
+          target: 100ms
+          window: 7d
+    error_budget: 0.1%
+  - name: kgExtract
+    endpoint: /api/kg/extract
+    method: POST
+    indicators:
+      availability:
+        target: 0.995
+        window: 30d
+      latency:
+        p95:
+          target: 3000ms
+          window: 7d
+        p99:
+          target: 5000ms
+          window: 7d
+    error_budget: 0.5%

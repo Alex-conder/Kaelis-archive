@@ -1,0 +1,18 @@
+﻿<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" width="256" height="256">
+    <defs>
+        <linearGradient id="paint_linear_2" x1="50" y1="50" x2="206" y2="206" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#BD95FF" offset="0"/>
+            <stop stop-color="#EC4899" offset="1"/>
+        </linearGradient>
+    </defs>
+    <!-- 背景圆形 -->
+    <circle cx="128" cy="128" r="86.4" opacity="0.1" fill="#000000"/>
+    <!-- 白色竖条 -->
+    <rect width="11.52" height="96" x="52.8" y="80" rx="5.76" fill="#ffffff"/>
+    <!-- 上斜线 -->
+    <path d="M64.32 108.8L129.6 80L134.4 87.68L76.8 113.6L64.32 108.8Z" fill="#ffffff"/>
+    <!-- 下斜线 -->
+    <path d="M76.8 123.2L134.4 168.32L129.6 176L64.32 128L76.8 123.2Z" fill="#ffffff"/>
+    <!-- 渐变圆点 -->
+    <ellipse rx="5.76" ry="5.76" cx="139.2" cy="83.84" fill="url(#paint_linear_2)"/>
+</svg>

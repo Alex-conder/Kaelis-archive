@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PWA 离线功能 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 顶部导航 */
+        .mobile-header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            background: rgba(23,23,23,0.95); 
+            backdrop-filter: blur(20px);
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .back-btn { 
+            width: 40px; 
+            height: 40px; 
+            border: none; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 10px; 
+            color: white; 
+            font-size: 20px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-title { font-size: 17px; font-weight: 600; flex: 1; }
+        
+        /* 内容区域 */
+        .content { padding: 20px; }
+        
+        /* 网络状态卡片 */
+        .status-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .status-icon { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            margin: 0 auto 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 40px;
+            transition: all 0.3s;
+        }
+        .status-icon.online { 
+            background: linear-gradient(135deg, #22C55E 0%, #10B981 100%); 
+            box-shadow: 0 8px 32px rgba(34,197,94,0.3);
+        }
+        .status-icon.offline { 
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); 
+            box-shadow: 0 8px 32px rgba(239,68,68,0.3);
+        }
+        .status-text { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .status-desc { font-size: 14px; color: #6B7280; }
+        
+        /* 功能卡片 */
+        .section-title { 
+            font-size: 13px; 
+            color: #6B7280; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+        .section-title:first-child { margin-top: 0; }
+        
+        .feature-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px;
+        }
+        .feature-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .feature-card:active { transform: scale(0.98); background: rgba(255,255,255,0.05); }
+        .feature-icon { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 16px; 
+            background: rgba(136,72,249,0.15); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 28px; 
+            margin: 0 auto 12px;
+        }
+        .feature-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .feature-desc { font-size: 12px; color: #6B7280; }
+        
+        /* 离线内容列表 */
+        .offline-list { 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px; 
+            overflow: hidden;
+        }
+        .offline-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            padding: 16px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .offline-item:last-child { border-bottom: none; }
+        .offline-icon { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 12px; 
+            background: rgba(255,255,255,0.05); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .offline-info { flex: 1; }
+        .offline-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .offline-meta { font-size: 12px; color: #6B7280; }
+        .offline-status { 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 11px; 
+            font-weight: 600;
+        }
+        .offline-status.synced { 
+            background: rgba(34,197,94,0.15); 
+            color: #22C55E;
+        }
+        .offline-status.pending { 
+            background: rgba(245,158,11,0.15); 
+            color: #F59E0B;
+        }
+        .offline-status.error { 
+            background: rgba(239,68,68,0.15); 
+            color: #EF4444;
+        }
+        
+        /* 缓存统计 */
+        .cache-stats { 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 16px; 
+            padding: 20px;
+        }
+        .cache-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .cache-item:last-child { border-bottom: none; }
+        .cache-label { font-size: 14px; color: #A1A1AA; }
+        .cache-value { font-size: 14px; font-weight: 600; }
+        .cache-bar { 
+            width: 100%; 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px; 
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .cache-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 3px; 
+            transition: width 0.5s;
+        }
+        
+        /* 按钮 */
+        .action-btn { 
+            width: 100%; 
+            padding: 16px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px; 
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s;
+        }
+        .action-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .action-btn.secondary { 
+            background: rgba(255,255,255,0.1); 
+            margin-top: 8px;
+        }
+        
+        /* 安装提示 */
+        .install-banner { 
+            display: none;
+            position: fixed; 
+            bottom: 20px; 
+            left: 20px; 
+            right: 20px; 
+            background: rgba(23,23,23,0.98); 
+            border: 1px solid rgba(136,72,249,0.3); 
+            border-radius: 16px; 
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 200;
+        }
+        .install-banner.show { display: flex; }
+        .install-icon { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 12px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            margin-right: 16px;
+        }
+        .install-content { flex: 1; }
+        .install-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .install-desc { font-size: 13px; color: #6B7280; }
+        .install-btn { 
+            padding: 10px 20px; 
+            background: var(--primary); 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px; 
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .install-close { 
+            position: absolute; 
+            top: 8px; 
+            right: 8px; 
+            width: 24px; 
+            height: 24px; 
+            border: none; 
+            background: transparent; 
+            color: #6B7280; 
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        /* Toast */
+        .toast { 
+            position: fixed; 
+            bottom: 100px; 
+            left: 50%; 
+            transform: translateX(-50%) translateY(100px); 
+            background: rgba(50,50,50,0.95); 
+            padding: 12px 24px; 
+            border-radius: 24px; 
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+        .toast.show { 
+            transform: translateX(-50%) translateY(0); 
+            opacity: 1;
+        }
+        
+        /* 同步动画 */
+        .sync-icon { 
+            display: inline-block;
+            animation: rotate 2s linear infinite;
+        }
+        @keyframes rotate { 
+            from { transform: rotate(0deg); } 
+            to { transform: rotate(360deg); } 
+        }
+        
+        /* 底部安全区域 */
+        .safe-area-bottom { height: calc(20px + env(safe-area-inset-bottom)); }
+    </style>
+</head>
+<body>
+    <header class="mobile-header">
+        <button class="back-btn" onclick="history.back()">?</button>
+        <span class="header-title">PWA 离线功能</span>
+    </header>
+    
+    <div class="content">
+        <!-- 网络状态 -->
+        <div class="status-card">
+            <div class="status-icon online" id="statusIcon">??</div>
+            <div class="status-text" id="statusText">在线</div>
+            <div class="status-desc" id="statusDesc">已连接到网络</div>
+        </div>
+        
+        <!-- 快捷功能 -->
+        <div class="section-title">离线功能</div>
+        <div class="feature-grid">
+            <div class="feature-card" onclick="syncData()">
+                <div class="feature-icon">??</div>
+                <div class="feature-title">同步数据</div>
+                <div class="feature-desc">立即同步离线数据</div>
+            </div>
+            <div class="feature-card" onclick="clearCache()">
+                <div class="feature-icon">???</div>
+                <div class="feature-title">清理缓存</div>
+                <div class="feature-desc">释放存储空间</div>
+            </div>
+            <div class="feature-card" onclick="downloadContent()">
+                <div class="feature-icon">??</div>
+                <div class="feature-title">离线下载</div>
+                <div class="feature-desc">下载内容供离线使用</div>
+            </div>
+            <div class="feature-card" onclick="showCacheInfo()">
+                <div class="feature-icon">??</div>
+                <div class="feature-title">存储管理</div>
+                <div class="feature-desc">查看缓存详情</div>
+            </div>
+        </div>
+        
+        <!-- 离线内容 -->
+        <div class="section-title">离线内容</div>
+        <div class="offline-list">
+            <div class="offline-item">
+                <div class="offline-icon">??</div>
+                <div class="offline-info">
+                    <div class="offline-title">项目文档.pdf</div>
+                    <div class="offline-meta">2.4 MB · 昨天</div>
+                </div>
+                <span class="offline-status synced">已同步</span>
+            </div>
+            <div class="offline-item">
+                <div class="offline-icon">???</div>
+                <div class="offline-info">
+                    <div class="offline-title">设计资源.zip</div>
+                    <div class="offline-meta">15.8 MB · 3天前</div>
+                </div>
+                <span class="offline-status synced">已同步</span>
+            </div>
+            <div class="offline-item">
+                <div class="offline-icon">??</div>
+                <div class="offline-info">
+                    <div class="offline-title">会议记录.md</div>
+                    <div class="offline-meta">12 KB · 刚刚</div>
+                </div>
+                <span class="offline-status pending">待同步</span>
+            </div>
+            <div class="offline-item">
+                <div class="offline-icon">??</div>
+                <div class="offline-info">
+                    <div class="offline-title">数据报表.xlsx</div>
+                    <div class="offline-meta">856 KB · 同步失败</div>
+                </div>
+                <span class="offline-status error">错误</span>
+            </div>
+        </div>
+        
+        <!-- 缓存统计 -->
+        <div class="section-title">存储统计</div>
+        <div class="cache-stats">
+            <div class="cache-item">
+                <span class="cache-label">已用存储</span>
+                <span class="cache-value" id="usedStorage">128 MB</span>
+            </div>
+            <div class="cache-bar">
+                <div class="cache-fill" id="storageBar" style="width: 25%"></div>
+            </div>
+            <div class="cache-item" style="margin-top: 16px;">
+                <span class="cache-label">可用空间</span>
+                <span class="cache-value" id="availableStorage">3.8 GB</span>
+            </div>
+            <div class="cache-item">
+                <span class="cache-label">缓存文件</span>
+                <span class="cache-value">156 个</span>
+            </div>
+            <div class="cache-item">
+                <span class="cache-label">上次同步</span>
+                <span class="cache-value">10分钟前</span>
+            </div>
+        </div>
+        
+        <button class="action-btn" onclick="syncData()">
+            <span id="syncText">立即同步</span>
+        </button>
+        <button class="action-btn secondary" onclick="checkForUpdate()">检查更新</button>
+        
+        <div class="safe-area-bottom"></div>
+    </div>
+    
+    <!-- 安装提示 -->
+    <div class="install-banner" id="installBanner">
+        <button class="install-close" onclick="hideInstallBanner()">×</button>
+        <div class="install-icon">??</div>
+        <div class="install-content">
+            <div class="install-title">添加到主屏幕</div>
+            <div class="install-desc">像原生应用一样使用 Kaelis</div>
+        </div>
+        <button class="install-btn" onclick="installPWA()">安装</button>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 网络状态检测
+        function updateNetworkStatus() {
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            const desc = document.getElementById('statusDesc');
+            
+            if (navigator.onLine) {
+                icon.className = 'status-icon online';
+                icon.textContent = '??';
+                text.textContent = '在线';
+                desc.textContent = '已连接到网络';
+                showToast('已连接到网络');
+                // 自动同步离线数据
+                syncOfflineData();
+            } else {
+                icon.className = 'status-icon offline';
+                icon.textContent = '??';
+                text.textContent = '离线';
+                desc.textContent = '使用离线模式';
+                showToast('进入离线模式');
+            }
+        }
+        
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        
+        // 显示 Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+        
+        // 同步数据
+        function syncData() {
+            const syncText = document.getElementById('syncText');
+            syncText.innerHTML = '<span class="sync-icon">??</span> 同步中...';
+            
+            // 模拟同步过程
+            setTimeout(() => {
+                syncText.textContent = '立即同步';
+                showToast('同步完成');
+                
+                // 更新待同步项为已同步
+                document.querySelectorAll('.offline-status.pending').forEach(el => {
+                    el.className = 'offline-status synced';
+                    el.textContent = '已同步';
+                });
+            }, 2000);
+        }
+        
+        // 同步离线数据
+        function syncOfflineData() {
+            const pendingItems = document.querySelectorAll('.offline-status.pending');
+            if (pendingItems.length > 0) {
+                showToast(`正在同步 ${pendingItems.length} 个文件...`);
+                setTimeout(() => {
+                    pendingItems.forEach(el => {
+                        el.className = 'offline-status synced';
+                        el.textContent = '已同步';
+                    });
+                    showToast('离线数据同步完成');
+                }, 1500);
+            }
+        }
+        
+        // 清理缓存
+        function clearCache() {
+            if (confirm('确定要清理缓存吗？这将删除所有离线内容。')) {
+                showToast('正在清理缓存...');
+                setTimeout(() => {
+                    document.getElementById('usedStorage').textContent = '0 MB';
+                    document.getElementById('storageBar').style.width = '0%';
+                    showToast('缓存已清理');
+                }, 1000);
+            }
+        }
+        
+        // 下载内容
+        function downloadContent() {
+            showToast('开始下载离线内容...');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    showToast('下载完成');
+                    updateStorageStats();
+                }
+            }, 200);
+        }
+        
+        // 更新存储统计
+        function updateStorageStats() {
+            const used = Math.floor(Math.random() * 200) + 50;
+            document.getElementById('usedStorage').textContent = used + ' MB';
+            document.getElementById('storageBar').style.width = (used / 512 * 100) + '%';
+        }
+        
+        // 显示缓存信息
+        function showCacheInfo() {
+            showToast('缓存详情: 156个文件, 128MB');
+        }
+        
+        // 检查更新
+        function checkForUpdate() {
+            showToast('检查更新中...');
+            setTimeout(() => {
+                showToast('已是最新版本');
+            }, 1500);
+        }
+        
+        // PWA 安装
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').classList.add('show');
+        });
+        
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showToast('应用安装中...');
+                    } else {
+                        showToast('已取消安装');
+                    }
+                    deferredPrompt = null;
+                    hideInstallBanner();
+                });
+            } else {
+                showToast('您的浏览器不支持PWA安装');
+            }
+        }
+        
+        function hideInstallBanner() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+        
+        // Service Worker 注册
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('Service Worker 注册成功:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker 注册失败:', error);
+                });
+        }
+        
+        // 后台同步
+        if ('sync' in navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.sync.register('sync-data')
+                    .then(() => console.log('后台同步已注册'))
+                    .catch(err => console.log('后台同步注册失败:', err));
+            });
+        }
+        
+        // 初始化
+        updateNetworkStatus();
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

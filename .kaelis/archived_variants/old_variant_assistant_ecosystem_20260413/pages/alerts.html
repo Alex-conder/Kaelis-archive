@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>告警规则 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .alerts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .alerts-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-rule-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .rules-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .rule-item { display: flex; align-items: center; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; }
+        .rule-icon { width: 48px; height: 48px; background: #fef3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 16px; }
+        .rule-info { flex: 1; }
+        .rule-name { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .rule-condition { font-size: 13px; color: #64748b; }
+        .rule-severity { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 16px; }
+        .rule-severity.critical { background: #fee2e2; color: #dc2626; }
+        .rule-severity.warning { background: #fef3c7; color: #d97706; }
+        .rule-severity.info { background: #dbeafe; color: #2563eb; }
+        .rule-status { width: 44px; height: 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; position: relative; margin-right: 16px; }
+        .rule-status::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; right: 2px; }
+        .rule-actions { display: flex; gap: 8px; }
+        .rule-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">☰</button><span class="logo">告警规则</span></div>
+        <div class="nav-right"><button class="nav-btn">🔍</button><button class="nav-btn">🔔</button><button class="nav-btn">👤</button></div>
+    </nav>
+    <div class="container">
+        <div class="alerts-header">
+            <h1>告警规则配置</h1>
+            <button class="new-rule-btn">+ 新建规则</button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-value">24</div><div class="stat-label">总规则数</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#dc2626;">3</div><div class="stat-label">严重告警</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#d97706;">8</div><div class="stat-label">警告告警</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#16a34a;">18</div><div class="stat-label">已启用</div></div>
+        </div>
+        <div class="rules-card">
+            <h2 class="card-title">活跃规则</h2>
+            <div class="rule-item">
+                <div class="rule-icon">🔥</div>
+                <div class="rule-info"><div class="rule-name">CPU 使用率过高</div><div class="rule-condition">CPU > 80% 持续 5 分钟</div></div>
+                <span class="rule-severity critical">严重</span>
+                <div class="rule-status"></div>
+                <div class="rule-actions"><button class="rule-btn">编辑</button><button class="rule-btn">测试</button></div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">💾</div>
+                <div class="rule-info"><div class="rule-name">内存不足</div><div class="rule-condition">内存使用率 > 90%</div></div>
+                <span class="rule-severity critical">严重</span>
+                <div class="rule-status"></div>
+                <div class="rule-actions"><button class="rule-btn">编辑</button><button class="rule-btn">测试</button></div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">⏱️</div>
+                <div class="rule-info"><div class="rule-name">API 响应缓慢</div><div class="rule-condition">P95 延迟 > 500ms</div></div>
+                <span class="rule-severity warning">警告</span>
+                <div class="rule-status"></div>
+                <div class="rule-actions"><button class="rule-btn">编辑</button><button class="rule-btn">测试</button></div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">🔄</div>
+                <div class="rule-info"><div class="rule-name">错误率异常</div><div class="rule-condition">错误率 > 1% 持续 3 分钟</div></div>
+                <span class="rule-severity warning">警告</span>
+                <div class="rule-status"></div>
+                <div class="rule-actions"><button class="rule-btn">编辑</button><button class="rule-btn">测试</button></div>
+            </div>
+        </div>
+    </div>
+    <!-- Kaelis 统一加载器 -->
+    <script src="../assets/js/kaelis-loader.js" data-modules="dashboard,alerts"></script>
+</body>
+</html>
+
+
+
+
+
+

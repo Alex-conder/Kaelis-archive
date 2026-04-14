@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知中心 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 32px; font-weight: 700; }
+        .header-actions { display: flex; gap: 12px; }
+        .btn { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* 筛选标签 */
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; }
+        .filter-tab { padding: 10px 20px; background: transparent; border: none; color: #A1A1AA; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .filter-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .filter-tab:hover:not(.active) { color: white; }
+        
+        /* 通知列表 */
+        .notification-list { display: flex; flex-direction: column; gap: 12px; }
+        .notification-item { 
+            display: flex; 
+            align-items: flex-start; 
+            padding: 20px; 
+            background: rgba(23,23,23,0.8); 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s;
+        }
+        .notification-item:hover { background: rgba(255,255,255,0.05); }
+        .notification-item.unread { border-left: 4px solid var(--primary); }
+        .notification-icon { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px; 
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        .notification-icon.system { background: rgba(136,72,249,0.2); }
+        .notification-icon.alert { background: rgba(239,68,68,0.2); }
+        .notification-icon.success { background: rgba(34,197,94,0.2); }
+        .notification-icon.info { background: rgba(59,130,246,0.2); }
+        .notification-content { flex: 1; }
+        .notification-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .notification-title { font-size: 15px; font-weight: 600; }
+        .notification-time { font-size: 12px; color: #6B7280; }
+        .notification-text { font-size: 14px; color: #A1A1AA; line-height: 1.5; }
+        .notification-actions { display: flex; gap: 12px; margin-top: 12px; }
+        .action-link { font-size: 13px; color: var(--primary); cursor: pointer; }
+        .action-link:hover { text-decoration: underline; }
+        .unread-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; margin-left: 12px; }
+        
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 80px 40px; }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .empty-desc { font-size: 14px; color: #6B7280; }
+        
+        /* 分页 */
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 32px; }
+        .page-btn { 
+            padding: 10px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            cursor: pointer; 
+        }
+        .page-btn.active { background: var(--primary); border-color: var(--primary); }
+        
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .notification-item { flex-direction: column; }
+            .notification-icon { margin-bottom: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 通知中心</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="openSettings()">?? 设置</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">通知中心</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="markAllRead()">? 全部已读</button>
+                <button class="btn btn-secondary" onclick="clearAll()">??? 清空</button>
+            </div>
+        </div>
+        
+        <!-- 筛选标签 -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterNotifications('all')">全部 (12)</button>
+            <button class="filter-tab" onclick="filterNotifications('unread')">未读 (3)</button>
+            <button class="filter-tab" onclick="filterNotifications('system')">系统 (5)</button>
+            <button class="filter-tab" onclick="filterNotifications('alert')">告警 (4)</button>
+            <button class="filter-tab" onclick="filterNotifications('mention')">提及 (3)</button>
+        </div>
+        
+        <!-- 通知列表 -->
+        <div class="notification-list">
+            <div class="notification-item unread">
+                <div class="notification-icon alert">??</div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">GitLab API 响应超时</span>
+                        <span class="notification-time">2分钟前</span>
+                    </div>
+                    <div class="notification-text">GitLab API 连接超时，已连续失败 3 次，请检查网络连接或 API 配置。</div>
+                    <div class="notification-actions">
+                        <span class="action-link" onclick="viewDetail()">查看详情</span>
+                        <span class="action-link" onclick="ignoreAlert()">忽略</span>
+                    </div>
+                </div>
+                <div class="unread-dot"></div>
+            </div>
+            
+            <div class="notification-item unread">
+                <div class="notification-icon system">??</div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">系统更新可用</span>
+                        <span class="notification-time">1小时前</span>
+                    </div>
+                    <div class="notification-text">Kaelis v3.1.0 已发布，包含性能优化和新功能。建议尽快更新。</div>
+                    <div class="notification-actions">
+                        <span class="action-link" onclick="updateNow()">立即更新</span>
+                        <span class="action-link" onclick="viewChangelog()">查看更新日志</span>
+                    </div>
+                </div>
+                <div class="unread-dot"></div>
+            </div>
+            
+            <div class="notification-item unread">
+                <div class="notification-icon success">?</div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">数据导入完成</span>
+                        <span class="notification-time">3小时前</span>
+                    </div>
+                    <div class="notification-text">成功导入 1,250 条记录，耗时 45 秒。所有数据已验证通过。</div>
+                    <div class="notification-actions">
+                        <span class="action-link" onclick="viewReport()">查看报告</span>
+                    </div>
+                </div>
+                <div class="unread-dot"></div>
+            </div>
+            
+            <div class="notification-item">
+                <div class="notification-icon info">??</div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">李明在文档中提及了你</span>
+                        <span class="notification-time">5小时前</span>
+                    </div>
+                    <div class="notification-text">在产品需求文档 v2.0 中："@张经理 请确认这个需求优先级"</div>
+                    <div class="notification-actions">
+                        <span class="action-link" onclick="viewDocument()">查看文档</span>
+                        <span class="action-link" onclick="reply()">回复</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="notification-item">
+                <div class="notification-icon system">??</div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">插件更新提醒</span>
+                        <span class="notification-time">昨天</span>
+                    </div>
+                    <div class="notification-text">3 个已安装插件有新版本可用：AI助手 Pro、数据可视化、工作流自动化</div>
+                    <div class="notification-actions">
+                        <span class="action-link" onclick="updatePlugins()">一键更新</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+            <button class="page-btn">←</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">→</button>
+        </div>
+    </div>
+
+    <script>
+        function markAllRead() {
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.classList.remove('unread');
+            });
+            document.querySelectorAll('.unread-dot').forEach(dot => {
+                dot.style.display = 'none';
+            });
+            alert('所有通知已标记为已读');
+        }
+        
+        function clearAll() {
+            if (confirm('确定要清空所有通知吗？')) {
+                alert('通知已清空');
+            }
+        }
+        
+        function filterNotifications(type) {
+            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        function openSettings() {
+            alert('打开通知设置');
+        }
+        
+        function viewDetail() { alert('查看详情'); }
+        function ignoreAlert() { alert('忽略告警'); }
+        function updateNow() { alert('立即更新'); }
+        function viewChangelog() { alert('查看更新日志'); }
+        function viewReport() { alert('查看报告'); }
+        function viewDocument() { alert('查看文档'); }
+        function reply() { alert('回复'); }
+        function updatePlugins() { alert('更新插件'); }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

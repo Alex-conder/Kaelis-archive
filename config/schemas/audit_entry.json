@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kaelis.dev/schemas/audit_entry.json",
+  "title": "Kaelis Audit Entry",
+  "description": "Unified audit log entry",
+  "type": "object",
+  "required": ["timestamp", "session_id", "operation", "target", "result"],
+  "properties": {
+    "timestamp": {"type": "string", "format": "date-time"},
+    "session_id": {"type": "string"},
+    "execution_id": {"type": "string"},
+    "operation": {"type": "string"},
+    "target": {
+      "type": "object",
+      "properties": {
+        "type": {"type": "string"},
+        "path": {"type": "string"},
+        "entity": {"type": "string"}
+      }
+    },
+    "result": {"type": "string", "enum": ["success", "failed", "blocked", "rolled_back"]},
+    "details": {"type": "object"},
+    "performance": {
+      "type": "object",
+      "properties": {
+        "duration_ms": {"type": "integer"}
+      }
+    }
+  }
+}

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灾备管理 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .dr-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+        .overview-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .overview-card h3 { font-size: 14px; color: #64748b; margin-bottom: 12px; }
+        .overview-value { font-size: 36px; font-weight: 700; color: #1e293b; }
+        .overview-target { font-size: 13px; color: #22c55e; margin-top: 8px; }
+        .sites-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+        .site-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .site-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .site-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .site-info h4 { font-size: 16px; font-weight: 600; color: #1e293b; }
+        .site-info p { font-size: 13px; color: #64748b; }
+        .site-status { padding: 6px 12px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: auto; }
+        .site-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .metric { padding: 12px; background: #f8fafc; border-radius: 10px; }
+        .metric-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .metric-value { font-size: 16px; font-weight: 600; color: #1e293b; }
+        .section-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
+        .backups-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .backup-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
+        .backup-item:last-child { border-bottom: none; }
+        .backup-icon { width: 40px; height: 40px; background: #dbeafe; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 14px; font-size: 18px; }
+        .backup-content { flex: 1; }
+        .backup-title { font-size: 14px; font-weight: 500; color: #1e293b; }
+        .backup-meta { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+        .backup-size { font-size: 14px; font-weight: 600; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">灾备管理</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="dr-overview">
+            <div class="overview-card"><h3>恢复点目标 (RPO)</h3><div class="overview-value">5分钟</div><div class="overview-target">? 目标: 5分钟</div></div>
+            <div class="overview-card"><h3>恢复时间目标 (RTO)</h3><div class="overview-value">10分钟</div><div class="overview-target">? 目标: 10分钟</div></div>
+            <div class="overview-card"><h3>上次演练</h3><div class="overview-value">3天前</div><div class="overview-target">? 成功</div></div>
+        </div>
+        <div class="sites-grid">
+            <div class="site-card">
+                <div class="site-header"><div class="site-icon">??</div><div class="site-info"><h4>北京主站点</h4><p>Primary</p></div><span class="site-status">运行中</span></div>
+                <div class="site-metrics"><div class="metric"><div class="metric-label">数据同步</div><div class="metric-value">实时</div></div><div class="metric"><div class="metric-label">延迟</div><div class="metric-value">2ms</div></div></div>
+            </div>
+            <div class="site-card">
+                <div class="site-header"><div class="site-icon">??</div><div class="site-info"><h4>上海灾备站</h4><p>Standby</p></div><span class="site-status">待命</span></div>
+                <div class="site-metrics"><div class="metric"><div class="metric-label">数据同步</div><div class="metric-value">实时</div></div><div class="metric"><div class="metric-label">延迟</div><div class="metric-value">15ms</div></div></div>
+            </div>
+            <div class="site-card">
+                <div class="site-header"><div class="site-icon">??</div><div class="site-info"><h4>新加坡灾备站</h4><p>Standby</p></div><span class="site-status">待命</span></div>
+                <div class="site-metrics"><div class="metric"><div class="metric-label">数据同步</div><div class="metric-value">实时</div></div><div class="metric"><div class="metric-label">延迟</div><div class="metric-value">45ms</div></div></div>
+            </div>
+        </div>
+        <h2 class="section-title">备份列表</h2>
+        <div class="backups-card">
+            <div class="backup-item"><div class="backup-icon">??</div><div class="backup-content"><div class="backup-title">完整备份 - 2026.03.17</div><div class="backup-meta">每小时备份 · 所有数据</div></div><span class="backup-size">2.3 GB</span></div>
+            <div class="backup-item"><div class="backup-icon">??</div><div class="backup-content"><div class="backup-title">增量备份 - 2026.03.16</div><div class="backup-meta">每日备份 · 变更数据</div></div><span class="backup-size">456 MB</span></div>
+            <div class="backup-item"><div class="backup-icon">??</div><div class="backup-content"><div class="backup-title">完整备份 - 2026.03.15</div><div class="backup-meta">每周备份 · 所有数据</div></div><span class="backup-size">2.1 GB</span></div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - Kaelis</title>
+    
+    <!-- 统一CSS系统 -->
+    <link rel="stylesheet" href="{{assetsPath}}/styles/variables.css">
+    <link rel="stylesheet" href="{{assetsPath}}/styles/components.css">
+    
+    {{#if pageStyles}}
+    <!-- 页面特定样式 -->
+    <style>
+        {{pageStyles}}
+    </style>
+    {{/if}}
+</head>
+<body data-page-type="{{pageType}}" class="page-{{pageType}}">
+    
+    {{> navigation}}
+    
+    <main class="main-content">
+        <div class="container">
+            {{{content}}}
+        </div>
+    </main>
+    
+    {{> footer}}
+    
+    <!-- Kaelis 统一加载器 -->
+    <script src="{{assetsPath}}/js/kaelis-loader.js" data-modules="{{loaderModules}}"></script>
+    
+    {{#if pageScripts}}
+    <!-- 页面特定脚本 -->
+    <script>
+        {{pageScripts}}
+    </script>
+    {{/if}}
+</body>
+</html>

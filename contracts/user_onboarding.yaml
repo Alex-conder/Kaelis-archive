@@ -1,0 +1,45 @@
+# Kaelis User Onboarding Contract
+# 定义用户首次启动时的强制引导流程
+
+version: "1.0"
+
+onboarding:
+  steps:
+    - id: welcome
+      component: WelcomeCard
+      title: "欢迎来到 Kaelis"
+      description: "您的 AI 科研工作台，3 步即可开始知识提取"
+      conditions:
+        - type: file_not_exists
+          path: "onboarding_completed"
+      actions:
+        - show: LLMConfigWizard
+        - highlight: sidebar-settings
+
+    - id: llm_config
+      component: LLMConfigWizard
+      title: "配置 LLM"
+      description: "选择提供商并输入 API Key，我们将测试连接"
+      conditions:
+        - type: api_key_not_set
+          provider: any
+      validation:
+        endpoint: "http://localhost:5000/api/llm/test"
+      success_action: mark_step_complete
+
+    - id: first_workflow
+      component: TemplateImporter
+      title: "导入首个工作流"
+      description: "从模板开始，快速体验 KG 提取"
+      conditions:
+        - type: workflow_count
+          operator: eq
+          value: 0
+      template: "literature_review"
+      success_action: navigate_to_workflow
+
+  completion_marker: "onboarding_completed"
+  storage:
+    backend_path: ".kaelis/onboarding_completed"
+    frontend_path: "localStorage"
+    key: "kaelis_onboarding_completed"

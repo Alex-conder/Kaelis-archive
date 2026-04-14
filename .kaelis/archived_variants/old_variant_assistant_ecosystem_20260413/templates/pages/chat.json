@@ -1,0 +1,24 @@
+{
+  "title": "AI 对话",
+  "pageType": "chat",
+  "loaderModules": "chat",
+  "assetsPath": "../assets",
+  "basePath": "",
+  "navItems": [
+    { "id": "dashboard", "label": "首页", "href": "dashboard.html", "active": false },
+    { "id": "chat", "label": "对话", "href": "chat.html", "active": true },
+    { "id": "plugins", "label": "插件", "href": "plugins.html", "active": false },
+    { "id": "settings", "label": "设置", "href": "settings.html", "active": false }
+  ],
+  "userAvatar": "张",
+  "notificationCount": 0,
+  "content": {
+    "welcomeMessage": "你好！我是 Kaelis AI 助手，有什么可以帮助你的吗？",
+    "quickActions": [
+      { "icon": "💡", "text": "创意写作" },
+      { "icon": "💻", "text": "代码辅助" },
+      { "icon": "📊", "text": "数据分析" },
+      { "icon": "🎨", "text": "图像生成" }
+    ]
+  }
+}

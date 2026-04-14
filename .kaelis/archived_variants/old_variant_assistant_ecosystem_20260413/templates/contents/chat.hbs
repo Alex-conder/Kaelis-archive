@@ -1,0 +1,65 @@
+<!-- 聊天页面内容 -->
+<div class="chat-layout">
+    <!-- 侧边栏 -->
+    <aside class="chat-sidebar card">
+        <div class="sidebar-header">
+            <button class="btn btn-primary btn-full">
+                <span>+</span> 新对话
+            </button>
+        </div>
+        <div class="conversation-list">
+            <div class="conversation-item active">
+                <span class="conversation-icon">💬</span>
+                <div class="conversation-info">
+                    <h4>新对话</h4>
+                    <p>今天 10:30</p>
+                </div>
+            </div>
+            <div class="conversation-item">
+                <span class="conversation-icon">💡</span>
+                <div class="conversation-info">
+                    <h4>创意写作助手</h4>
+                    <p>昨天 15:20</p>
+                </div>
+            </div>
+            <div class="conversation-item">
+                <span class="conversation-icon">💻</span>
+                <div class="conversation-info">
+                    <h4>代码调试帮助</h4>
+                    <p>3天前</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主聊天区 -->
+    <main class="chat-main">
+        <!-- 消息区域 -->
+        <div class="chat-messages">
+            <div class="message message-ai">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <p>{{welcomeMessage}}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="quick-actions-bar">
+            {{#each quickActions}}
+            <button class="quick-action-btn">
+                <span>{{icon}}</span>
+                <span>{{text}}</span>
+            </button>
+            {{/each}}
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="chat-input-area card">
+            <textarea class="form-input" placeholder="输入消息..." rows="1"></textarea>
+            <button class="btn btn-primary send-btn">
+                <span>发送</span>
+            </button>
+        </div>
+    </main>
+</div>

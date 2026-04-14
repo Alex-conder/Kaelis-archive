@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时协作 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .back-btn { width: 36px; height: 36px; border: none; background: rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; font-size: 16px; color: white; }
+        .doc-title { font-size: 16px; font-weight: 600; }
+        .doc-status { font-size: 12px; color: #22C55E; display: flex; align-items: center; gap: 6px; }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .collaborators { display: flex; align-items: center; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; border: 2px solid #0A0A0A; margin-left: -8px; }
+        .avatar:first-child { margin-left: 0; }
+        .avatar-more { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 11px; border: 2px solid #0A0A0A; margin-left: -8px; }
+        .share-btn { padding: 8px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .workspace { display: flex; height: calc(100vh - 61px); }
+        .sidebar { width: 280px; background: rgba(23,23,23,0.8); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px; overflow-y: auto; }
+        .sidebar-section { margin-bottom: 24px; }
+        .sidebar-title { font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+        .file-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .file-item:hover { background: rgba(255,255,255,0.05); }
+        .file-item.active { background: rgba(136,72,249,0.2); }
+        .file-icon { margin-right: 10px; font-size: 16px; }
+        .file-name { font-size: 14px; flex: 1; }
+        .file-status { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+        .editor-area { flex: 1; display: flex; flex-direction: column; }
+        .toolbar { padding: 12px 24px; background: rgba(23,23,23,0.8); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; gap: 8px; }
+        .tool-btn { padding: 8px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #A1A1AA; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .tool-btn:hover { border-color: var(--primary); color: white; }
+        .tool-btn.active { background: rgba(136,72,249,0.2); border-color: var(--primary); color: #BD95FF; }
+        .editor-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .editor-page { max-width: 800px; margin: 0 auto; background: rgba(23,23,23,0.8); border-radius: 16px; padding: 48px; min-height: 800px; }
+        .editor-title { font-size: 32px; font-weight: 700; margin-bottom: 24px; outline: none; }
+        .editor-title:empty:before { content: '无标题文档'; color: #6B7280; }
+        .editor-body { font-size: 16px; line-height: 1.8; color: #D1D5DB; outline: none; }
+        .editor-body:empty:before { content: '开始输入内容...'; color: #6B7280; }
+        .cursor { position: absolute; width: 2px; height: 20px; background: var(--primary); animation: blink 1s infinite; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        .user-cursor { position: absolute; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .comments-panel { width: 320px; background: rgba(23,23,23,0.8); border-left: 1px solid rgba(255,255,255,0.1); padding: 20px; overflow-y: auto; }
+        .comments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .comments-title { font-size: 16px; font-weight: 600; }
+        .comment-count { padding: 4px 10px; background: rgba(136,72,249,0.2); color: #BD95FF; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .comment-item { padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 12px; }
+        .comment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .comment-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+        .comment-author { font-size: 14px; font-weight: 600; }
+        .comment-time { font-size: 12px; color: #6B7280; margin-left: auto; }
+        .comment-text { font-size: 14px; color: #D1D5DB; line-height: 1.5; }
+        .comment-input { margin-top: 20px; }
+        .comment-textarea { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; font-size: 14px; resize: none; }
+        .comment-textarea:focus { outline: none; border-color: var(--primary); }
+        .send-btn { width: 100%; margin-top: 10px; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .activity-indicator { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; background: rgba(23,23,23,0.9); border-radius: 20px; font-size: 13px; color: #A1A1AA; display: flex; align-items: center; gap: 8px; }
+        .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="back-btn">←</button>
+            <div>
+                <div class="doc-title">产品需求文档 v2.0</div>
+                <div class="doc-status"><span class="activity-dot"></span> 所有更改已保存</div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="collaborators">
+                <div class="avatar" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">张</div>
+                <div class="avatar" style="background: linear-gradient(135deg, #22C55E, #16A34A);">李</div>
+                <div class="avatar" style="background: linear-gradient(135deg, #F59E0B, #D97706);">王</div>
+                <div class="avatar-more">+2</div>
+            </div>
+            <button class="share-btn" onclick="shareDocument()">分享</button>
+        </div>
+    </nav>
+    
+    <div class="workspace">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">文档</div>
+                <div class="file-item active">
+                    <span class="file-icon">??</span>
+                    <span class="file-name">产品需求文档</span>
+                    <span class="file-status"></span>
+                </div>
+                <div class="file-item">
+                    <span class="file-icon">??</span>
+                    <span class="file-name">数据分析报告</span>
+                    <span class="file-status"></span>
+                </div>
+                <div class="file-item">
+                    <span class="file-icon">??</span>
+                    <span class="file-name">设计规范</span>
+                    <span class="file-status"></span>
+                </div>
+                <div class="file-item">
+                    <span class="file-icon">??</span>
+                    <span class="file-name">技术方案</span>
+                    <span class="file-status"></span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">最近访问</div>
+                <div class="file-item">
+                    <span class="file-icon">??</span>
+                    <span class="file-name">会议纪要</span>
+                </div>
+                <div class="file-item">
+                    <span class="file-icon">??</span>
+                    <span class="file-name">用户调研</span>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="editor-area">
+            <div class="toolbar">
+                <button class="tool-btn active">正文</button>
+                <button class="tool-btn">标题 1</button>
+                <button class="tool-btn">标题 2</button>
+                <button class="tool-btn">?? 评论</button>
+                <button class="tool-btn">?? 插入链接</button>
+                <button class="tool-btn">??? 图片</button>
+                <button class="tool-btn">?? 表格</button>
+            </div>
+            <div class="editor-content">
+                <div class="editor-page">
+                    <h1 class="editor-title" contenteditable="true">Kaelis AI 平台 产品需求文档</h1>
+                    <div class="editor-body" contenteditable="true">
+                        <p>一、产品概述</p>
+                        <p>Kaelis AI 平台是一个企业级的人工智能解决方案，旨在帮助企业快速构建和部署AI应用。</p>
+                        <br>
+                        <p>二、核心功能</p>
+                        <p>1. AI对话系统：支持多轮对话、上下文理解、流式输出</p>
+                        <p>2. 插件生态：丰富的插件市场，支持第三方扩展</p>
+                        <p>3. 数据分析：深度数据洞察和可视化</p>
+                        <p>4. 团队协作：实时协作编辑、权限管理</p>
+                        <br>
+                        <p>三、技术架构</p>
+                        <p>前端：React + TypeScript + Tailwind CSS</p>
+                        <p>后端：FastAPI + PostgreSQL + Redis</p>
+                        <p>AI：支持多种大语言模型</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <aside class="comments-panel">
+            <div class="comments-header">
+                <span class="comments-title">?? 评论</span>
+                <span class="comment-count">3</span>
+            </div>
+            <div class="comment-item">
+                <div class="comment-header">
+                    <div class="comment-avatar">张</div>
+                    <span class="comment-author">张三</span>
+                    <span class="comment-time">10分钟前</span>
+                </div>
+                <div class="comment-text">建议在技术架构部分补充安全相关的说明</div>
+            </div>
+            <div class="comment-item">
+                <div class="comment-header">
+                    <div class="comment-avatar" style="background: linear-gradient(135deg, #22C55E, #16A34A);">李</div>
+                    <span class="comment-author">李四</span>
+                    <span class="comment-time">30分钟前</span>
+                </div>
+                <div class="comment-text">核心功能部分需要更详细的描述</div>
+            </div>
+            <div class="comment-item">
+                <div class="comment-header">
+                    <div class="comment-avatar" style="background: linear-gradient(135deg, #F59E0B, #D97706);">王</div>
+                    <span class="comment-author">王五</span>
+                    <span class="comment-time">1小时前</span>
+                </div>
+                <div class="comment-text">已更新产品概述，请大家查看</div>
+            </div>
+            <div class="comment-input">
+                <textarea class="comment-textarea" rows="3" placeholder="添加评论..."></textarea>
+                <button class="send-btn" onclick="addComment()">发送</button>
+            </div>
+        </aside>
+    </div>
+    
+    <div class="activity-indicator">
+        <span class="activity-dot"></span>
+        <span>5人在线编辑</span>
+    </div>
+
+    <script>
+        function shareDocument() {
+            alert('分享链接已复制到剪贴板!');
+        }
+        
+        function addComment() {
+            const textarea = document.querySelector('.comment-textarea');
+            if (textarea.value.trim()) {
+                alert('评论已添加!');
+                textarea.value = '';
+            }
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

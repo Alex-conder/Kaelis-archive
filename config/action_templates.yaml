@@ -1,0 +1,352 @@
+# Kaelis ACK v2.1 - Action Templates
+# 符号化规则引擎模板库
+# 版本: 2.1.0
+
+version: "2.1"
+
+# ============================================================================
+# 模板定义
+# ============================================================================
+templates:
+  # --------------------------------------------------------------------------
+  # API 路由相关
+  # --------------------------------------------------------------------------
+  - id: "add_api_route"
+    name: "增加 API 路由"
+    description: "在指定模块中添加新的 API 端点"
+    intent_patterns:
+      - "add api route"
+      - "增加 api 路由"
+      - "添加接口"
+      - "new endpoint"
+    required_intent:
+      action: "add"
+      target:
+        type: "api_route"
+    operations:
+      - step: 1
+        type: "verify_file_exists"
+        params:
+          path: "{{target.path}}"
+          create_if_missing: true
+          template: "api_route_template.py"
+      - step: 2
+        type: "ast_inject"
+        params:
+          location: "end_of_class_or_module"
+          code_template: |
+            @bp.route('{{parameters.route_path}}', methods={{parameters.http_methods}})
+            def {{target.entity_name}}():
+                """{{parameters.docstring}}"""
+                try:
+                    {{parameters.implementation}}
+                except Exception as e:
+                    return jsonify({"error": str(e)}), 500
+      - step: 3
+        type: "verify_syntax"
+      - step: 4
+        type: "run_tests"
+        params:
+          test_pattern: "test_{{target.entity_name}}"
+    validation:
+      pre_checks:
+        - type: "path_format"
+          pattern: "^api/routes/.*\\.py$"
+        - type: "entity_name_valid"
+          reserved: ["def", "class", "if", "for", "while"]
+      post_checks:
+        - type: "route_registered"
+        - type: "no_syntax_error"
+        - type: "imports_resolvable"
+    rollback_steps:
+      - type: "restore_backup"
+      - type: "remove_route_registration"
+
+  - id: "add_api_timeout"
+    name: "增加 API 超时配置"
+    description: "为现有 API 端点添加超时控制"
+    intent_patterns:
+      - "add timeout"
+      - "增加超时"
+      - "api timeout"
+      - "超时配置"
+    required_intent:
+      action: "modify"
+      target:
+        type: "api_route"
+    operations:
+      - step: 1
+        type: "ast_modify"
+        params:
+          find_pattern: "@bp.route"
+          inject_before: |
+            @timeout({{parameters.timeout_seconds}})
+      - step: 2
+        type: "add_import_if_missing"
+        params:
+          import_line: "from core.timeout import timeout"
+      - step: 3
+        type: "verify_syntax"
+    validation:
+      pre_checks:
+        - type: "file_exists"
+        - type: "timeout_value_valid"
+          min: 1
+          max: 300
+      post_checks:
+        - type: "import_resolvable"
+          module: "core.timeout"
+    rollback_steps:
+      - type: "restore_backup"
+
+  # --------------------------------------------------------------------------
+  # 配置相关
+  # --------------------------------------------------------------------------
+  - id: "modify_config"
+    name: "修改配置文件"
+    description: "安全地修改 YAML/JSON 配置"
+    intent_patterns:
+      - "修改配置"
+      - "update config"
+      - "配置变更"
+    required_intent:
+      action: "configure"
+      target:
+        type: "config"
+    operations:
+      - step: 1
+        type: "backup_file"
+      - step: 2
+        type: "yaml_modify"
+        params:
+          key_path: "{{parameters.config_key}}"
+          value: "{{parameters.config_value}}"
+          validate_schema: "{{parameters.schema_file}}"
+      - step: 3
+        type: "verify_yaml_syntax"
+    validation:
+      pre_checks:
+        - type: "file_exists"
+        - type: "key_in_whitelist"
+          whitelist: "config/allowed_keys.yaml"
+      post_checks:
+        - type: "yaml_valid"
+        - type: "schema_valid"
+    rollback_steps:
+      - type: "restore_backup"
+
+  # --------------------------------------------------------------------------
+  # 数据库相关
+  # --------------------------------------------------------------------------
+  - id: "add_model_field"
+    name: "添加数据库模型字段"
+    description: "安全地为数据模型添加新字段"
+    intent_patterns:
+      - "add field"
+      - "添加字段"
+      - "new column"
+    required_intent:
+      action: "modify"
+      target:
+        type: "database"
+    operations:
+      - step: 1
+        type: "backup_file"
+      - step: 2
+        type: "ast_inject"
+        params:
+          location: "in_model_class"
+          code_template: "{{target.entity_name}} = db.Column(db.{{parameters.field_type}}, {{parameters.constraints}})"
+      - step: 3
+        type: "generate_migration"
+        params:
+          migration_name: "add_{{target.entity_name}}_to_{{target.table}}"
+      - step: 4
+        type: "run_migration"
+        params:
+          dry_run_first: true
+    validation:
+      pre_checks:
+        - type: "file_exists"
+        - type: "model_class_exists"
+        - type: "field_not_exists"
+      post_checks:
+        - type: "migration_generates"
+        - type: "migration_test_pass"
+    rollback_steps:
+      - type: "rollback_migration"
+      - type: "restore_backup"
+
+  # --------------------------------------------------------------------------
+  # Agent 工具相关
+  # --------------------------------------------------------------------------
+  - id: "add_agent_tool"
+    name: "添加 Agent 工具"
+    description: "注册新的 Agent 工具到工具链"
+    intent_patterns:
+      - "add tool"
+      - "添加工具"
+      - "new agent tool"
+    required_intent:
+      action: "add"
+      target:
+        type: "agent_tool"
+    operations:
+      - step: 1
+        type: "create_file_from_template"
+        params:
+          template: "agent_tool_template.py"
+          output_path: "{{target.path}}"
+      - step: 2
+        type: "update_registry"
+        params:
+          registry_file: "agent/tool_registry.yaml"
+          tool_name: "{{target.entity_name}}"
+          tool_path: "{{target.path}}"
+      - step: 3
+        type: "verify_import"
+        params:
+          module: "{{target.path.replace('/', '.').replace('.py', '')}}"
+    validation:
+      pre_checks:
+        - type: "file_not_exists"
+          message: "Tool already exists"
+        - type: "name_in_registry_unique"
+      post_checks:
+        - type: "tool_importable"
+        - type: "registry_valid"
+    rollback_steps:
+      - type: "remove_registry_entry"
+      - type: "delete_file"
+
+  # --------------------------------------------------------------------------
+  # 测试相关
+  # --------------------------------------------------------------------------
+  - id: "add_test_case"
+    name: "添加测试用例"
+    description: "为指定功能生成测试代码"
+    intent_patterns:
+      - "add test"
+      - "添加测试"
+      - "test case"
+    required_intent:
+      action: "add"
+      target:
+        type: "test"
+    operations:
+      - step: 1
+        type: "analyze_target_function"
+        params:
+          extract_signature: true
+          extract_docstring: true
+      - step: 2
+        type: "generate_test_from_template"
+        params:
+          template: "pytest_function_template.py"
+          coverage_target: "{{parameters.coverage}}"
+      - step: 3
+        type: "write_test_file"
+        params:
+          path: "tests/test_{{target.entity_name}}.py"
+      - step: 4
+        type: "run_test"
+        params:
+          fail_fast: true
+    validation:
+      pre_checks:
+        - type: "target_function_exists"
+      post_checks:
+        - type: "test_passes"
+        - type: "no_import_error"
+    rollback_steps:
+      - type: "delete_test_file"
+
+  # --------------------------------------------------------------------------
+  # 通用重构
+  # --------------------------------------------------------------------------
+  - id: "refactor_function"
+    name: "重构函数"
+    description: "安全的函数重构，保持行为不变"
+    intent_patterns:
+      - "refactor"
+      - "重构"
+      - "rename"
+    required_intent:
+      action: "refactor"
+    operations:
+      - step: 1
+        type: "full_backup"
+      - step: 2
+        type: "ast_transform"
+        params:
+          transformation: "{{parameters.refactor_type}}"
+          options: "{{parameters.options}}"
+      - step: 3
+        type: "regenerate_imports"
+      - step: 4
+        type: "run_tests"
+        params:
+          test_suite: "full"
+    validation:
+      pre_checks:
+        - type: "all_tests_pass"
+        - type: "git_working_tree_clean"
+      post_checks:
+        - type: "all_tests_pass"
+        - type: "no_reference_errors"
+    rollback_steps:
+      - type: "git_reset_hard"
+      - type: "restore_backup"
+
+# ============================================================================
+# 模板选择策略
+# ============================================================================
+selection_strategy:
+  # 精确匹配优先
+  exact_match_weight: 2.0
+  
+  # 字段匹配权重
+  field_match_weights:
+    action: 1.5
+    target.type: 1.5
+    target.path: 1.0
+    target.entity_name: 0.5
+  
+  # 最小匹配阈值
+  min_match_score: 0.7
+  
+  # 无匹配时的行为
+  no_match_action: "escalate_to_human"
+  no_match_message: |
+    无法找到匹配的操作模板。
+    请使用以下标准格式描述您的需求：
+    - 动作类型: add/modify/delete/configure/...
+    - 目标类型: api_route/agent_tool/config/...
+    - 目标路径: 具体的文件路径
+    - 实体名称: 函数名/类名/变量名（如适用）
+
+# ============================================================================
+# 安全策略
+# ============================================================================
+safety:
+  # 需要开发者确认的操作
+  require_confirmation:
+    - delete
+    - refactor
+    - migrate
+  
+  # 高风险模式
+  high_risk_patterns:
+    - pattern: "delete.*production"
+      action: "block"
+      message: "禁止在生产环境执行删除操作"
+    - pattern: "modify.*config.*prod"
+      action: "require_approval"
+      approvers: ["tech_lead"]
+  
+  # 自动回滚触发条件
+  auto_rollback_on:
+    - syntax_error
+    - test_failure
+    - import_error
+    - health_check_failure

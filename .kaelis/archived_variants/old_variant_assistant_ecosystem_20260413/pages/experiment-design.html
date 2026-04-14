@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验设计与记录 - Kaelis Research</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css">
+    <link rel="stylesheet" href="../assets/styles/components.css">
+    <link rel="stylesheet" href="../assets/styles/animations.css">
+    <style>
+        body { position: relative; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            right: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-blue) 0%, transparent 70%);
+            filter: blur(64px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container { position: relative; z-index: 1; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); }
+        .tab { padding: 12px 24px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.3s; }
+        .tab:hover { color: var(--text-secondary); }
+        .tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .experiments-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .experiment-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; transition: all 0.3s; }
+        .experiment-card:hover { transform: translateY(-4px); border-color: var(--border-color-hover); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .exp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .exp-id { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+        .exp-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-running { background: var(--info-bg); color: var(--info); }
+        .status-completed { background: var(--success-bg); color: var(--success); }
+        .status-pending { background: var(--warning-bg); color: var(--warning); }
+        .status-failed { background: var(--error-bg); color: var(--error); }
+        .exp-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+        .exp-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5; }
+        .exp-meta { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+        .exp-progress { margin-bottom: 16px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; color: var(--text-secondary); }
+        .progress-bar { height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .progress-fill.green { background: linear-gradient(90deg, var(--success), #16a34a); }
+        .progress-fill.orange { background: linear-gradient(90deg, var(--warning), #d97706); }
+        .progress-fill.blue { background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        .exp-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .tag { padding: 4px 10px; background: var(--bg-input); border-radius: 6px; font-size: 12px; color: var(--text-secondary); }
+        .exp-actions { display: flex; gap: 8px; }
+        .exp-actions button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s; }
+        .exp-actions button:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .main-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+        .design-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; }
+        .panel-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 16px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 14px; transition: all 0.2s; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--glow-purple); }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; color: var(--text-secondary); }
+        .checkbox-item input { width: 18px; height: 18px; accent-color: var(--primary-color); }
+        .timeline { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; }
+        .timeline-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--text-primary); }
+        .timeline-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-color); }
+        .timeline-item:last-child { border-bottom: none; }
+        .timeline-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+        .timeline-dot.blue { background: var(--primary-color); }
+        .timeline-dot.green { background: var(--success); }
+        .timeline-dot.orange { background: var(--warning); }
+        .timeline-content { flex: 1; }
+        .timeline-time { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .timeline-text { font-size: 14px; color: var(--text-primary); }
+        .timeline-user { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        @media (max-width: 1200px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .experiments-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .experiments-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="animate-fade-in">
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <div class="logo-icon float-animate">
+                    <img src="../assets/images/logo-precise.svg" alt="Kaelis" style="width: 40px; height: 40px;">
+                </div>
+                <div class="logo-text">Kaelis</div>
+            </div>
+        </div>
+        <div class="nav-center">
+            <a href="dashboard.html" class="nav-item">仪表盘</a>
+            <a href="chat.html" class="nav-item">对话</a>
+            <a href="research-data.html" class="nav-item">科研数据</a>
+            <a href="experiment-design.html" class="nav-item nav-item-animate active">实验设计</a>
+            <a href="paper-management.html" class="nav-item">论文管理</a>
+            <a href="peer-review.html" class="nav-item">科研协作</a>
+            <a href="data-visualization.html" class="nav-item">数据可视化</a>
+            <a href="research-resources.html" class="nav-item">资源库</a>
+        </div>
+        <div class="nav-right">
+            <button class="notification-btn btn-hover">??</button>
+            <div class="user-avatar">张</div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>?? 实验设计与记录系统</h1>
+                <p>管理和追踪您的所有研究实验</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-hover">?? 实验模板</button>
+                <button class="btn btn-primary btn-hover ripple">+ 新建实验</button>
+            </div>
+        </div>
+        <div class="tabs stagger-animate">
+            <div class="tab active btn-hover">全部实验</div>
+            <div class="tab btn-hover">进行中</div>
+            <div class="tab btn-hover">已完成</div>
+            <div class="tab btn-hover">设计草稿</div>
+            <div class="tab btn-hover">已归档</div>
+        </div>
+        <div class="main-layout">
+            <div>
+                <div class="experiments-grid">
+                    <div class="experiment-card">
+                        <div class="exp-header">
+                            <span class="exp-id">EXP-2026-0317-001</span>
+                            <span class="exp-status status-running">运行中</span>
+                        </div>
+                        <div class="exp-title">Transformer模型优化实验</div>
+                        <div class="exp-desc">测试不同注意力机制在NLP任务上的性能表现，对比标准Transformer与稀疏注意力变体。</div>
+                        <div class="exp-meta">
+                            <span class="meta-item">?? 2026-03-17</span>
+                            <span class="meta-item">?? 张研究员</span>
+                            <span class="meta-item">? 运行 4小时</span>
+                        </div>
+                        <div class="exp-progress">
+                            <div class="progress-header">
+                                <span>实验进度</span>
+                                <span>67%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-animate blue" style="width: 67%;"></div>
+                            </div>
+                        </div>
+                        <div class="exp-tags">
+                            <span class="tag">深度学习</span>
+                            <span class="tag">NLP</span>
+                            <span class="tag">Transformer</span>
+                        </div>
+                        <div class="exp-actions">
+                            <button class="btn-hover">?? 查看</button>
+                            <button class="btn-hover">? 暂停</button>
+                            <button class="btn-hover">?? 结果</button>
+                        </div>
+                    </div>
+                    <div class="experiment-card">
+                        <div class="exp-header">
+                            <span class="exp-id">EXP-2026-0316-003</span>
+                            <span class="exp-status status-completed">已完成</span>
+                        </div>
+                        <div class="exp-title">蛋白质结构预测对比</div>
+                        <div class="exp-desc">对比AlphaFold3与ESMFold在罕见蛋白质结构预测上的准确性差异。</div>
+                        <div class="exp-meta">
+                            <span class="meta-item">?? 2026-03-16</span>
+                            <span class="meta-item">?? 李博士</span>
+                            <span class="meta-item">? 已完成</span>
+                        </div>
+                        <div class="exp-progress">
+                            <div class="progress-header">
+                                <span>实验完成度</span>
+                                <span>100%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-animate green" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                        <div class="exp-tags">
+                            <span class="tag">生物信息</span>
+                            <span class="tag">结构预测</span>
+                            <span class="tag">AlphaFold</span>
+                        </div>
+                        <div class="exp-actions">
+                            <button>?? 查看</button>
+                            <button>?? 分析</button>
+                            <button>?? 报告</button>
+                        </div>
+                    </div>
+                    <div class="experiment-card">
+                        <div class="exp-header">
+                            <span class="exp-id">EXP-2026-0315-007</span>
+                            <span class="exp-status status-pending">待启动</span>
+                        </div>
+                        <div class="exp-title">量子计算模拟实验</div>
+                        <div class="exp-desc">使用量子模拟器测试Shor算法在不同比特数下的分解效率。</div>
+                        <div class="exp-meta">
+                            <span class="meta-item">?? 2026-03-15</span>
+                            <span class="meta-item">?? 王教授</span>
+                            <span class="meta-item">? 队列中</span>
+                        </div>
+                        <div class="exp-progress">
+                            <div class="progress-header">
+                                <span>准备就绪</span>
+                                <span>0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-animate orange" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="exp-tags">
+                            <span class="tag">量子计算</span>
+                            <span class="tag">算法</span>
+                            <span class="tag">模拟</span>
+                        </div>
+                        <div class="exp-actions">
+                            <button>?? 查看</button>
+                            <button>? 启动</button>
+                            <button>? 编辑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="design-panel card-hover scroll-animate" style="margin-bottom: 24px;">
+                    <div class="panel-title">? 快速创建实验</div>
+                    <div class="form-group">
+                        <label class="form-label">实验名称</label>
+                        <input type="text" class="form-input" placeholder="输入实验名称...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">研究领域</label>
+                        <select class="form-select">
+                            <option>选择研究领域...</option>
+                            <option>机器学习</option>
+                            <option>计算机视觉</option>
+                            <option>自然语言处理</option>
+                            <option>生物信息学</option>
+                            <option>材料科学</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">实验类型</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item"><input type="checkbox"> 对比实验</label>
+                            <label class="checkbox-item"><input type="checkbox"> 消融实验</label>
+                            <label class="checkbox-item"><input type="checkbox"> 超参数调优</label>
+                            <label class="checkbox-item"><input type="checkbox"> 基准测试</label>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-hover ripple" style="width: 100%;">创建实验</button>
+                </div>
+                <div class="timeline card-hover scroll-animate">
+                    <div class="timeline-title">?? 最近活动</div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot blue"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">10分钟前</div>
+                            <div class="timeline-text">实验 EXP-2026-0317-001 完成第3轮训练</div>
+                            <div class="timeline-user">张研究员</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot green"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">1小时前</div>
+                            <div class="timeline-text">实验 EXP-2026-0316-003 已完成并生成报告</div>
+                            <div class="timeline-user">李博士</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot orange"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">3小时前</div>
+                            <div class="timeline-text">新建实验设计：量子计算模拟实验</div>
+                            <div class="timeline-user">王教授</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot blue"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">昨天</div>
+                            <div class="timeline-text">数据集 "ImageNet-1K 增强版" 已更新</div>
+                            <div class="timeline-user">系统</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="../assets/js/animations.js"></script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

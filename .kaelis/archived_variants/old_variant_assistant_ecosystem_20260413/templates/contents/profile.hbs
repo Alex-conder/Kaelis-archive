@@ -1,0 +1,57 @@
+<!-- 个人中心页面内容 -->
+<div class="profile-layout">
+    <!-- 用户信息卡片 -->
+    <div class="profile-header card">
+        <div class="profile-avatar-large">{{user.avatar}}</div>
+        <div class="profile-info">
+            <h2 class="profile-name">{{user.name}}</h2>
+            <p class="profile-email">{{user.email}}</p>
+            <div class="profile-meta">
+                <span class="badge badge-primary">{{user.role}}</span>
+                <span class="join-date">加入时间: {{user.joinDate}}</span>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <button class="btn btn-secondary">编辑资料</button>
+            <button class="btn btn-primary">更换头像</button>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="profile-stats grid-3">
+        {{#each stats}}
+        <div class="stat-card card metric-card">
+            <div class="metric-value">{{value}}</div>
+            <div class="metric-label">{{label}}</div>
+        </div>
+        {{/each}}
+    </div>
+
+    <!-- 账户安全 -->
+    <div class="profile-section card">
+        <h3 class="section-title">账户安全</h3>
+        <div class="security-list">
+            <div class="security-item flex-between">
+                <div class="security-info">
+                    <h4>密码</h4>
+                    <p>上次修改: 30天前</p>
+                </div>
+                <button class="btn btn-secondary">修改密码</button>
+            </div>
+            <div class="security-item flex-between">
+                <div class="security-info">
+                    <h4>两步验证</h4>
+                    <p>状态: 未开启</p>
+                </div>
+                <button class="btn btn-primary">开启</button>
+            </div>
+            <div class="security-item flex-between">
+                <div class="security-info">
+                    <h4>登录设备</h4>
+                    <p>当前有 3 个设备登录</p>
+                </div>
+                <button class="btn btn-ghost">管理</button>
+            </div>
+        </div>
+    </div>
+</div>

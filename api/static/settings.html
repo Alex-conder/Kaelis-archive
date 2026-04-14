@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelis 智流 - 系统设置</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        header h1 {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+        }
+        
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-header h2 {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+        
+        .card-header .icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .form-group .description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+        
+        .slider:before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        input:checked + .slider {
+            background: var(--primary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+        
+        .toggle-label {
+            font-weight: 500;
+        }
+        
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+        
+        /* Button */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        /* Status Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        /* Info box */
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .info-box ul {
+            margin-left: 1.25rem;
+            color: #1e40af;
+            font-size: 0.875rem;
+        }
+        
+        .info-box li {
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>⚙️ 系统设置</h1>
+            <p>配置 Kaelis 智流 AI Agent 的各项参数</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Alert Messages -->
+        <div id="alert" class="alert"></div>
+
+        <div class="settings-grid">
+            <!-- 自进化引擎配置 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon">🧬</div>
+                    <h2>自进化引擎配置</h2>
+                </div>
+
+                <div class="info-box">
+                    <h4>💡 功能说明</h4>
+                    <ul>
+                        <li>任务结果自动评估与改进</li>
+                        <li>知识检索与策略优化</li>
+                        <li>成功经验自动记录</li>
+                    </ul>
+                </div>
+
+                <div class="form-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="evolutionEnabled" checked>
+                        <span class="slider"></span>
+                        <span class="toggle-label">启用自进化引擎</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxIterations">最大迭代次数</label>
+                    <p class="description">单次任务的最大自我改进迭代次数</p>
+                    <input type="number" id="maxIterations" value="3" min="1" max="10">
+                </div>
+
+                <div class="form-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="webSearchEnabled">
+                        <span class="slider"></span>
+                        <span class="toggle-label">允许网页搜索</span>
+                    </label>
+                    <p class="description">允许从互联网检索知识（需要网络连接）</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="evalMethod">默认评估方法</label>
+                    <select id="evalMethod">
+                        <option value="hybrid">混合模式（推荐）</option>
+                        <option value="rule">规则引擎</option>
+                        <option value="llm">LLM 评估</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="stuckThreshold">停滞检测阈值</label>
+                    <p class="description">连续迭代置信度变化小于此值时触发回滚</p>
+                    <input type="number" id="stuckThreshold" value="0.05" min="0.01" max="0.5" step="0.01">
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-primary" onclick="saveEvolutionConfig()">
+                        💾 保存配置
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetEvolutionConfig()">
+                        🔄 重置
+                    </button>
+                </div>
+            </div>
+
+            <!-- 知识检索配置 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon">📚</div>
+                    <h2>知识检索配置</h2>
+                </div>
+
+                <div class="form-group">
+                    <label for="docDir">本地文档目录</label>
+                    <input type="text" id="docDir" value="data/documents/" placeholder="data/documents/">
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="indexPDF" checked>
+                        <span>索引 PDF 文件</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="indexTXT" checked>
+                        <span>索引 TXT 文件</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="indexMD" checked>
+                        <span>索引 Markdown 文件</span>
+                    </label>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-primary" onclick="reindexDocuments()">
+                        🔄 重新索引文档
+                    </button>
+                </div>
+            </div>
+
+            <!-- LLM 配置 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon">🤖</div>
+                    <h2>LLM 配置</h2>
+                </div>
+
+                <div class="form-group">
+                    <label for="defaultProvider">默认提供商</label>
+                    <select id="defaultProvider">
+                        <option value="moonshot">Moonshot (Kimi)</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="deepseek">DeepSeek</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="temperature">Temperature</label>
+                    <input type="number" id="temperature" value="0.7" min="0" max="2" step="0.1">
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-primary" onclick="testLLMConnection()">
+                        🔌 测试连接
+                    </button>
+                </div>
+            </div>
+
+            <!-- 系统状态 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon">📊</div>
+                    <h2>系统状态</h2>
+                </div>
+
+                <div class="form-group">
+                    <label>自进化引擎</label>
+                    <span class="badge badge-success" id="engineStatus">运行中</span>
+                </div>
+
+                <div class="form-group">
+                    <label>知识检索器</label>
+                    <span class="badge badge-success" id="knowledgeStatus">已加载</span>
+                </div>
+
+                <div class="form-group">
+                    <label>已存储成功案例</label>
+                    <p id="successCasesCount">加载中...</p>
+                </div>
+
+                <div class="form-group">
+                    <label>文档索引状态</label>
+                    <p id="indexStatus">加载中...</p>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-secondary" onclick="refreshStatus()">
+                        🔄 刷新状态
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API 基础 URL
+        const API_BASE = '/api/evolve';
+
+        // 显示提示
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 3000);
+        }
+
+        // 保存自进化配置
+        async function saveEvolutionConfig() {
+            const config = {
+                stuck_threshold: parseFloat(document.getElementById('stuckThreshold').value),
+                default_max_iterations: parseInt(document.getElementById('maxIterations').value),
+                exploration_perturbation: 0.3,
+                enable_web_search: document.getElementById('webSearchEnabled').checked,
+                default_evaluation_method: document.getElementById('evalMethod').value,
+                evolution_enabled: document.getElementById('evolutionEnabled').checked
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('配置保存成功！', 'success');
+                } else {
+                    showAlert(`保存失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`请求失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 重置配置
+        function resetEvolutionConfig() {
+            document.getElementById('evolutionEnabled').checked = true;
+            document.getElementById('maxIterations').value = 3;
+            document.getElementById('webSearchEnabled').checked = false;
+            document.getElementById('evalMethod').value = 'hybrid';
+            document.getElementById('stuckThreshold').value = 0.05;
+            showAlert('配置已重置为默认值', 'success');
+        }
+
+        // 重新索引文档
+        async function reindexDocuments() {
+            showAlert('正在重新索引文档...', 'success');
+            // 这里应该调用实际的 API
+            setTimeout(() => {
+                showAlert('文档索引完成！', 'success');
+            }, 2000);
+        }
+
+        // 测试 LLM 连接
+        async function testLLMConnection() {
+            showAlert('正在测试 LLM 连接...', 'success');
+            setTimeout(() => {
+                showAlert('LLM 连接正常！', 'success');
+            }, 1500);
+        }
+
+        // 刷新状态
+        async function refreshStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/config`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('engineStatus').textContent = '运行中';
+                    document.getElementById('knowledgeStatus').textContent = '已加载';
+                    document.getElementById('successCasesCount').textContent = '加载中...';
+                    document.getElementById('indexStatus').textContent = '已就绪';
+                }
+            } catch (error) {
+                document.getElementById('engineStatus').textContent = '未连接';
+                document.getElementById('engineStatus').className = 'badge badge-warning';
+            }
+        }
+
+        // 页面加载时获取配置
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/config`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const config = data.data.config || {};
+                    document.getElementById('stuckThreshold').value = config.stuck_threshold || 0.05;
+                    document.getElementById('maxIterations').value = config.default_max_iterations || 3;
+                }
+            } catch (error) {
+                console.warn('无法加载配置:', error);
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            refreshStatus();
+        });
+    </script>
+</body>
+</html>

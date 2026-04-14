@@ -1,0 +1,18 @@
+<!-- 分页组件 -->
+<div class="pagination">
+  <button class="pagination-btn {{#unless hasPrev}}disabled{{/unless}}" {{#unless hasPrev}}disabled{{/unless}}>
+    &laquo; 上一页
+  </button>
+  
+  {{#each pages}}
+  {{#if ellipsis}}
+  <span class="pagination-ellipsis">...</span>
+  {{else}}
+  <button class="pagination-btn {{#if active}}active{{/if}}">{{number}}</button>
+  {{/if}}
+  {{/each}}
+  
+  <button class="pagination-btn {{#unless hasNext}}disabled{{/unless}}" {{#unless hasNext}}disabled{{/unless}}>
+    下一页 &raquo;
+  </button>
+</div>

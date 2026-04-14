@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音助手 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+            background: linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+        .voice-header {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+        }
+        .back-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 20px;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        .voice-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .mic-container {
+            position: relative;
+            margin-bottom: 40px;
+        }
+        .mic-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: rgba(102,126,234,0.3);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .mic-pulse:nth-child(2) {
+            width: 280px;
+            height: 280px;
+            animation-delay: 0.5s;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        .mic-button {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            cursor: pointer;
+            box-shadow: 0 0 60px rgba(102,126,234,0.5);
+            position: relative;
+            z-index: 1;
+        }
+        .voice-status {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .voice-status h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .voice-status p {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+        .voice-text {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 32px;
+            min-height: 36px;
+        }
+        .voice-wave {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 40px;
+        }
+        .wave-bar {
+            width: 4px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(1) { height: 20%; animation-delay: 0s; }
+        .wave-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { height: 100%; animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { height: 70%; animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { height: 40%; animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { height: 80%; animation-delay: 0.5s; }
+        .wave-bar:nth-child(7) { height: 50%; animation-delay: 0.6s; }
+        .wave-bar:nth-child(8) { height: 90%; animation-delay: 0.7s; }
+        .wave-bar:nth-child(9) { height: 30%; animation-delay: 0.8s; }
+        .wave-bar:nth-child(10) { height: 70%; animation-delay: 0.9s; }
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.5); }
+            50% { transform: scaleY(1); }
+        }
+        .voice-tips {
+            position: fixed;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 0 24px;
+        }
+        .voice-tips p {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 16px;
+        }
+        .quick-commands {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .quick-command {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 14px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        .quick-command:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <header class="voice-header">
+        <button class="back-btn">←</button>
+    </header>
+    <div class="voice-container">
+        <div class="mic-container">
+            <div class="mic-pulse"></div>
+            <div class="mic-pulse"></div>
+            <button class="mic-button">??</button>
+        </div>
+        <div class="voice-status">
+            <h2>Kaelis</h2>
+            <p>正在聆听...</p>
+        </div>
+        <div class="voice-text">"检查系统状态"</div>
+        <div class="voice-wave">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+    </div>
+    <div class="voice-tips">
+        <p>?? 试试说:</p>
+        <div class="quick-commands">
+            <button class="quick-command">检查状态</button>
+            <button class="quick-command">显示仪表板</button>
+            <button class="quick-command">运行测试</button>
+            <button class="quick-command">部署到生产</button>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

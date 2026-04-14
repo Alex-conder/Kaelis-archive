@@ -1,0 +1,28 @@
+<!-- 表格组件 -->
+<div class="table-container">
+  <table class="table">
+    <thead>
+      <tr>
+        {{#each columns}}
+        <th>{{this}}</th>
+        {{/each}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#each rows}}
+      <tr>
+        {{#each this}}
+        <td>{{this}}</td>
+        {{/each}}
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{#if pagination}}
+  <div class="table-pagination">
+    <button class="btn btn-ghost btn-sm" {{#unless hasPrev}}disabled{{/unless}}>上一页</button>
+    <span class="page-info">第 {{currentPage}} 页，共 {{totalPages}} 页</span>
+    <button class="btn btn-ghost btn-sm" {{#unless hasNext}}disabled{{/unless}}>下一页</button>
+  </div>
+  {{/if}}
+</div>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组件文档 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white;
+            display: flex;
+        }
+        
+        /* 侧边导航 */
+        .sidebar { 
+            width: 280px; 
+            background: rgba(23,23,23,0.95); 
+            border-right: 1px solid rgba(255,255,255,0.1);
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .sidebar-logo { 
+            font-size: 24px; 
+            font-weight: 700;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-section { margin-bottom: 24px; }
+        .nav-title { 
+            font-size: 12px; 
+            color: #6B7280; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .nav-item { 
+            display: block; 
+            padding: 10px 12px; 
+            color: #A1A1AA; 
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .nav-item:hover, .nav-item.active { 
+            background: rgba(136,72,249,0.1); 
+            color: var(--primary);
+        }
+        
+        /* 主内容区 */
+        .main { 
+            flex: 1; 
+            margin-left: 280px;
+            padding: 40px;
+            max-width: 900px;
+        }
+        
+        .page-title { 
+            font-size: 48px; 
+            margin-bottom: 16px;
+        }
+        .page-desc { 
+            font-size: 18px; 
+            color: #6B7280; 
+            margin-bottom: 40px;
+        }
+        
+        /* 组件展示 */
+        .component-section { margin-bottom: 60px; }
+        .component-title { 
+            font-size: 28px; 
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .component-desc { 
+            font-size: 16px; 
+            color: #A1A1AA; 
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        /* 演示区域 */
+        .demo-box  { @extend .card; }
+        
+        /* 代码块 */
+        .code-block { 
+            background: #1a1a2e; 
+            border-radius: 12px; 
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .code-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .code-lang { 
+            font-size: 12px; 
+            color: #6B7280;
+            text-transform: uppercase;
+        }
+        .code-copy { 
+            padding: 6px 12px; 
+            background: rgba(255,255,255,0.1); 
+            border: none; 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .code-content { 
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-keyword { color: #c792ea; }
+        .code-string { color: #c3e88d; }
+        .code-comment { color: #676e95; }
+        .code-tag { color: #f07178; }
+        .code-attr { color: #ffcb6b; }
+        
+        /* 属性表格 */
+        .props-table { 
+            width: 100%; 
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+        .props-table th, .props-table td { 
+            padding: 16px; 
+            text-align: left; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .props-table th { 
+            color: #6B7280; 
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .props-table td { font-size: 14px; }
+        .prop-name { 
+            font-family: monospace; 
+            color: #ffcb6b;
+        }
+        .prop-type { 
+            font-family: monospace; 
+            color: #c792ea;
+        }
+        .prop-default { 
+            font-family: monospace; 
+            color: #c3e88d;
+        }
+        .prop-required { 
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(239,68,68,0.2);
+            color: #EF4444;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        /* 提示框 */
+        .alert { 
+            padding: 16px 20px; 
+            border-radius: 12px; 
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .alert-info { 
+            background: rgba(59,130,246,0.1); 
+            border: 1px solid rgba(59,130,246,0.3);
+        }
+        .alert-warning { 
+            background: rgba(245,158,11,0.1); 
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+        .alert-icon { font-size: 20px; }
+        .alert-content { flex: 1; }
+        .alert-title { font-weight: 600; margin-bottom: 4px; }
+        .alert-text { font-size: 14px; color: #A1A1AA; }
+        
+        /* 示例按钮 */
+        .btn { 
+            padding: 12px 24px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-secondary { 
+            background: rgba(255,255,255,0.1);
+            margin-left: 12px;
+        }
+        .btn-sm { padding: 8px 16px; font-size: 13px; }
+        .btn-lg { padding: 16px 32px; font-size: 16px; }
+        
+        /* 变体展示 */
+        .variant-group { margin-bottom: 24px; }
+        .variant-label { 
+            font-size: 12px; 
+            color: #6B7280; 
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        .variant-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">?? Kaelis UI</div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Getting Started</div>
+            <a href="#" class="nav-item active">介绍</a>
+            <a href="#" class="nav-item">快速开始</a>
+            <a href="#" class="nav-item">安装</a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Components</div>
+            <a href="#button" class="nav-item">Button 按钮</a>
+            <a href="#input" class="nav-item">Input 输入框</a>
+            <a href="#card" class="nav-item">Card 卡片</a>
+            <a href="#modal" class="nav-item">Modal 对话框</a>
+            <a href="#table" class="nav-item">Table 表格</a>
+            <a href="#chart" class="nav-item">Chart 图表</a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Hooks</div>
+            <a href="#" class="nav-item">useAuth</a>
+            <a href="#" class="nav-item">useTheme</a>
+            <a href="#" class="nav-item">useFetch</a>
+        </div>
+    </aside>
+    
+    <main class="main">
+        <h1 class="page-title">Button 按钮</h1>
+        <p class="page-desc">按钮用于开始一个即时操作，是用户与界面交互最常用的元素。</p>
+        
+        <!-- 使用示例 -->
+        <div class="component-section" id="button">
+            <h2 class="component-title">使用示例</h2>
+            <p class="component-desc">最简单的用法，通过 type 属性设置按钮类型。</p>
+            
+            <div class="demo-box">
+                <button class="btn">默认按钮</button>
+                <button class="btn btn-secondary">次要按钮</button>
+            </div>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="code-copy">复制</button>
+                </div>
+                <div class="code-content">
+<span class="code-tag">&lt;button</span> <span class="code-attr">class</span>=<span class="code-string">"btn"</span><span class="code-tag">&gt;</span>默认按钮<span class="code-tag">&lt;/button&gt;</span>
+<span class="code-tag">&lt;button</span> <span class="code-attr">class</span>=<span class="code-string">"btn btn-secondary"</span><span class="code-tag">&gt;</span>次要按钮<span class="code-tag">&lt;/button&gt;</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 按钮尺寸 -->
+        <div class="component-section">
+            <h2 class="component-title">按钮尺寸</h2>
+            <p class="component-desc">按钮有大、中、小三种尺寸，通过设置 size 属性调整。</p>
+            
+            <div class="demo-box">
+                <div class="variant-group">
+                    <div class="variant-label">Small</div>
+                    <div class="variant-row">
+                        <button class="btn btn-sm">小按钮</button>
+                        <button class="btn btn-sm btn-secondary">次要</button>
+                    </div>
+                </div>
+                <div class="variant-group">
+                    <div class="variant-label">Default</div>
+                    <div class="variant-row">
+                        <button class="btn">默认按钮</button>
+                        <button class="btn btn-secondary">次要</button>
+                    </div>
+                </div>
+                <div class="variant-group">
+                    <div class="variant-label">Large</div>
+                    <div class="variant-row">
+                        <button class="btn btn-lg">大按钮</button>
+                        <button class="btn btn-lg btn-secondary">次要</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- API文档 -->
+        <div class="component-section">
+            <h2 class="component-title">API</h2>
+            
+            <div class="alert alert-info">
+                <span class="alert-icon">??</span>
+                <div class="alert-content">
+                    <div class="alert-title">提示</div>
+                    <div class="alert-text">Button 组件继承自原生 button 元素，支持所有原生属性。</div>
+                </div>
+            </div>
+            
+            <h3 style="font-size: 20px; margin-bottom: 16px;">属性</h3>
+            <table class="props-table">
+                <thead>
+                    <tr>
+                        <th>属性</th>
+                        <th>说明</th>
+                        <th>类型</th>
+                        <th>默认值</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="prop-name">type</span></td>
+                        <td>按钮类型</td>
+                        <td><span class="prop-type">'primary' | 'secondary' | 'danger'</span></td>
+                        <td><span class="prop-default">'primary'</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="prop-name">size</span></td>
+                        <td>按钮尺寸</td>
+                        <td><span class="prop-type">'sm' | 'md' | 'lg'</span></td>
+                        <td><span class="prop-default">'md'</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="prop-name">disabled</span></td>
+                        <td>是否禁用</td>
+                        <td><span class="prop-type">boolean</span></td>
+                        <td><span class="prop-default">false</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="prop-name">loading</span></td>
+                        <td>加载状态</td>
+                        <td><span class="prop-type">boolean</span></td>
+                        <td><span class="prop-default">false</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="prop-name">onClick</span> <span class="prop-required">必需</span></td>
+                        <td>点击回调</td>
+                        <td><span class="prop-type">(e: MouseEvent) => void</span></td>
+                        <td><span class="prop-default">-</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 方法 -->
+        <div class="component-section">
+            <h2 class="component-title">方法</h2>
+            <table class="props-table">
+                <thead>
+                    <tr>
+                        <th>方法名</th>
+                        <th>说明</th>
+                        <th>参数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="prop-name">focus()</span></td>
+                        <td>使按钮获得焦点</td>
+                        <td><span class="prop-type">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="prop-name">blur()</span></td>
+                        <td>移除按钮焦点</td>
+                        <td><span class="prop-type">-</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 最佳实践 -->
+        <div class="component-section">
+            <h2 class="component-title">最佳实践</h2>
+            
+            <div class="alert alert-warning">
+                <span class="alert-icon">??</span>
+                <div class="alert-content">
+                    <div class="alert-title">注意</div>
+                    <div class="alert-text">一个页面上不要出现太多按钮，优先使用主要按钮引导用户操作。</div>
+                </div>
+            </div>
+            
+            <h3 style="font-size: 18px; margin: 24px 0 16px;">何时使用</h3>
+            <ul style="color: #A1A1AA; line-height: 2; margin-left: 20px;">
+                <li>主按钮用于页面中最主要的操作，一个页面通常只有一个主按钮</li>
+                <li>次要按钮用于次要操作或取消操作</li>
+                <li>危险按钮用于需要谨慎操作的场景，如删除</li>
+                <li>链接按钮用于导航到其他页面</li>
+            </ul>
+        </div>
+    </main>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

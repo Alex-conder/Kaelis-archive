@@ -1,0 +1,56 @@
+# Service Health Contract
+# 服务健康检查与自愈配置
+
+version: "1.0"
+description: "定义服务的健康检查端点和修复动作"
+
+services:
+  - name: backend
+    description: "Flask 后端服务"
+    endpoint: "http://localhost:5000/api/health"
+    check_interval: 30
+    timeout: 5
+    remediation: "python launch.py"
+    max_remediation_attempts: 3
+    
+  - name: frontend
+    description: "Vite 前端开发服务器"
+    endpoint: "http://localhost:5173"
+    check_interval: 30
+    timeout: 5
+    remediation: "cd web/frontend && npm run dev"
+    max_remediation_attempts: 3
+    
+  - name: neo4j
+    description: "Neo4j 图数据库"
+    endpoint: "http://localhost:7474"
+    check_interval: 60
+    timeout: 10
+    remediation: "docker-compose up -d neo4j"
+    max_remediation_attempts: 2
+    
+  - name: supabase
+    description: "Supabase 连接状态"
+    endpoint: "http://localhost:5000/api/auth/health"
+    check_interval: 60
+    timeout: 5
+    remediation: "echo '请检查 Supabase 配置'"
+    max_remediation_attempts: 1
+
+# 通知配置
+notifications:
+  enabled: true
+  methods:
+    - type: console
+      level: info
+    - type: file
+      path: ".kaelis/daemon.log"
+      level: warn
+
+# 守护进程配置
+daemon:
+  name: "Kaelis Guardian"
+  version: "1.0"
+  pid_file: ".kaelis/daemon.pid"
+  log_file: ".kaelis/daemon.log"
+  auto_start: false

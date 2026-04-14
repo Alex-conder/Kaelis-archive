@@ -1,0 +1,89 @@
+# Frontend Contract - 定义前端技术栈和结构
+
+framework: react-ts
+version: "18.x"
+
+# 构建工具
+build_tool: vite
+
+# 依赖管理
+dependencies:
+  core:
+    - react
+    - react-dom
+    - react-router-dom
+  state:
+    - zustand
+    - pinia
+  http:
+    - axios
+  auth:
+    - "@supabase/supabase-js"
+  ui:
+    - tailwindcss
+    - "@headlessui/react"
+
+devDependencies:
+  - typescript
+  - "@types/react"
+  - "@types/react-dom"
+  - "@vitejs/plugin-react"
+  - vite
+  - autoprefixer
+  - postcss
+
+# 项目结构
+structure:
+  src/:
+    - components/: 可复用组件
+    - pages/: 页面组件
+    - stores/: 状态管理
+    - hooks/: 自定义 Hooks
+    - lib/: 工具库
+    - api/: 生成的 API 客户端
+    - assets/: 静态资源
+  public/: 公共文件
+
+# 生成的页面
+pages:
+  - path: /
+    component: Home
+    public: true
+    
+  - path: /login
+    component: Login
+    public: true
+    
+  - path: /register
+    component: Register
+    public: true
+    
+  - path: /dashboard
+    component: Dashboard
+    auth_required: true
+    
+  - path: /settings
+    component: Settings
+    auth_required: true
+    
+  - path: /kg-flywheel
+    component: KGFlywheel
+    auth_required: true
+    
+  - path: /workflows
+    component: Workflows
+    auth_required: true
+
+# 生成的组件
+components:
+  - name: AuthGuard
+    type: route_guard
+    
+  - name: LLMProviderSelector
+    type: ui
+    
+  - name: SyncStatus
+    type: ui
+    
+  - name: ConflictDialog
+    type: modal

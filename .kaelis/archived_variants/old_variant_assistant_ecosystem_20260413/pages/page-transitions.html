@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>页面转场动画 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .demo-container { 
+            max-width: 800px; 
+            margin: 0 auto;
+        }
+        
+        /* 预览窗口 */
+        .preview-window { 
+            width: 100%; 
+            height: 400px; 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        
+        .preview-page { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            display: flex; 
+            flex-direction: column;
+            padding: 24px;
+        }
+        
+        .preview-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            margin-bottom: 24px;
+        }
+        .preview-back { 
+            width: 40px; 
+            height: 40px; 
+            background: rgba(255,255,255,0.1); 
+            border: none; 
+            border-radius: 10px; 
+            color: white; 
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .preview-title { font-size: 20px; font-weight: 600; }
+        
+        .preview-content { 
+            flex: 1; 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 16px;
+        }
+        .preview-card { 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 16px; 
+            padding: 20px;
+        }
+        .preview-card-header { 
+            width: 60%; 
+            height: 16px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            margin-bottom: 12px;
+        }
+        .preview-card-body { 
+            height: 60px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 8px;
+        }
+        
+        /* 页面1 - 首页 */
+        .page-home { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+        .page-home .preview-card:nth-child(1) { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
+        
+        /* 页面2 - 详情 */
+        .page-detail { 
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            transform: translateX(100%);
+        }
+        
+        /* 转场动画类 */
+        /* 滑动 */
+        .transition-slide .page-home { animation: slideOut 0.5s forwards; }
+        .transition-slide .page-detail { animation: slideIn 0.5s forwards; }
+        @keyframes slideOut { to { transform: translateX(-30%); opacity: 0.5; } }
+        @keyframes slideIn { to { transform: translateX(0); } }
+        
+        /* 淡入 */
+        .transition-fade .page-detail { animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; transform: translateX(0); } }
+        
+        /* 缩放 */
+        .transition-scale .page-home { animation: scaleOut 0.5s forwards; }
+        .transition-scale .page-detail { animation: scaleIn 0.5s forwards; }
+        @keyframes scaleOut { to { transform: scale(0.9); opacity: 0.5; } }
+        @keyframes scaleIn { from { transform: scale(1.1); opacity: 0; } to { transform: scale(1) translateX(0); opacity: 1; } }
+        
+        /* 翻转 */
+        .transition-flip .page-home { animation: flipOut 0.6s forwards; }
+        .transition-flip .page-detail { animation: flipIn 0.6s forwards; }
+        @keyframes flipOut { 
+            to { transform: perspective(1000px) rotateY(-15deg) translateX(-20%); opacity: 0.5; } 
+        }
+        @keyframes flipIn { 
+            from { transform: perspective(1000px) rotateY(15deg) translateX(100%); opacity: 0; }
+            to { transform: perspective(1000px) rotateY(0) translateX(0); opacity: 1; }
+        }
+        
+        /* 立方体 */
+        .transition-cube .preview-window { perspective: 1000px; }
+        .transition-cube .page-home { animation: cubeOut 0.6s forwards; transform-origin: left center; }
+        .transition-cube .page-detail { animation: cubeIn 0.6s forwards; transform-origin: right center; }
+        @keyframes cubeOut { 
+            to { transform: rotateY(90deg); opacity: 0; } 
+        }
+        @keyframes cubeIn { 
+            from { transform: rotateY(-90deg) translateX(100%); opacity: 0; }
+            to { transform: rotateY(0) translateX(0); opacity: 1; }
+        }
+        
+        /* 覆盖 */
+        .transition-cover .page-detail { animation: coverIn 0.5s forwards; }
+        @keyframes coverIn { 
+            from { transform: translateY(100%); } 
+            to { transform: translateY(0); } 
+        }
+        
+        /* 揭开 */
+        .transition-reveal .page-home { animation: revealOut 0.5s forwards; transform-origin: bottom; }
+        .transition-reveal .page-detail { animation: revealIn 0.5s forwards; }
+        @keyframes revealOut { 
+            to { transform: scale(0.9) translateY(-10%); opacity: 0.5; } 
+        }
+        @keyframes revealIn { 
+            from { transform: translateX(0) scale(1.1); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        
+        /* 卡片展开 */
+        .transition-card .page-detail { animation: cardIn 0.5s forwards; }
+        @keyframes cardIn { 
+            from { 
+                transform: translateX(0) scale(0.8); 
+                opacity: 0;
+                border-radius: 40px;
+            }
+            to { 
+                transform: translateX(0) scale(1); 
+                opacity: 1;
+                border-radius: 0;
+            }
+        }
+        
+        /* 模糊过渡 */
+        .transition-blur .page-home { animation: blurOut 0.5s forwards; }
+        .transition-blur .page-detail { animation: blurIn 0.5s forwards; }
+        @keyframes blurOut { to { filter: blur(10px); opacity: 0.5; transform: scale(0.95); } }
+        @keyframes blurIn { 
+            from { filter: blur(10px); opacity: 0; transform: translateX(0) scale(1.05); }
+            to { filter: blur(0); opacity: 1; transform: translateX(0) scale(1); }
+        }
+        
+        /* 波纹扩散 */
+        .transition-ripple .ripple-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: rippleExpand 0.6s forwards;
+            z-index: 10;
+        }
+        @keyframes rippleExpand {
+            to { width: 200%; height: 200%; opacity: 0; }
+        }
+        .transition-ripple .page-detail { animation: rippleReveal 0.5s 0.3s forwards; opacity: 0; }
+        @keyframes rippleReveal { to { opacity: 1; transform: translateX(0); } }
+        
+        /* 动画选择器 */
+        .transition-selector { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .transition-btn { 
+            padding: 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 2px solid transparent; 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .transition-btn:hover { background: rgba(255,255,255,0.1); }
+        .transition-btn.active { 
+            border-color: var(--primary); 
+            background: rgba(136,72,249,0.1);
+        }
+        .transition-btn .icon { font-size: 24px; display: block; margin-bottom: 8px; }
+        
+        /* 代码展示 */
+        .code-block { 
+            background: rgba(0,0,0,0.5); 
+            border-radius: 12px; 
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            color: #A1A1AA;
+        }
+        .code-block .keyword { color: var(--primary); }
+        .code-block .property { color: var(--secondary); }
+        .code-block .value { color: #22C55E; }
+        
+        /* 导航演示 */
+        .nav-demo { 
+            display: flex; 
+            justify-content: center; 
+            gap: 16px; 
+            margin-top: 32px;
+            padding: 24px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+        }
+        .nav-demo-item { 
+            padding: 12px 24px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-demo-item:hover, .nav-demo-item.active { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+        }
+        
+        /* 页面指示器 */
+        .page-indicator { 
+            display: flex; 
+            justify-content: center; 
+            gap: 8px; 
+            margin-top: 16px;
+        }
+        .indicator-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+        .indicator-dot.active { 
+            width: 24px; 
+            border-radius: 4px; 
+            background: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 页面转场动画</h1>
+        <p>流畅的页面切换体验</p>
+    </div>
+    
+    <div class="demo-container">
+        <!-- 预览窗口 -->
+        <div class="preview-window" id="previewWindow">
+            <div class="preview-page page-home" id="pageHome">
+                <div class="preview-header">
+                    <div class="preview-title">?? 首页</div>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-card">
+                        <div class="preview-card-header"></div>
+                        <div class="preview-card-body"></div>
+                    </div>
+                    <div class="preview-card">
+                        <div class="preview-card-header"></div>
+                        <div class="preview-card-body"></div>
+                    </div>
+                    <div class="preview-card">
+                        <div class="preview-card-header"></div>
+                        <div class="preview-card-body"></div>
+                    </div>
+                    <div class="preview-card">
+                        <div class="preview-card-header"></div>
+                        <div class="preview-card-body"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="preview-page page-detail" id="pageDetail">
+                <div class="preview-header">
+                    <button class="preview-back" onclick="goBack()">?</button>
+                    <div class="preview-title">?? 详情页</div>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-card" style="grid-column: span 2;">
+                        <div class="preview-card-header" style="width: 40%;"></div>
+                        <div class="preview-card-body" style="height: 150px;"></div>
+                    </div>
+                    <div class="preview-card">
+                        <div class="preview-card-header"></div>
+                        <div class="preview-card-body"></div>
+                    </div>
+                    <div class="preview-card">
+                        <div class="preview-card-header"></div>
+                        <div class="preview-card-body"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 页面指示器 -->
+        <div class="page-indicator">
+            <div class="indicator-dot active" id="dot1"></div>
+            <div class="indicator-dot" id="dot2"></div>
+        </div>
+        
+        <!-- 动画选择 -->
+        <div class="transition-selector">
+            <button class="transition-btn active" onclick="selectTransition('slide')">
+                <span class="icon">??</span>
+                <span>滑动</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('fade')">
+                <span class="icon">?</span>
+                <span>淡入</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('scale')">
+                <span class="icon">??</span>
+                <span>缩放</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('flip')">
+                <span class="icon">??</span>
+                <span>翻转</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('cube')">
+                <span class="icon">??</span>
+                <span>立方体</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('cover')">
+                <span class="icon">??</span>
+                <span>覆盖</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('reveal')">
+                <span class="icon">???</span>
+                <span>揭开</span>
+            </button>
+            <button class="transition-btn" onclick="selectTransition('card')">
+                <span class="icon">??</span>
+                <span>卡片</span>
+            </button>
+        </div>
+        
+        <!-- 代码示例 -->
+        <div class="code-block" id="codeBlock">
+<span class="keyword">.page</span> {
+  <span class="property">transition</span>: <span class="value">transform 0.5s ease, opacity 0.5s ease</span>;
+}
+<span class="keyword">.page-enter</span> {
+  <span class="property">transform</span>: <span class="value">translateX(100%)</span>;
+  <span class="property">opacity</span>: <span class="value">0</span>;
+}
+<span class="keyword">.page-enter-active</span> {
+  <span class="property">transform</span>: <span class="value">translateX(0)</span>;
+  <span class="property">opacity</span>: <span class="value">1</span>;
+}
+        </div>
+        
+        <!-- 导航演示 -->
+        <div class="nav-demo">
+            <div class="nav-demo-item active" onclick="goToPage(0)">首页</div>
+            <div class="nav-demo-item" onclick="goToPage(1)">详情</div>
+            <div class="nav-demo-item" onclick="goToPage(2)">设置</div>
+            <div class="nav-demo-item" onclick="goToPage(3)">我的</div>
+        </div>
+    </div>
+
+    <script>
+        let currentTransition = 'slide';
+        let currentPage = 0;
+        
+        const codeExamples = {
+            slide: `.page-enter { transform: translateX(100%); }
+.page-enter-active { transform: translateX(0); }`,
+            fade: `.page-enter { opacity: 0; }
+.page-enter-active { opacity: 1; }`,
+            scale: `.page-enter { transform: scale(1.1); opacity: 0; }
+.page-enter-active { transform: scale(1); opacity: 1; }`,
+            flip: `.page-enter { transform: perspective(1000px) rotateY(15deg); }
+.page-enter-active { transform: perspective(1000px) rotateY(0); }`,
+            cube: `.page-enter { transform: rotateY(-90deg); }
+.page-enter-active { transform: rotateY(0); }`,
+            cover: `.page-enter { transform: translateY(100%); }
+.page-enter-active { transform: translateY(0); }`,
+            reveal: `.page-enter { transform: scale(1.1); opacity: 0; }
+.page-enter-active { transform: scale(1); opacity: 1; }`,
+            card: `.page-enter { transform: scale(0.8); border-radius: 40px; }
+.page-enter-active { transform: scale(1); border-radius: 0; }`
+        };
+        
+        function selectTransition(type) {
+            currentTransition = type;
+            document.querySelectorAll('.transition-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.transition-btn').classList.add('active');
+            
+            // 更新代码示例
+            document.getElementById('codeBlock').innerHTML = `<span class="keyword">/* ${type} 转场效果 */</span>\n<span class="property">${codeExamples[type].replace(/\n/g, '<br>').replace(/\{/g, '<span class="keyword">{</span>').replace(/transform|opacity/g, '<span class="property">$&</span>').replace(/translateX|scale|rotateY/g, '<span class="value">$&</span>')}</span>`;
+            
+            // 重置并播放
+            resetPages();
+            setTimeout(() => goToPage(1), 100);
+        }
+        
+        function goToPage(page) {
+            const previewWindow = document.getElementById('previewWindow');
+            const pageHome = document.getElementById('pageHome');
+            const pageDetail = document.getElementById('pageDetail');
+            const dot1 = document.getElementById('dot1');
+            const dot2 = document.getElementById('dot2');
+            
+            // 移除所有转场类
+            previewWindow.className = 'preview-window';
+            
+            if (page === 1) {
+                previewWindow.classList.add(`transition-${currentTransition}`);
+                dot1.classList.remove('active');
+                dot2.classList.add('active');
+            } else {
+                dot1.classList.add('active');
+                dot2.classList.remove('active');
+                resetPages();
+            }
+            
+            currentPage = page;
+            
+            // 更新导航
+            document.querySelectorAll('.nav-demo-item').forEach((item, i) => {
+                item.classList.toggle('active', i === page);
+            });
+        }
+        
+        function goBack() {
+            goToPage(0);
+        }
+        
+        function resetPages() {
+            const previewWindow = document.getElementById('previewWindow');
+            previewWindow.className = 'preview-window';
+            
+            // 移除波纹效果
+            const ripple = previewWindow.querySelector('.ripple-effect');
+            if (ripple) ripple.remove();
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

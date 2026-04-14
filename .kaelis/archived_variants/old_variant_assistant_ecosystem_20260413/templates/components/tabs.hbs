@@ -1,0 +1,15 @@
+<!-- 标签页组件 -->
+<div class="tabs">
+  <div class="tabs-header">
+    {{#each tabs}}
+    <button class="tab-btn {{#if active}}active{{/if}}" data-tab="{{id}}">{{label}}</button>
+    {{/each}}
+  </div>
+  <div class="tabs-content">
+    {{#each tabs}}
+    <div class="tab-panel {{#if active}}active{{/if}}" id="tab-{{id}}">
+      {{{content}}}
+    </div>
+    {{/each}}
+  </div>
+</div>

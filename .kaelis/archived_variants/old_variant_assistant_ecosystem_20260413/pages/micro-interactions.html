@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微交互动画 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        
+        .section { margin-bottom: 48px; }
+        .section-title { 
+            font-size: 18px; 
+            margin-bottom: 24px; 
+            color: #A1A1AA;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 2px;
+        }
+        
+        .demo-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 24px;
+        }
+        
+        .demo-card { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 32px;
+            text-align: center;
+        }
+        .demo-card h3 { 
+            font-size: 14px; 
+            color: #6B7280; 
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* ===== 按钮动画 ===== */
+        .btn { 
+            padding: 14px 32px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(136,72,249,0.4); }
+        .btn:active { transform: translateY(0) scale(0.98); }
+        
+        /* 涟漪效果按钮 */
+        .btn-ripple { 
+            position: relative; 
+            overflow: hidden;
+        }
+        .btn-ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .btn-ripple:active::after { width: 300px; height: 300px; }
+        
+        /* 脉冲按钮 */
+        .btn-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(136,72,249,0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(136,72,249,0); }
+        }
+        
+        /* 抖动按钮 */
+        .btn-shake:hover { animation: shake 0.5s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        /* 发光按钮 */
+        .btn-glow { 
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary); }
+            to { box-shadow: 0 0 20px var(--secondary), 0 0 40px var(--secondary); }
+        }
+        
+        /* ===== 卡片动画 ===== */
+        .card-3d { 
+            width: 200px; 
+            height: 120px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 16px;
+            margin: 0 auto;
+            transition: all 0.3s;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+        .card-3d:hover { transform: rotateY(15deg) rotateX(10deg) scale(1.05); }
+        
+        /* 翻转卡片 */
+        .flip-card { 
+            width: 160px; 
+            height: 160px; 
+            margin: 0 auto;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .flip-card-inner { 
+            width: 100%; 
+            height: 100%; 
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            backface-visibility: hidden;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+        .flip-card-front { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
+        .flip-card-back { 
+            background: linear-gradient(135deg, #22C55E 0%, #10B981 100%); 
+            transform: rotateY(180deg);
+        }
+        
+        /* 悬浮卡片 */
+        .float-card { 
+            width: 180px; 
+            height: 100px; 
+            background: rgba(136,72,249,0.2); 
+            border: 1px solid rgba(136,72,249,0.3);
+            border-radius: 16px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        /* ===== 图标动画 ===== */
+        .icon-anim { 
+            font-size: 48px; 
+            display: inline-block;
+        }
+        .icon-bounce { animation: iconBounce 1s infinite; }
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .icon-spin { animation: iconSpin 2s linear infinite; }
+        @keyframes iconSpin { to { transform: rotate(360deg); } }
+        .icon-wiggle { animation: iconWiggle 0.5s ease-in-out infinite; }
+        @keyframes iconWiggle {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+        }
+        .icon-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            14% { transform: scale(1.1); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.1); }
+        }
+        
+        /* ===== 输入框动画 ===== */
+        .input-anim { 
+            width: 100%; 
+            padding: 14px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 2px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .input-anim:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 4px rgba(136,72,249,0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* 搜索框展开 */
+        .search-expand { 
+            width: 50px; 
+            height: 50px; 
+            background: rgba(255,255,255,0.1); 
+            border: none; 
+            border-radius: 25px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            overflow: hidden;
+        }
+        .search-expand:hover { width: 200px; }
+        .search-expand input { 
+            width: 0; 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            font-size: 16px;
+            outline: none;
+            transition: all 0.4s;
+        }
+        .search-expand:hover input { width: 120px; margin-left: 10px; }
+        
+        /* ===== 开关动画 ===== */
+        .switch-anim { 
+            width: 60px; 
+            height: 34px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 17px; 
+            position: relative;
+            cursor: pointer;
+            margin: 0 auto;
+            transition: all 0.3s;
+        }
+        .switch-anim.active { background: var(--primary); }
+        .switch-anim::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .switch-anim.active::after { left: 28px; }
+        
+        /* ===== 徽章动画 ===== */
+        .badge-anim { 
+            display: inline-block; 
+            padding: 8px 16px; 
+            background: #EF4444; 
+            border-radius: 20px; 
+            font-size: 14px;
+            font-weight: 600;
+            animation: badgePop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 通知点 */
+        .notification-dot { 
+            width: 12px; 
+            height: 12px; 
+            background: #EF4444; 
+            border-radius: 50%; 
+            margin: 0 auto;
+            position: relative;
+        }
+        .notification-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border: 2px solid #EF4444;
+            border-radius: 50%;
+            animation: dotPulse 1.5s infinite;
+        }
+        @keyframes dotPulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* ===== 进度动画 ===== */
+        .progress-container { 
+            width: 100%; 
+            height: 8px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 4px; 
+            overflow: hidden;
+        }
+        .progress-bar { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-bar.animate { animation: progressFill 2s ease-out forwards; }
+        @keyframes progressFill { to { width: 75%; } }
+        
+        /* 圆形进度 */
+        .circle-progress { 
+            width: 100px; 
+            height: 100px; 
+            margin: 0 auto;
+            position: relative;
+        }
+        .circle-progress svg { transform: rotate(-90deg); }
+        .circle-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+        .circle-fill { 
+            fill: none; 
+            stroke: url(#gradient); 
+            stroke-width: 8; 
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 1.5s ease-out;
+        }
+        .circle-progress.animate .circle-fill { stroke-dashoffset: 70; }
+        .circle-text { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 24px; 
+            font-weight: 700;
+        }
+        
+        /* ===== 骨架屏动画 ===== */
+        .skeleton { 
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); 
+            background-size: 200% 100%; 
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px;
+        }
+        .skeleton-avatar { width: 48px; height: 48px; border-radius: 50%; }
+        .skeleton-line { height: 16px; flex: 1; }
+        .skeleton-line.short { width: 60%; margin-top: 8px; }
+        
+        /* 控制按钮 */
+        .controls { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            display: flex; 
+            gap: 12px;
+            z-index: 100;
+        }
+        .control-btn { 
+            padding: 12px 24px; 
+            background: rgba(136,72,249,0.9); 
+            border: none; 
+            border-radius: 25px; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+        .control-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(136,72,249,0.4); }
+    </style>
+</head>
+<body>
+    <svg width="0" height="0">
+        <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:var(--primary)"/>
+                <stop offset="100%" style="stop-color:var(--secondary)"/>
+            </linearGradient>
+        </defs>
+    </svg>
+    
+    <div class="header">
+        <h1>? 微交互动画</h1>
+        <p>提升用户体验的精致动画效果</p>
+    </div>
+    
+    <!-- 按钮动画 -->
+    <div class="section">
+        <div class="section-title">按钮动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>涟漪效果</h3>
+                <button class="btn btn-ripple">点击我</button>
+            </div>
+            <div class="demo-card">
+                <h3>脉冲动画</h3>
+                <button class="btn btn-pulse">重要操作</button>
+            </div>
+            <div class="demo-card">
+                <h3>抖动效果</h3>
+                <button class="btn btn-shake">悬停抖动</button>
+            </div>
+            <div class="demo-card">
+                <h3>发光效果</h3>
+                <button class="btn btn-glow">霓虹按钮</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 卡片动画 -->
+    <div class="section">
+        <div class="section-title">卡片动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>3D 倾斜</h3>
+                <div class="card-3d">??</div>
+            </div>
+            <div class="demo-card">
+                <h3>翻转效果</h3>
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">??</div>
+                        <div class="flip-card-back">?</div>
+                    </div>
+                </div>
+            </div>
+            <div class="demo-card">
+                <h3>悬浮动画</h3>
+                <div class="float-card">??</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 图标动画 -->
+    <div class="section">
+        <div class="section-title">图标动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>弹跳</h3>
+                <span class="icon-anim icon-bounce">??</span>
+            </div>
+            <div class="demo-card">
+                <h3>旋转</h3>
+                <span class="icon-anim icon-spin">??</span>
+            </div>
+            <div class="demo-card">
+                <h3>摇摆</h3>
+                <span class="icon-anim icon-wiggle">??</span>
+            </div>
+            <div class="demo-card">
+                <h3>心跳</h3>
+                <span class="icon-anim icon-heartbeat">??</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 输入框动画 -->
+    <div class="section">
+        <div class="section-title">输入框动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>聚焦效果</h3>
+                <input type="text" class="input-anim" placeholder="点击聚焦">
+            </div>
+            <div class="demo-card">
+                <h3>搜索展开</h3>
+                <div class="search-expand">
+                    ??
+                    <input type="text" placeholder="搜索...">
+                </div>
+            </div>
+            <div class="demo-card">
+                <h3>开关切换</h3>
+                <div class="switch-anim" onclick="this.classList.toggle('active')"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 徽章动画 -->
+    <div class="section">
+        <div class="section-title">徽章动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>弹出动画</h3>
+                <span class="badge-anim">NEW</span>
+            </div>
+            <div class="demo-card">
+                <h3>脉冲通知</h3>
+                <div class="notification-dot"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 进度动画 -->
+    <div class="section">
+        <div class="section-title">进度动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>线性进度</h3>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+            <div class="demo-card">
+                <h3>圆形进度</h3>
+                <div class="circle-progress" id="circleProgress">
+                    <svg width="100" height="100" viewBox="0 0 100 100">
+                        <circle class="circle-bg" cx="50" cy="50" r="45"/>
+                        <circle class="circle-fill" cx="50" cy="50" r="45"/>
+                    </svg>
+                    <span class="circle-text">75%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 骨架屏 -->
+    <div class="section">
+        <div class="section-title">骨架屏</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>加载动画</h3>
+                <div class="skeleton-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line short"></div>
+                    </div>
+                </div>
+                <div class="skeleton-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line short"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="control-btn" onclick="playAnimations()">? 播放动画</button>
+        <button class="control-btn" onclick="resetAnimations()">? 重置</button>
+    </div>
+
+    <script>
+        function playAnimations() {
+            document.getElementById('progressBar').classList.add('animate');
+            document.getElementById('circleProgress').classList.add('animate');
+        }
+        
+        function resetAnimations() {
+            document.getElementById('progressBar').classList.remove('animate');
+            document.getElementById('circleProgress').classList.remove('animate');
+            setTimeout(() => {
+                document.getElementById('progressBar').classList.add('animate');
+                document.getElementById('circleProgress').classList.add('animate');
+            }, 100);
+        }
+        
+        // 自动播放一次
+        setTimeout(playAnimations, 500);
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

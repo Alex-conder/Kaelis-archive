@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档生成器 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .docgen-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .docgen-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .generate-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .templates-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+        .template-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; cursor: pointer; transition: all 0.2s; }
+        .template-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .template-card.active { border: 2px solid var(--primary); }
+        .template-icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; margin: 0 auto 16px; }
+        .template-card h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .template-card p { font-size: 13px; color: #64748b; }
+        .preview-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .preview-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .preview-actions { display: flex; gap: 8px; }
+        .preview-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .preview-content { background: #f8fafc; border-radius: 12px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.8; color: #374151; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">文档生成器</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="docgen-header">
+            <h1>自动生成文档</h1>
+            <button class="generate-btn">? 生成文档</button>
+        </div>
+        <div class="templates-grid">
+            <div class="template-card active">
+                <div class="template-icon">??</div>
+                <h3>API 文档</h3>
+                <p>OpenAPI/Swagger 格式</p>
+            </div>
+            <div class="template-card">
+                <div class="template-icon">??</div>
+                <h3>SDK 文档</h3>
+                <p>多语言 SDK 指南</p>
+            </div>
+            <div class="template-card">
+                <div class="template-icon">??</div>
+                <h3>架构文档</h3>
+                <p>系统架构说明</p>
+            </div>
+            <div class="template-card">
+                <div class="template-icon">??</div>
+                <h3>运维手册</h3>
+                <p>部署运维指南</p>
+            </div>
+        </div>
+        <div class="preview-card">
+            <div class="preview-header">
+                <h2 class="preview-title">文档预览</h2>
+                <div class="preview-actions">
+                    <button class="preview-btn">?? 复制</button>
+                    <button class="preview-btn">?? 保存</button>
+                    <button class="preview-btn">?? 导出</button>
+                </div>
+            </div>
+            <div class="preview-content">
+                <h1>Kaelis API 文档</h1>
+                <h2>认证</h2>
+                <p>所有 API 请求需要在 Header 中包含 Authorization 字段...</p>
+                <h2>端点列表</h2>
+                <p>GET /api/v1/plugins - 获取插件列表</p>
+                <p>POST /api/v1/chat - 发送消息</p>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

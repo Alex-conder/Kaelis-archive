@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载优化 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white; 
+            padding: 40px 20px;
+        }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .header p { color: #6B7280; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px; }
+        .card { background: rgba(23,23,23,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; }
+        .card-title { font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .card-title .icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .strategy-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 12px; }
+        .strategy-icon { width: 48px; height: 48px; background: rgba(136,72,249,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .strategy-info { flex: 1; }
+        .strategy-name { font-size: 15px; font-weight: 500; }
+        .strategy-desc { font-size: 13px; color: #6B7280; margin-top: 4px; }
+        .strategy-toggle { width: 44px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; position: relative; cursor: pointer; transition: all 0.3s; }
+        .strategy-toggle.active { background: var(--primary); }
+        .strategy-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: all 0.3s; }
+        .strategy-toggle.active::after { left: 22px; }
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+        .stat-item { text-align: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #22C55E; }
+        .stat-label { font-size: 13px; color: #6B7280; margin-top: 4px; }
+        .cache-list { }
+        .cache-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .cache-item:last-child { border-bottom: none; }
+        .cache-name { flex: 1; font-size: 14px; }
+        .cache-size { font-size: 13px; color: #6B7280; }
+        .cache-btn { padding: 6px 12px; background: rgba(239,68,68,0.2); border: none; border-radius: 6px; color: #EF4444; font-size: 12px; cursor: pointer; }
+        .btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>?? 加载优化</h1>
+        <p>资源压缩、懒加载、缓存策略</p>
+    </div>
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <div class="card-title"><div class="icon">?</div><span>优化策略</span></div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">???</div>
+                    <div class="strategy-info"><div class="strategy-name">Gzip压缩</div><div class="strategy-desc">启用服务器端压缩，减少70%传输大小</div></div>
+                    <div class="strategy-toggle active" onclick="this.classList.toggle('active')"></div>
+                </div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">???</div>
+                    <div class="strategy-info"><div class="strategy-name">图片懒加载</div><div class="strategy-desc">视口外图片延迟加载</div></div>
+                    <div class="strategy-toggle active" onclick="this.classList.toggle('active')"></div>
+                </div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">??</div>
+                    <div class="strategy-info"><div class="strategy-name">代码分割</div><div class="strategy-desc">按需加载JavaScript模块</div></div>
+                    <div class="strategy-toggle" onclick="this.classList.toggle('active')"></div>
+                </div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">??</div>
+                    <div class="strategy-info"><div class="strategy-name">Service Worker缓存</div><div class="strategy-desc">离线访问支持</div></div>
+                    <div class="strategy-toggle active" onclick="this.classList.toggle('active')"></div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item"><div class="stat-value">-45%</div><div class="stat-label">加载时间</div></div>
+                    <div class="stat-item"><div class="stat-value">-60%</div><div class="stat-label">资源大小</div></div>
+                    <div class="stat-item"><div class="stat-value">+25%</div><div class="stat-label">性能评分</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><div class="icon">??</div><span>缓存管理</span></div>
+                <div class="cache-list">
+                    <div class="cache-item"><span class="cache-name">静态资源缓存</span><span class="cache-size">156 MB</span><button class="cache-btn">清除</button></div>
+                    <div class="cache-item"><span class="cache-name">API响应缓存</span><span class="cache-size">45 MB</span><button class="cache-btn">清除</button></div>
+                    <div class="cache-item"><span class="cache-name">图片缓存</span><span class="cache-size">234 MB</span><button class="cache-btn">清除</button></div>
+                    <div class="cache-item"><span class="cache-name">Service Worker</span><span class="cache-size">12 MB</span><button class="cache-btn">清除</button></div>
+                </div>
+                <button class="btn">清除所有缓存</button>
+            </div>
+            <div class="card">
+                <div class="card-title"><div class="icon">??</div><span>预加载配置</span></div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">??</div>
+                    <div class="strategy-info"><div class="strategy-name">DNS预解析</div><div class="strategy-desc">dns-prefetch 已启用</div></div>
+                    <div class="strategy-toggle active" onclick="this.classList.toggle('active')"></div>
+                </div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">?</div>
+                    <div class="strategy-info"><div class="strategy-name">预连接</div><div class="strategy-desc">preconnect 已启用</div></div>
+                    <div class="strategy-toggle active" onclick="this.classList.toggle('active')"></div>
+                </div>
+                <div class="strategy-item">
+                    <div class="strategy-icon">??</div>
+                    <div class="strategy-info"><div class="strategy-name">预渲染</div><div class="strategy-desc">prerender 关键页面</div></div>
+                    <div class="strategy-toggle" onclick="this.classList.toggle('active')"></div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

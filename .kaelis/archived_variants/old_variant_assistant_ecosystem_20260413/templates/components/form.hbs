@@ -1,0 +1,50 @@
+<!-- 表单组件 -->
+<form class="form {{#if class}}{{class}}{{/if}}" {{#if id}}id="{{id}}"{{/if}}>
+  {{#each fields}}
+  <div class="form-group">
+    <label class="form-label" for="{{id}}">{{label}}{{#if required}} <span class="required">*</span>{{/if}}</label>
+    
+    {{#if (eq type "text")}}
+    <input type="text" class="form-input" id="{{id}}" name="{{id}}" placeholder="{{placeholder}}" {{#if required}}required{{/if}}>
+    {{/if}}
+    
+    {{#if (eq type "email")}}
+    <input type="email" class="form-input" id="{{id}}" name="{{id}}" placeholder="{{placeholder}}" {{#if required}}required{{/if}}>
+    {{/if}}
+    
+    {{#if (eq type "password")}}
+    <input type="password" class="form-input" id="{{id}}" name="{{id}}" placeholder="{{placeholder}}" {{#if required}}required{{/if}}>
+    {{/if}}
+    
+    {{#if (eq type "textarea")}}
+    <textarea class="form-input" id="{{id}}" name="{{id}}" rows="{{rows}}" placeholder="{{placeholder}}" {{#if required}}required{{/if}}></textarea>
+    {{/if}}
+    
+    {{#if (eq type "select")}}
+    <select class="form-select" id="{{id}}" name="{{id}}">
+      {{#each options}}
+      <option value="{{value}}">{{label}}</option>
+      {{/each}}
+    </select>
+    {{/if}}
+    
+    {{#if (eq type "checkbox")}}
+    <label class="checkbox-label">
+      <input type="checkbox" id="{{id}}" name="{{id}}">
+      <span>{{label}}</span>
+    </label>
+    {{/if}}
+    
+    {{#if help}}
+    <p class="form-help">{{help}}</p>
+    {{/if}}
+  </div>
+  {{/each}}
+  
+  <div class="form-actions">
+    {{#if showCancel}}
+    <button type="button" class="btn btn-secondary">取消</button>
+    {{/if}}
+    <button type="submit" class="btn btn-primary">{{submitLabel}}</button>
+  </div>
+</form>

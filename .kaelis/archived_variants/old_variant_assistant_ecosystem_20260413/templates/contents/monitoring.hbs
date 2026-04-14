@@ -1,0 +1,56 @@
+<!-- 系统监控页面内容 -->
+<div class="monitoring-header">
+    <h1 class="page-title">系统监控</h1>
+    <div class="time-filter">
+        <button class="btn btn-sm">1H</button>
+        <button class="btn btn-sm active">24H</button>
+        <button class="btn btn-sm">7D</button>
+        <button class="btn btn-sm">30D</button>
+    </div>
+</div>
+
+<!-- 指标卡片 -->
+<div class="metrics-grid grid-4">
+    {{#each metrics}}
+    {{> metric this}}
+    {{/each}}
+</div>
+
+<!-- 告警列表 -->
+<div class="monitoring-section card">
+    <div class="section-header flex-between">
+        <h3 class="section-title">⚠️ 系统告警</h3>
+        <a href="alerts.html" class="link">查看全部</a>
+    </div>
+    <div class="alerts-list">
+        {{#each alerts}}
+        <div class="alert-item alert-{{type}}">
+            <div class="alert-icon">{{#if (eq type "warning")}}⚠️{{else}}ℹ️{{/if}}</div>
+            <div class="alert-content">
+                <h4>{{title}}</h4>
+                <p>{{message}}</p>
+                <span class="alert-time">{{time}}</span>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+
+<!-- 服务状态 -->
+<div class="monitoring-section card">
+    <div class="section-header flex-between">
+        <h3 class="section-title">🖥️ 服务状态</h3>
+        <span class="badge badge-success">运行正常</span>
+    </div>
+    <div class="services-list">
+        {{#each services}}
+        <div class="service-item flex-between">
+            <div class="service-info">
+                <span class="service-status status-dot {{#if (eq status "running")}}ok{{else}}warning{{/if}}"></span>
+                <span class="service-name">{{name}}</span>
+            </div>
+            <div class="service-uptime">可用率: {{uptime}}</div>
+        </div>
+        {{/each}}
+    </div>
+</div>

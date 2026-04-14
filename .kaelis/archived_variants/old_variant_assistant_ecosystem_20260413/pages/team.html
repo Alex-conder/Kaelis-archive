@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>团队管理 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .invite-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .team-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .members-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .search-box input { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 240px; }
+        .member-item { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid #f1f5f9; }
+        .member-item:last-child { border-bottom: none; }
+        .member-avatar { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; margin-right: 16px; }
+        .member-info { flex: 1; }
+        .member-name { font-size: 15px; font-weight: 600; color: #1e293b; }
+        .member-email { font-size: 13px; color: #64748b; }
+        .member-role { padding: 4px 12px; background: #dbeafe; color: #2563eb; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 16px; }
+        .member-status { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; margin-right: 16px; }
+        .member-actions { display: flex; gap: 8px; }
+        .action-btn { padding: 8px 14px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">团队管理</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="page-header">
+            <h1>团队成员</h1>
+            <button class="invite-btn">+ 邀请成员</button>
+        </div>
+        <div class="team-stats">
+            <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">总成员</div></div>
+            <div class="stat-card"><div class="stat-value">8</div><div class="stat-label">在线</div></div>
+            <div class="stat-card"><div class="stat-value">3</div><div class="stat-label">管理员</div></div>
+            <div class="stat-card"><div class="stat-value">2</div><div class="stat-label">待邀请</div></div>
+        </div>
+        <div class="members-card">
+            <div class="card-header">
+                <h2 class="card-title">成员列表</h2>
+                <div class="search-box"><input type="text" placeholder="搜索成员..."></div>
+            </div>
+            <div class="member-item">
+                <div class="member-avatar">AC</div>
+                <div class="member-info"><div class="member-name">Alex Chen</div><div class="member-email">alex@kaelis.ai</div></div>
+                <span class="member-role">管理员</span>
+                <div class="member-status"></div>
+                <div class="member-actions"><button class="action-btn">编辑</button><button class="action-btn">权限</button></div>
+            </div>
+            <div class="member-item">
+                <div class="member-avatar">SL</div>
+                <div class="member-info"><div class="member-name">Sarah Liu</div><div class="member-email">sarah@kaelis.ai</div></div>
+                <span class="member-role">开发者</span>
+                <div class="member-status"></div>
+                <div class="member-actions"><button class="action-btn">编辑</button><button class="action-btn">权限</button></div>
+            </div>
+            <div class="member-item">
+                <div class="member-avatar">MW</div>
+                <div class="member-info"><div class="member-name">Mike Wang</div><div class="member-email">mike@kaelis.ai</div></div>
+                <span class="member-role">开发者</span>
+                <div class="member-status" style="background:#9ca3af;"></div>
+                <div class="member-actions"><button class="action-btn">编辑</button><button class="action-btn">权限</button></div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

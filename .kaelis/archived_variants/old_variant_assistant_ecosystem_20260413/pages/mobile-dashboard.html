@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>仪表盘 - Kaelis Mobile</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; padding-bottom: 80px; }
+        .mobile-header { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); padding: 20px; color: white; position: sticky; top: 0; z-index: 100; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .brand { font-size: 24px; font-weight: 700; }
+        .header-actions { display: flex; gap: 16px; }
+        .header-btn { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: none; border-radius: 12px; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+        .greeting { font-size: 14px; opacity: 0.9; }
+        .user-name { font-size: 20px; font-weight: 600; }
+        .quick-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
+        .stat-card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); animation: slideUp 0.5s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .stat-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #1e293b; }
+        .stat-change { font-size: 12px; margin-top: 4px; }
+        .stat-change.up { color: #16a34a; }
+        .stat-change.down { color: #ef4444; }
+        .section { padding: 16px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .section-more { font-size: 14px; color: var(--primary); }
+        .chart-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px; }
+        .chart-placeholder { height: 180px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+        .activity-list { background: white; border-radius: 16px; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .activity-item { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid #f1f5f9; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px; flex-shrink: 0; }
+        .activity-content { flex: 1; }
+        .activity-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .activity-time { font-size: 13px; color: #94a3b8; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e2e8f0; padding: 8px 16px 20px; display: flex; justify-content: space-around; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 16px; color: #94a3b8; text-decoration: none; transition: all 0.2s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; }
+        .nav-label { font-size: 11px; }
+        .fab { position: fixed; bottom: 100px; right: 20px; width: 56px; height: 56px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none; border-radius: 50%; color: white; font-size: 24px; box-shadow: 0 4px 12px rgba(102,126,234,0.4); display: flex; align-items: center; justify-content: center; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    </style>
+</head>
+<body>
+    <header class="mobile-header">
+        <div class="header-top">
+            <div class="brand">?? Kaelis</div>
+            <div class="header-actions">
+                <button class="header-btn">??</button>
+                <button class="header-btn">??</button>
+            </div>
+        </div>
+        <div class="greeting">下午好,</div>
+        <div class="user-name">管理员 ??</div>
+    </header>
+    
+    <div class="quick-stats">
+        <div class="stat-card" style="animation-delay:0.1s;">
+            <div class="stat-icon" style="background:#dbeafe;">??</div>
+            <div class="stat-label">活跃用户</div>
+            <div class="stat-value">12.5K</div>
+            <div class="stat-change up">↑ 12%</div>
+        </div>
+        <div class="stat-card" style="animation-delay:0.2s;">
+            <div class="stat-icon" style="background:#dcfce7;">??</div>
+            <div class="stat-label">AI调用</div>
+            <div class="stat-value">856K</div>
+            <div class="stat-change up">↑ 23%</div>
+        </div>
+        <div class="stat-card" style="animation-delay:0.3s;">
+            <div class="stat-icon" style="background:#fef3c7;">?</div>
+            <div class="stat-label">响应时间</div>
+            <div class="stat-value">245ms</div>
+            <div class="stat-change down">↓ 8%</div>
+        </div>
+        <div class="stat-card" style="animation-delay:0.4s;">
+            <div class="stat-icon" style="background:#f3e8ff;">?</div>
+            <div class="stat-label">满意度</div>
+            <div class="stat-value">4.8</div>
+            <div class="stat-change up">↑ 0.3</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">?? 趋势分析</h2>
+            <a href="#" class="section-more">查看全部 →</a>
+        </div>
+        <div class="chart-card">
+            <div class="chart-placeholder">?? 周活跃用户趋势</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">?? 最近活动</h2>
+            <a href="#" class="section-more">查看全部 →</a>
+        </div>
+        <div class="activity-list">
+            <div class="activity-item">
+                <div class="activity-icon" style="background:#dbeafe;">??</div>
+                <div class="activity-content">
+                    <div class="activity-title">新模型 GPT-4-Turbo 已部署</div>
+                    <div class="activity-time">5分钟前</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon" style="background:#dcfce7;">??</div>
+                <div class="activity-content">
+                    <div class="activity-title">新用户注册 +128</div>
+                    <div class="activity-time">1小时前</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon" style="background:#fef3c7;">??</div>
+                <div class="activity-content">
+                    <div class="activity-title">API响应时间告警</div>
+                    <div class="activity-time">2小时前</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="fab">??</button>
+    
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <span class="nav-icon">??</span>
+            <span class="nav-label">首页</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">??</span>
+            <span class="nav-label">对话</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">??</span>
+            <span class="nav-label">数据</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">??</span>
+            <span class="nav-label">设置</span>
+        </a>
+    </nav>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

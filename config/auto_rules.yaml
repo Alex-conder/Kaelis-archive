@@ -1,0 +1,12 @@
+version: '1.0'
+rules:
+- pattern: scripts:# AUTO-FIX
+  file_pattern: scripts
+  content_feature: auto_fix_marker
+  action: format_code
+  confidence: 0.98
+  success_count: 49
+  total_count: 50
+  crystallized_at: '2026-04-12T20:25:29.751429'
+  source: decision_model
+crystallized_at: '2026-04-12T20:25:29.751480'

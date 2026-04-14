@@ -1,0 +1,12 @@
+﻿<svg viewBox="832 275 256 256" xmlns="http://www.w3.org/2000/svg" width="256" height="256">
+    <defs>
+        <linearGradient id="logo-grad" x1="832" y1="275" x2="1088" y2="531" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#8848F9" offset="0"/>
+            <stop stop-color="#3B82F6" offset="1"/>
+        </linearGradient>
+    </defs>
+    <rect x="832" y="275" width="256" height="256" rx="60" fill="#171717"/>
+    <rect x="864" y="307" width="192" height="192" rx="48" fill="url(#logo-grad)"/>
+    <rect x="896" y="339" width="128" height="128" rx="32" fill="#0a0a0a"/>
+    <rect x="928" y="371" width="64" height="64" rx="16" fill="url(#logo-grad)"/>
+</svg>

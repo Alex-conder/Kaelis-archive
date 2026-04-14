@@ -1,0 +1,286 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Knowledge Graph Flywheel 实时监控仪表盘",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "panels": [],
+      "title": "系统状态概览",
+      "type": "row"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"options": {"0": {"color": "red", "text": "Disconnected"}}, "type": "value"},
+            {"options": {"1": {"color": "green", "text": "Connected"}}, "type": "value"}
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 1}
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "expr": "kg_neo4j_connected",
+          "refId": "A"
+        }
+      ],
+      "title": "Neo4j 连接状态",
+      "type": "stat"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "blue", "value": null},
+              {"color": "green", "value": 100}
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "expr": "kg_entity_count",
+          "refId": "A"
+        }
+      ],
+      "title": "实体总数",
+      "type": "stat"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "purple", "value": null},
+              {"color": "green", "value": 500}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "area"},
+      "targets": [
+        {
+          "expr": "kg_relation_count",
+          "refId": "A"
+        }
+      ],
+      "title": "关系总数",
+      "type": "stat"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 0.6},
+              {"color": "green", "value": 0.8}
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+      "id": 5,
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "kg_quality_score{metric=\"overall\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "整体质量评分",
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "id": 6,
+      "panels": [],
+      "title": "操作性能",
+      "type": "row"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "line", "lineInterpolation": "linear"},
+          "unit": "ops"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "id": 7,
+      "options": {
+        "legend": {"displayMode": "list", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {
+          "expr": "rate(kg_extraction_total[1m])",
+          "legendFormat": "提取速率",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(kg_query_total[1m])",
+          "legendFormat": "查询速率",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(kg_inspection_total[1m])",
+          "legendFormat": "质检速率",
+          "refId": "C"
+        }
+      ],
+      "title": "操作速率 (每秒)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "line"},
+          "unit": "s"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "id": 8,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(kg_extraction_duration_seconds_bucket[5m]))",
+          "legendFormat": "提取 P95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(kg_query_duration_seconds_bucket[5m]))",
+          "legendFormat": "查询 P95",
+          "refId": "B"
+        }
+      ],
+      "title": "操作耗时 P95",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "id": 9,
+      "panels": [],
+      "title": "质量分析",
+      "type": "row"
+    },
+    {
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "line"},
+          "max": 1,
+          "min": 0,
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 15},
+      "id": 10,
+      "targets": [
+        {
+          "expr": "kg_quality_score{metric=\"completeness\"}",
+          "legendFormat": "完整性",
+          "refId": "A"
+        },
+        {
+          "expr": "kg_quality_score{metric=\"consistency\"}",
+          "legendFormat": "一致性",
+          "refId": "B"
+        },
+        {
+          "expr": "kg_quality_score{metric=\"accuracy\"}",
+          "legendFormat": "准确性",
+          "refId": "C"
+        }
+      ],
+      "title": "质量指标趋势",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["kg-flywheel", "neo4j", "knowledge-graph"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": false, "text": "Prometheus", "value": "Prometheus"},
+        "hide": 0,
+        "includeAll": false,
+        "label": "数据源",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+  },
+  "timezone": "Asia/Shanghai",
+  "title": "Knowledge Graph Flywheel 监控",
+  "uid": "kg-flywheel-001",
+  "version": 1
+}

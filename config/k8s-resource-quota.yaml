@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: kaelis-api-quota
+  namespace: kaelis
+  generated_at: '2026-04-13T01:39:17.493802'
+  source: contracts/openapi.yaml
+spec:
+  hard:
+    requests.cpu: 12840m
+    requests.memory: 6921Mi
+    limits.cpu: 25680m
+    limits.memory: 13842Mi
+    pods: '2'

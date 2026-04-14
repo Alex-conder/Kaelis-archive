@@ -1,0 +1,120 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动画效果演示 - Kaelis</title>
+    <link rel="stylesheet" href="assets/styles/variables.css">
+    <link rel="stylesheet" href="assets/styles/components.css">
+    <link rel="stylesheet" href="assets/styles/animations.css">
+    <style>
+        body { background: #0a0a0a; color: white; font-family: Inter, sans-serif; padding: 40px; }
+        .demo-section { margin-bottom: 60px; }
+        .demo-title { font-size: 24px; margin-bottom: 20px; color: #BD95FF; }
+        .demo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .demo-card { 
+            background: #171717; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 16px; 
+            padding: 30px; 
+            text-align: center;
+        }
+        .demo-box { 
+            width: 80px; 
+            height: 80px; 
+            background: linear-gradient(135deg, #8848F9, #3B82F6); 
+            border-radius: 12px; 
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; margin-bottom: 40px;">🎨 Kaelis 动画系统演示</h1>
+    
+    <div class="demo-section">
+        <div class="demo-title">1. 页面加载动画</div>
+        <div class="demo-grid">
+            <div class="demo-card scroll-animate">
+                <div class="demo-box animate-fade-in">😊</div>
+                <div>淡入</div>
+            </div>
+            <div class="demo-card scroll-animate">
+                <div class="demo-box animate-fade-in-up">⬆</div>
+                <div>上滑淡入</div>
+            </div>
+            <div class="demo-card scroll-animate">
+                <div class="demo-box animate-scale-in">🔍</div>
+                <div>缩放进入</div>
+            </div>
+            <div class="demo-card scroll-animate">
+                <div class="demo-box animate-blur-in">✨</div>
+                <div>模糊淡入</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <div class="demo-title">2. 悬停动画</div>
+        <div class="demo-grid">
+            <div class="demo-card card-hover">
+                <div class="demo-box">🎯</div>
+                <div>卡片悬浮</div>
+            </div>
+            <div class="demo-card">
+                <div class="demo-box btn-hover magnetic-hover">👆</div>
+                <div>磁性按钮</div>
+            </div>
+            <div class="demo-card">
+                <div class="demo-box tilt-hover">🎲</div>
+                <div>3D倾斜</div>
+            </div>
+            <div class="demo-card">
+                <div class="demo-box neon-glow">💡</div>
+                <div>霓虹发光</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <div class="demo-title">3. 持续动画</div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <div class="demo-box pulse-animate">💓</div>
+                <div>脉冲效果</div>
+            </div>
+            <div class="demo-card">
+                <div class="demo-box float-animate">🎈</div>
+                <div>浮动效果</div>
+            </div>
+            <div class="demo-card">
+                <div class="demo-box spin-animate">⚙</div>
+                <div>旋转动画</div>
+            </div>
+            <div class="demo-card">
+                <div class="demo-box shimmer-animate">✨</div>
+                <div>闪光效果</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <div class="demo-title">4. 交错动画</div>
+        <div class="demo-grid stagger-animate">
+            <div class="demo-card"><div class="demo-box">1</div></div>
+            <div class="demo-card"><div class="demo-box">2</div></div>
+            <div class="demo-card"><div class="demo-box">3</div></div>
+            <div class="demo-card"><div class="demo-box">4</div></div>
+            <div class="demo-card"><div class="demo-box">5</div></div>
+            <div class="demo-card"><div class="demo-box">6</div></div>
+            <div class="demo-card"><div class="demo-box">7</div></div>
+            <div class="demo-card"><div class="demo-box">8</div></div>
+        </div>
+    </div>
+    
+    <script src="assets/js/animations.js"></script>
+</body>
+</html>

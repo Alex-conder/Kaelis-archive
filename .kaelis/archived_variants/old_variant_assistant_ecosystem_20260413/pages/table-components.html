@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格组件 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { margin-bottom: 40px; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        
+        /* 表格区块 */
+        .table-section { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-bottom: 32px;
+        }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+        
+        /* 基础表格 */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { 
+            text-align: left; 
+            padding: 14px 16px; 
+            font-size: 13px; 
+            color: #A1A1AA; 
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        .data-table td { 
+            padding: 16px; 
+            font-size: 14px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .data-table tr:hover { background: rgba(255,255,255,0.02); }
+        .data-table tr:last-child td { border-bottom: none; }
+        
+        /* 用户单元格 */
+        .user-cell { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 14px; 
+            font-weight: 600;
+        }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-weight: 500; }
+        .user-email { font-size: 12px; color: #6B7280; }
+        
+        /* 状态标签 */
+        .status-tag { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: 500;
+        }
+        .status-active { background: rgba(34,197,94,0.15); color: #22C55E; }
+        .status-inactive { background: rgba(107,114,128,0.15); color: #9CA3AF; }
+        .status-pending { background: rgba(245,158,11,0.15); color: #F59E0B; }
+        .status-error { background: rgba(239,68,68,0.15); color: #EF4444; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .status-active .status-dot { background: #22C55E; }
+        .status-inactive .status-dot { background: #9CA3AF; }
+        .status-pending .status-dot { background: #F59E0B; }
+        .status-error .status-dot { background: #EF4444; }
+        
+        /* 操作按钮 */
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn { 
+            padding: 6px 12px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 12px; 
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.1); }
+        
+        /* 可排序表头 */
+        .sortable { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .sortable:hover { color: white; }
+        .sort-icon { font-size: 10px; opacity: 0.5; }
+        .sortable.active .sort-icon { opacity: 1; color: var(--primary); }
+        
+        /* 复选框 */
+        .table-checkbox { 
+            width: 18px; 
+            height: 18px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            border-radius: 4px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+        .table-checkbox.checked { background: var(--primary); border-color: var(--primary); }
+        
+        /* 表格工具栏 */
+        .table-toolbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .toolbar-left { display: flex; gap: 12px; }
+        .toolbar-right { display: flex; gap: 12px; }
+        .toolbar-btn { 
+            padding: 8px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 13px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toolbar-btn:hover { background: rgba(255,255,255,0.1); }
+        .toolbar-btn.primary { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+        }
+        .search-input { 
+            padding: 8px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 13px;
+            width: 240px;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        
+        /* 分页 */
+        .pagination { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .page-info { font-size: 13px; color: #6B7280; }
+        .page-btns { display: flex; gap: 8px; }
+        .page-btn { 
+            padding: 8px 14px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 13px; 
+            cursor: pointer;
+        }
+        .page-btn:hover { background: rgba(255,255,255,0.1); }
+        .page-btn.active { background: var(--primary); border-color: var(--primary); }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* 展开行 */
+        .expand-icon { 
+            width: 20px; 
+            height: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .expand-icon.expanded { transform: rotate(90deg); }
+        .expanded-row { background: rgba(136,72,249,0.05); }
+        .expanded-content { 
+            padding: 20px; 
+            background: rgba(255,255,255,0.02); 
+            border-radius: 8px; 
+            margin: 8px 16px;
+        }
+        
+        /* 树形表格 */
+        .tree-indent { display: inline-block; width: 24px; }
+        .tree-toggle { 
+            width: 20px; 
+            height: 20px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        
+        /* 空状态 */
+        .empty-state { 
+            text-align: center; 
+            padding: 60px 40px; 
+        }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .empty-desc { font-size: 14px; color: #6B7280; }
+        
+        /* 加载状态 */
+        .loading-row td { 
+            position: relative; 
+            overflow: hidden; 
+        }
+        .skeleton { 
+            height: 16px; 
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); 
+            background-size: 200% 100%; 
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 表格组件</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">表格组件</h1>
+        </div>
+        
+        <!-- 基础表格 -->
+        <div class="table-section">
+            <h2 class="section-title">基础表格</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>用户</th>
+                        <th>角色</th>
+                        <th>状态</th>
+                        <th>最后登录</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">张</div>
+                                <div class="user-info">
+                                    <span class="user-name">张经理</span>
+                                    <span class="user-email">zhang@example.com</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>管理员</td>
+                        <td><span class="status-tag status-active"><span class="status-dot"></span>活跃</span></td>
+                        <td>2026-01-20 14:30</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn">编辑</button>
+                                <button class="action-btn">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">李</div>
+                                <div class="user-info">
+                                    <span class="user-name">李明</span>
+                                    <span class="user-email">liming@example.com</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>开发者</td>
+                        <td><span class="status-tag status-active"><span class="status-dot"></span>活跃</span></td>
+                        <td>2026-01-20 13:15</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn">编辑</button>
+                                <button class="action-btn">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">王</div>
+                                <div class="user-info">
+                                    <span class="user-name">王芳</span>
+                                    <span class="user-email">wangfang@example.com</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>访客</td>
+                        <td><span class="status-tag status-inactive"><span class="status-dot"></span>离线</span></td>
+                        <td>2026-01-19 18:20</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn">编辑</button>
+                                <button class="action-btn">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 带工具栏和分页的表格 -->
+        <div class="table-section">
+            <h2 class="section-title">完整功能表格</h2>
+            
+            <div class="table-toolbar">
+                <div class="toolbar-left">
+                    <button class="toolbar-btn primary">? 新增用户</button>
+                    <button class="toolbar-btn">??? 批量删除</button>
+                    <button class="toolbar-btn">?? 导出</button>
+                </div>
+                <div class="toolbar-right">
+                    <input type="text" class="search-input" placeholder="?? 搜索用户...">
+                    <button class="toolbar-btn">?? 筛选</button>
+                </div>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><div class="table-checkbox checked">?</div></th>
+                        <th>
+                            <div class="sortable active">
+                                用户名
+                                <span class="sort-icon">▼</span>
+                            </div>
+                        </th>
+                        <th>部门</th>
+                        <th>
+                            <div class="sortable">
+                                状态
+                                <span class="sort-icon">▲▼</span>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="sortable">
+                                创建时间
+                                <span class="sort-icon">▲▼</span>
+                            </div>
+                        </th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><div class="table-checkbox checked">?</div></td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">陈</div>
+                                <span class="user-name">陈工</span>
+                            </div>
+                        </td>
+                        <td>技术部</td>
+                        <td><span class="status-tag status-active"><span class="status-dot"></span>在职</span></td>
+                        <td>2025-08-15</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn">查看</button>
+                                <button class="action-btn">编辑</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><div class="table-checkbox"></div></td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">刘</div>
+                                <span class="user-name">刘洋</span>
+                            </div>
+                        </td>
+                        <td>产品部</td>
+                        <td><span class="status-tag status-pending"><span class="status-dot"></span>试用期</span></td>
+                        <td>2026-01-05</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn">查看</button>
+                                <button class="action-btn">编辑</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><div class="table-checkbox"></div></td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">赵</div>
+                                <span class="user-name">赵敏</span>
+                            </div>
+                        </td>
+                        <td>设计部</td>
+                        <td><span class="status-tag status-error"><span class="status-dot"></span>已离职</span></td>
+                        <td>2024-03-20</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn">查看</button>
+                                <button class="action-btn">编辑</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="pagination">
+                <span class="page-info">显示 1-10 条，共 86 条</span>
+                <div class="page-btns">
+                    <button class="page-btn" disabled>←</button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">...</button>
+                    <button class="page-btn">9</button>
+                    <button class="page-btn">→</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 可展开表格 -->
+        <div class="table-section">
+            <h2 class="section-title">可展开表格</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>订单号</th>
+                        <th>客户</th>
+                        <th>金额</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><div class="expand-icon expanded">?</div></td>
+                        <td>#ORD-2026-001</td>
+                        <td>张经理</td>
+                        <td>￥12,500</td>
+                        <td><span class="status-tag status-active"><span class="status-dot"></span>已完成</span></td>
+                    </tr>
+                    <tr class="expanded-row">
+                        <td colspan="5">
+                            <div class="expanded-content">
+                                <strong>订单详情：</strong><br>
+                                产品：企业版授权 × 5<br>
+                                下单时间：2026-01-20 10:30<br>
+                                支付方式：银行转账<br>
+                                备注：增值税专用发票
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><div class="expand-icon">?</div></td>
+                        <td>#ORD-2026-002</td>
+                        <td>李明</td>
+                        <td>￥3,800</td>
+                        <td><span class="status-tag status-pending"><span class="status-dot"></span>处理中</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 加载状态 -->
+        <div class="table-section">
+            <h2 class="section-title">加载状态</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>项目</th>
+                        <th>状态</th>
+                        <th>进度</th>
+                        <th>负责人</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="loading-row">
+                        <td><div class="skeleton" style="width: 80%"></div></td>
+                        <td><div class="skeleton" style="width: 60%"></div></td>
+                        <td><div class="skeleton" style="width: 40%"></div></td>
+                        <td><div class="skeleton" style="width: 70%"></div></td>
+                    </tr>
+                    <tr class="loading-row">
+                        <td><div class="skeleton" style="width: 70%"></div></td>
+                        <td><div class="skeleton" style="width: 50%"></div></td>
+                        <td><div class="skeleton" style="width: 60%"></div></td>
+                        <td><div class="skeleton" style="width: 65%"></div></td>
+                    </tr>
+                    <tr class="loading-row">
+                        <td><div class="skeleton" style="width: 90%"></div></td>
+                        <td><div class="skeleton" style="width: 55%"></div></td>
+                        <td><div class="skeleton" style="width: 45%"></div></td>
+                        <td><div class="skeleton" style="width: 75%"></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 空状态 -->
+        <div class="table-section">
+            <h2 class="section-title">空状态</h2>
+            <div class="empty-state">
+                <div class="empty-icon">??</div>
+                <div class="empty-title">暂无数据</div>
+                <div class="empty-desc">当前列表为空，点击上方按钮添加新数据</div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

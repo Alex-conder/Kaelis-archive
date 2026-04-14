@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelis 企业级总系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            width: 100%; 
+            height: 100%; 
+            overflow-x: hidden;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .svg-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            border: none;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+        .top-bar { 
+            background: rgba(23, 23, 23, 0.95); 
+            backdrop-filter: blur(10px); 
+            padding: 12px 32px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 40px; height: 40px; }
+        .logo-icon svg { width: 100%; height: 100%; }
+        .logo-text { color: white; font-size: 20px; font-weight: 700; }
+        .logo-badge { padding: 4px 10px; background: rgba(136, 72, 249, 0.2); color: #BD95FF; border: 1px solid rgba(136, 72, 249, 0.3); border-radius: 20px; font-size: 11px; font-weight: 600; }
+    </style>
+    <link rel="stylesheet" href="assets/styles/animations.css">`n</head>
+<body>
+    <iframe class="svg-background" src="assets/images/background-original.svg" scrolling="no"></iframe>
+    
+    <div class="content">
+        <div class="top-bar">
+            <div class="logo">
+                <div class="logo-icon"><img src="assets/images/logo-precise.svg" alt="Kaelis" style="width: 40px; height: 40px;"></div>
+                <div class="logo-text">Kaelis</div>
+                <div class="logo-badge">v4.0</div>
+            </div>
+        </div>
+    </div>
+    <!-- Kaelis 统一加载器 -->
+    <script src="assets/js/kaelis-loader.js" data-modules="basic"></script>
+</body>
+</html>
+
+

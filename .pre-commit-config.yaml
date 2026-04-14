@@ -1,0 +1,30 @@
+# Kaelis Pre-commit Configuration
+# 契约门禁：强制环境合规
+
+repos:
+  - repo: local
+    hooks:
+      - id: contract-gate
+        name: Kaelis Contract Gate
+        entry: python scripts/kaelis_guardian.py --pre-commit
+        language: system
+        pass_filenames: false
+        always_run: true
+        description: "验证项目契约合规性，阻断不合规提交"
+
+      - id: doc-contract-check
+        name: Documentation Contract Check
+        entry: python scripts/check_doc_contract.py
+        language: system
+        pass_filenames: false
+        files: ^contracts/.*\.(yaml|yml)$
+        description: "检查文档契约是否过期"
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']

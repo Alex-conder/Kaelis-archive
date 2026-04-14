@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特征开关 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .flags-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .flags-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-flag-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .flags-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .flags-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .flag-item { display: flex; align-items: center; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; }
+        .flag-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-right: 16px; }
+        .flag-info { flex: 1; }
+        .flag-name { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .flag-desc { font-size: 13px; color: #64748b; }
+        .flag-env { display: flex; gap: 8px; margin-right: 16px; }
+        .env-tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .env-tag.prod { background: #dcfce7; color: #16a34a; }
+        .env-tag.staging { background: #dbeafe; color: #2563eb; }
+        .env-tag.dev { background: #f3f4f6; color: #6b7280; }
+        .flag-toggle { width: 52px; height: 28px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 14px; position: relative; margin-right: 16px; }
+        .flag-toggle::after { content: ''; position: absolute; width: 24px; height: 24px; background: white; border-radius: 50%; top: 2px; right: 2px; }
+        .flag-toggle.off { background: #e2e8f0; }
+        .flag-toggle.off::after { left: 2px; }
+        .flag-actions { display: flex; gap: 8px; }
+        .flag-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">特征开关</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="flags-header">
+            <h1>功能开关管理</h1>
+            <button class="new-flag-btn">+ 新建开关</button>
+        </div>
+        <div class="flags-stats">
+            <div class="stat-card"><div class="stat-value">48</div><div class="stat-label">总开关数</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#16a34a;">36</div><div class="stat-label">已启用</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#6b7280;">12</div><div class="stat-label">已禁用</div></div>
+            <div class="stat-card"><div class="stat-value">8</div><div class="stat-label">实验中</div></div>
+        </div>
+        <div class="flags-card">
+            <h2 class="card-title">功能开关列表</h2>
+            <div class="flag-item">
+                <div class="flag-icon">??</div>
+                <div class="flag-info"><div class="flag-name">new-ai-model</div><div class="flag-desc">启用新的AI模型推理引擎</div></div>
+                <div class="flag-env"><span class="env-tag prod">生产</span><span class="env-tag staging">测试</span></div>
+                <div class="flag-toggle"></div>
+                <div class="flag-actions"><button class="flag-btn">配置</button><button class="flag-btn">历史</button></div>
+            </div>
+            <div class="flag-item">
+                <div class="flag-icon">??</div>
+                <div class="flag-info"><div class="flag-name">streaming-response</div><div class="flag-desc">流式响应输出</div></div>
+                <div class="flag-env"><span class="env-tag prod">生产</span></div>
+                <div class="flag-toggle"></div>
+                <div class="flag-actions"><button class="flag-btn">配置</button><button class="flag-btn">历史</button></div>
+            </div>
+            <div class="flag-item">
+                <div class="flag-icon">??</div>
+                <div class="flag-info"><div class="flag-name">advanced-security</div><div class="flag-desc">高级安全检测功能</div></div>
+                <div class="flag-env"><span class="env-tag dev">开发</span></div>
+                <div class="flag-toggle off"></div>
+                <div class="flag-actions"><button class="flag-btn">配置</button><button class="flag-btn">历史</button></div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

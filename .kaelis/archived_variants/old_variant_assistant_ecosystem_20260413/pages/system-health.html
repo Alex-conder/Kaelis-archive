@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统健康诊断 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 32px; font-weight: 700; }
+        
+        /* 健康评分 */
+        .health-score { 
+            background: linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%); 
+            border: 1px solid rgba(34,197,94,0.3); 
+            border-radius: 16px; 
+            padding: 40px; 
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .score-circle { 
+            width: 160px; 
+            height: 160px; 
+            border-radius: 50%; 
+            background: conic-gradient(#22C55E 324deg, rgba(255,255,255,0.1) 0deg); 
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .score-inner { 
+            width: 130px; 
+            height: 130px; 
+            border-radius: 50%; 
+            background: #0A0A0A; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .score-value { font-size: 48px; font-weight: 700; color: #22C55E; }
+        .score-label { font-size: 14px; color: #6B7280; }
+        .health-status { font-size: 20px; font-weight: 600; color: #22C55E; margin-bottom: 8px; }
+        .health-desc { font-size: 14px; color: #6B7280; }
+        
+        /* 检查项 */
+        .check-section { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-bottom: 24px;
+        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-title { font-size: 18px; font-weight: 600; }
+        .section-action { 
+            padding: 8px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 13px; 
+            cursor: pointer;
+        }
+        
+        .check-list { display: flex; flex-direction: column; gap: 12px; }
+        .check-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .check-icon { 
+            width: 40px; 
+            height: 40px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px; 
+            margin-right: 16px;
+        }
+        .check-icon.success { background: rgba(34,197,94,0.15); }
+        .check-icon.warning { background: rgba(245,158,11,0.15); }
+        .check-icon.error { background: rgba(239,68,68,0.15); }
+        .check-info { flex: 1; }
+        .check-name { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .check-desc { font-size: 13px; color: #6B7280; }
+        .check-status { 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: 500;
+        }
+        .check-status.success { background: rgba(34,197,94,0.15); color: #22C55E; }
+        .check-status.warning { background: rgba(245,158,11,0.15); color: #F59E0B; }
+        .check-status.error { background: rgba(239,68,68,0.15); color: #EF4444; }
+        
+        /* 优化建议 */
+        .suggestion-item { 
+            display: flex; 
+            align-items: flex-start; 
+            padding: 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 12px;
+        }
+        .suggestion-icon { 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 8px; 
+            background: rgba(136,72,249,0.15); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 18px; 
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        .suggestion-content { flex: 1; }
+        .suggestion-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+        .suggestion-desc { font-size: 13px; color: #6B7280; margin-bottom: 12px; }
+        .suggestion-btn { 
+            padding: 8px 16px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 12px; 
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        /* 扫描按钮 */
+        .scan-btn { 
+            width: 100%; 
+            padding: 16px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+            border: none; 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .scan-btn:hover { opacity: 0.9; }
+        
+        /* 扫描进度 */
+        .scan-progress { 
+            display: none;
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-bottom: 24px;
+        }
+        .scan-progress.show { display: block; }
+        .scan-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .scan-title { font-size: 15px; font-weight: 500; }
+        .scan-percent { font-size: 15px; font-weight: 600; color: var(--primary); }
+        .progress-bar { 
+            height: 8px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 4px; 
+            overflow: hidden;
+        }
+        .progress-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%); 
+            border-radius: 4px; 
+            transition: width 0.3s;
+        }
+        .scan-status { font-size: 13px; color: #6B7280; margin-top: 8px; }
+        
+        @media (max-width: 768px) {
+            .health-score { padding: 24px; }
+            .score-circle { width: 120px; height: 120px; }
+            .score-inner { width: 100px; height: 100px; }
+            .score-value { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 系统健康诊断</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="exportReport()">?? 导出报告</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">系统健康诊断</h1>
+        </div>
+        
+        <!-- 健康评分 -->
+        <div class="health-score">
+            <div class="score-circle">
+                <div class="score-inner">
+                    <div class="score-value">90</div>
+                    <div class="score-label">健康分</div>
+                </div>
+            </div>
+            <div class="health-status">? 系统运行良好</div>
+            <div class="health-desc">上次诊断: 2026-01-20 14:30 | 共检查 12 项</div>
+        </div>
+        
+        <!-- 扫描按钮 -->
+        <button class="scan-btn" onclick="startScan()">?? 开始全面诊断</button>
+        
+        <!-- 扫描进度 -->
+        <div class="scan-progress" id="scanProgress">
+            <div class="scan-header">
+                <span class="scan-title">正在诊断系统...</span>
+                <span class="scan-percent" id="scanPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="scanFill" style="width: 0%"></div>
+            </div>
+            <div class="scan-status" id="scanStatus">正在检查数据库连接...</div>
+        </div>
+        
+        <!-- 核心服务检查 -->
+        <div class="check-section">
+            <div class="section-header">
+                <span class="section-title">?? 核心服务检查</span>
+                <button class="section-action" onclick="viewDetails()">查看详情</button>
+            </div>
+            <div class="check-list">
+                <div class="check-item">
+                    <div class="check-icon success">?</div>
+                    <div class="check-info">
+                        <div class="check-name">数据库服务</div>
+                        <div class="check-desc">PostgreSQL 运行正常，响应时间 12ms</div>
+                    </div>
+                    <span class="check-status success">正常</span>
+                </div>
+                <div class="check-item">
+                    <div class="check-icon success">?</div>
+                    <div class="check-info">
+                        <div class="check-name">Redis 缓存</div>
+                        <div class="check-desc">缓存服务运行正常，命中率 94.5%</div>
+                    </div>
+                    <span class="check-status success">正常</span>
+                </div>
+                <div class="check-item">
+                    <div class="check-icon success">?</div>
+                    <div class="check-info">
+                        <div class="check-name">API 网关</div>
+                        <div class="check-desc">所有端点响应正常，平均延迟 45ms</div>
+                    </div>
+                    <span class="check-status success">正常</span>
+                </div>
+                <div class="check-item">
+                    <div class="check-icon warning">??</div>
+                    <div class="check-info">
+                        <div class="check-name">消息队列</div>
+                        <div class="check-desc">队列积压 1,240 条消息，建议扩容</div>
+                    </div>
+                    <span class="check-status warning">警告</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 性能检查 -->
+        <div class="check-section">
+            <div class="section-header">
+                <span class="section-title">? 性能检查</span>
+                <button class="section-action" onclick="viewDetails()">查看详情</button>
+            </div>
+            <div class="check-list">
+                <div class="check-item">
+                    <div class="check-icon success">?</div>
+                    <div class="check-info">
+                        <div class="check-name">CPU 使用率</div>
+                        <div class="check-desc">当前 35%，峰值 65%，运行平稳</div>
+                    </div>
+                    <span class="check-status success">正常</span>
+                </div>
+                <div class="check-item">
+                    <div class="check-icon success">?</div>
+                    <div class="check-info">
+                        <div class="check-name">内存使用</div>
+                        <div class="check-desc">已使用 6.2GB / 16GB，使用率 38.7%</div>
+                    </div>
+                    <span class="check-status success">正常</span>
+                </div>
+                <div class="check-item">
+                    <div class="check-icon warning">??</div>
+                    <div class="check-info">
+                        <div class="check-name">磁盘空间</div>
+                        <div class="check-desc">已使用 85%，建议清理日志文件</div>
+                    </div>
+                    <span class="check-status warning">警告</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 优化建议 -->
+        <div class="check-section">
+            <div class="section-header">
+                <span class="section-title">?? 优化建议</span>
+            </div>
+            <div class="suggestion-list">
+                <div class="suggestion-item">
+                    <div class="suggestion-icon">??</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-title">清理日志文件</div>
+                        <div class="suggestion-desc">系统日志占用 12GB 空间，建议清理 30 天前的日志</div>
+                        <button class="suggestion-btn" onclick="cleanLogs()">立即清理</button>
+                    </div>
+                </div>
+                <div class="suggestion-item">
+                    <div class="suggestion-icon">??</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-title">优化数据库索引</div>
+                        <div class="suggestion-desc">发现 3 个未使用的索引，建议重建以提升性能</div>
+                        <button class="suggestion-btn" onclick="optimizeDB()">优化数据库</button>
+                    </div>
+                </div>
+                <div class="suggestion-item">
+                    <div class="suggestion-icon">??</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-title">更新过期插件</div>
+                        <div class="suggestion-desc">5 个插件有新版本可用，包含安全补丁</div>
+                        <button class="suggestion-btn" onclick="updatePlugins()">更新插件</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startScan() {
+            const progress = document.getElementById('scanProgress');
+            const percent = document.getElementById('scanPercent');
+            const fill = document.getElementById('scanFill');
+            const status = document.getElementById('scanStatus');
+            
+            progress.classList.add('show');
+            
+            const statuses = [
+                '正在检查数据库连接...',
+                '正在测试 API 响应...',
+                '正在检查缓存服务...',
+                '正在分析磁盘空间...',
+                '正在检查内存使用...',
+                '正在验证插件状态...',
+                '正在生成诊断报告...'
+            ];
+            
+            let p = 0;
+            let i = 0;
+            const interval = setInterval(() => {
+                p += Math.random() * 15;
+                if (p >= 100) {
+                    p = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progress.classList.remove('show');
+                        alert('? 诊断完成！系统健康分: 90/100');
+                    }, 500);
+                }
+                fill.style.width = p + '%';
+                percent.textContent = Math.floor(p) + '%';
+                
+                if (i < statuses.length && p > (i + 1) * (100 / statuses.length)) {
+                    status.textContent = statuses[i];
+                    i++;
+                }
+            }, 200);
+        }
+        
+        function viewDetails() {
+            alert('查看详细检查报告');
+        }
+        
+        function exportReport() {
+            alert('导出诊断报告');
+        }
+        
+        function cleanLogs() {
+            if (confirm('确定要清理 30 天前的日志文件吗？')) {
+                alert('? 日志清理完成，释放 8.5GB 空间');
+            }
+        }
+        
+        function optimizeDB() {
+            if (confirm('确定要优化数据库索引吗？')) {
+                alert('? 数据库优化完成，查询性能提升 15%');
+            }
+        }
+        
+        function updatePlugins() {
+            alert('开始更新插件...');
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="dashboard"></script>
+
+</body>
+</html>
+

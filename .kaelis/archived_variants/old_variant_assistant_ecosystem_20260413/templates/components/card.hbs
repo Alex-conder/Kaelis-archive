@@ -1,0 +1,18 @@
+<div class="card {{#if hover}}card-hover{{/if}} {{#if class}}{{class}}{{/if}}">
+  {{#if header}}
+  <div class="card-header">
+    <h3 class="card-title">{{header.title}}</h3>
+    {{#if header.action}}
+    <a href="{{header.action.href}}" class="link">{{header.action.label}}</a>
+    {{/if}}
+  </div>
+  {{/if}}
+  <div class="card-body">
+    {{{content}}}
+  </div>
+  {{#if footer}}
+  <div class="card-footer">
+    {{{footer}}}
+  </div>
+  {{/if}}
+</div>

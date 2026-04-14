@@ -1,0 +1,62 @@
+﻿# Dependencies
+node_modules/
+**/node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+
+# Build / Distribution
+build/
+dist/
+release/
+win-unpacked/
+*.spec
+*.exe
+*.pkg
+*.zip
+*.tar.gz
+
+# Electron
+electron/resources/python/Lib/site-packages/
+
+# Data / Cache
+data/cache/
+data/chroma_db/
+data/uploads/
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Large binaries
+*.pdb
+*.pse
+*.pdbqt
+*.pkl
+*.otf
+*.ttf

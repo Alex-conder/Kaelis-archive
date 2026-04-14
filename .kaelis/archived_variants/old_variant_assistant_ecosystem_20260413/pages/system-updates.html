@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统更新管理 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 32px; font-weight: 700; }
+        
+        /* 当前版本卡片 */
+        .version-card { 
+            background: linear-gradient(135deg, rgba(136,72,249,0.2) 0%, rgba(59,130,246,0.2) 100%); 
+            border: 1px solid rgba(136,72,249,0.3); 
+            border-radius: 16px; 
+            padding: 32px; 
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .version-label { font-size: 14px; color: #A1A1AA; margin-bottom: 8px; }
+        .version-number { font-size: 48px; font-weight: 700; margin-bottom: 8px; }
+        .version-date { font-size: 14px; color: #6B7280; margin-bottom: 24px; }
+        .version-actions { display: flex; gap: 12px; justify-content: center; }
+        .version-btn { 
+            padding: 12px 24px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            border: none;
+        }
+        .version-btn-primary  { @extend .btn-primary; }
+        .version-btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* 更新状态 */
+        .update-status { 
+            background: rgba(34,197,94,0.1); 
+            border: 1px solid rgba(34,197,94,0.3); 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .status-icon { font-size: 32px; }
+        .status-info { flex: 1; }
+        .status-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .status-desc { font-size: 14px; color: #6B7280; }
+        
+        /* 更新日志 */
+        .changelog-section { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-bottom: 24px;
+        }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .version-item { 
+            padding: 20px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .version-item:last-child { border-bottom: none; }
+        .version-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .version-tag { 
+            padding: 4px 12px; 
+            background: var(--primary); 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: 600;
+        }
+        .version-tag.current { background: #22C55E; }
+        .version-time { font-size: 13px; color: #6B7280; }
+        .version-changes { list-style: none; }
+        .version-changes li { 
+            padding: 6px 0; 
+            font-size: 14px; 
+            color: #A1A1AA;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .change-type { 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 11px; 
+            font-weight: 500;
+        }
+        .type-feature { background: rgba(59,130,246,0.2); color: var(--secondary); }
+        .type-fix { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .type-improve { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        
+        /* 更新设置 */
+        .settings-section { 
+            background: rgba(23,23,23,0.8); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px;
+        }
+        .setting-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-info { display: flex; flex-direction: column; }
+        .setting-name { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .setting-desc { font-size: 13px; color: #6B7280; }
+        
+        /* 开关 */
+        .toggle { 
+            width: 50px; 
+            height: 28px; 
+            background: #374151; 
+            border-radius: 14px; 
+            position: relative; 
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+        .toggle.active { background: var(--primary); }
+        .toggle::after { 
+            content: ''; 
+            position: absolute; 
+            width: 22px; 
+            height: 22px; 
+            background: white; 
+            border-radius: 50%; 
+            top: 3px; 
+            left: 3px; 
+            transition: all 0.2s;
+        }
+        .toggle.active::after { left: 25px; }
+        
+        /* 进度弹窗 */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.8); 
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal { 
+            background: #1a1a1a; 
+            border-radius: 16px; 
+            padding: 40px; 
+            width: 90%; 
+            max-width: 400px;
+            text-align: center;
+        }
+        .modal-icon { font-size: 64px; margin-bottom: 20px; }
+        .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+        .modal-desc { font-size: 14px; color: #6B7280; margin-bottom: 24px; }
+        .progress-ring { 
+            width: 120px; 
+            height: 120px; 
+            margin: 0 auto 24px;
+            position: relative;
+        }
+        .progress-ring svg { transform: rotate(-90deg); }
+        .progress-ring-circle { 
+            fill: none; 
+            stroke: rgba(255,255,255,0.1); 
+            stroke-width: 8;
+        }
+        .progress-ring-progress { 
+            fill: none; 
+            stroke: url(#gradient); 
+            stroke-width: 8; 
+            stroke-linecap: round;
+            stroke-dasharray: 339.292;
+            stroke-dashoffset: 339.292;
+            transition: stroke-dashoffset 0.3s;
+        }
+        .progress-text { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 24px; 
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 系统更新</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">系统更新管理</h1>
+        </div>
+        
+        <!-- 当前版本 -->
+        <div class="version-card">
+            <div class="version-label">当前版本</div>
+            <div class="version-number">v3.2.1</div>
+            <div class="version-date">发布于 2026年1月15日</div>
+            <div class="version-actions">
+                <button class="version-btn version-btn-primary" onclick="checkUpdate()">?? 检查更新</button>
+                <button class="version-btn version-btn-secondary" onclick="viewChangelog()">?? 更新日志</button>
+            </div>
+        </div>
+        
+        <!-- 更新状态 -->
+        <div class="update-status">
+            <div class="status-icon">?</div>
+            <div class="status-info">
+                <div class="status-title">系统已是最新版本</div>
+                <div class="status-desc">上次检查: 2026-01-20 14:30 | 下次自动检查: 明天 02:00</div>
+            </div>
+        </div>
+        
+        <!-- 更新日志 -->
+        <div class="changelog-section">
+            <div class="section-title">?? 版本历史</div>
+            
+            <div class="version-item">
+                <div class="version-header">
+                    <span class="version-tag current">当前版本</span>
+                    <span class="version-time">2026-01-15</span>
+                </div>
+                <ul class="version-changes">
+                    <li><span class="change-type type-feature">新功能</span> 新增批量操作中心，支持用户/API/插件批量管理</li>
+                    <li><span class="change-type type-feature">新功能</span> 新增全局搜索功能，支持实时建议和热门搜索</li>
+                    <li><span class="change-type type-improve">优化</span> 优化 API 监控性能，响应速度提升 40%</li>
+                    <li><span class="change-type type-fix">修复</span> 修复数据导入时偶尔出现的格式错误问题</li>
+                </ul>
+            </div>
+            
+            <div class="version-item">
+                <div class="version-header">
+                    <span class="version-tag">v3.2.0</span>
+                    <span class="version-time">2026-01-08</span>
+                </div>
+                <ul class="version-changes">
+                    <li><span class="change-type type-feature">新功能</span> 新增通知中心，支持分类管理和批量操作</li>
+                    <li><span class="change-type type-feature">新功能</span> 新增备份恢复功能，支持自动备份和云存储</li>
+                    <li><span class="change-type type-improve">优化</span> 改进用户活动日志，增加统计分析功能</li>
+                </ul>
+            </div>
+            
+            <div class="version-item">
+                <div class="version-header">
+                    <span class="version-tag">v3.1.0</span>
+                    <span class="version-time">2025-12-25</span>
+                </div>
+                <ul class="version-changes">
+                    <li><span class="change-type type-feature">新功能</span> 新增多平台 API 集成中心</li>
+                    <li><span class="change-type type-feature">新功能</span> 新增 API 自动化发现和参数填充</li>
+                    <li><span class="change-type type-fix">修复</span> 修复移动端仪表盘显示问题</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 更新设置 -->
+        <div class="settings-section">
+            <div class="section-title">?? 更新设置</div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">自动检查更新</span>
+                    <span class="setting-desc">系统每天自动检查是否有新版本可用</span>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">自动下载更新</span>
+                    <span class="setting-desc">发现新版本时自动下载，安装前提示确认</span>
+                </div>
+                <div class="toggle active" onclick="toggleSetting(this)"></div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-name">夜间自动安装</span>
+                    <span class="setting-desc">在凌晨 2:00-4:00 低峰期自动安装更新</span>
+                </div>
+                <div class="toggle" onclick="toggleSetting(this)"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 更新进度弹窗 -->
+    <div class="modal-overlay" id="updateModal">
+        <div class="modal">
+            <svg width="0" height="0">
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:var(--primary)"/>
+                        <stop offset="100%" style="stop-color:var(--secondary)"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="progress-ring">
+                <svg width="120" height="120">
+                    <circle class="progress-ring-circle" cx="60" cy="60" r="54"/>
+                    <circle class="progress-ring-progress" cx="60" cy="60" r="54" id="progressCircle"/>
+                </svg>
+                <div class="progress-text" id="progressText">0%</div>
+            </div>
+            <div class="modal-title">正在下载更新...</div>
+            <div class="modal-desc">请勿关闭页面，更新完成后将自动重启</div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSetting(el) {
+            el.classList.toggle('active');
+        }
+        
+        function checkUpdate() {
+            const modal = document.getElementById('updateModal');
+            const progressCircle = document.getElementById('progressCircle');
+            const progressText = document.getElementById('progressText');
+            
+            modal.classList.add('show');
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        modal.classList.remove('show');
+                        alert('? 系统已是最新版本！');
+                    }, 500);
+                }
+                const offset = 339.292 - (progress / 100) * 339.292;
+                progressCircle.style.strokeDashoffset = offset;
+                progressText.textContent = Math.floor(progress) + '%';
+            }, 200);
+        }
+        
+        function viewChangelog() {
+            document.querySelector('.changelog-section').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

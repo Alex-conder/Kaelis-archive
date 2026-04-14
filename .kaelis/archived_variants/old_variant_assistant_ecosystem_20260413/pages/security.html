@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全中心 - Kaelis</title>
+    <link rel="stylesheet" href="../css/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/pages/security.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">☰</button>
+            <span class="logo">安全中心</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn">🔍</button>
+            <button class="nav-btn">🔔</button>
+            <button class="nav-btn">👤</button>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="score-card">
+            <div class="score-circle">
+                <svg width="160" height="160" viewBox="0 0 160 160">
+                    <circle class="score-circle-bg" cx="80" cy="80" r="70"/>
+                    <circle class="score-circle-fill" cx="80" cy="80" r="70"/>
+                </svg>
+                <div class="score-text"><div class="score-number">96</div><div class="score-label">/100</div></div>
+            </div>
+            <div class="score-status">优秀</div>
+            <div class="score-desc">所有检查通过</div>
+            <div class="score-actions">
+                <button class="btn btn-primary">运行安全扫描</button>
+                <button class="btn btn-secondary">查看详细报告</button>
+            </div>
+        </div>
+        <div class="checklist-card">
+            <h2 class="card-title">安全检查清单</h2>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">数据加密</div><div class="check-standard">AES-256-GCM</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">传输安全</div><div class="check-standard">TLS 1.3</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">认证强度</div><div class="check-standard">MFA + 生物识别</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">插件沙箱</div><div class="check-standard">gVisor/WASM</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">API限流</div><div class="check-standard">100 req/min</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">审计日志</div><div class="check-standard">区块链不可篡改</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">密钥管理</div><div class="check-standard">HashiCorp Vault</div></div></div>
+            <div class="check-item"><div class="check-icon">✓</div><div class="check-content"><div class="check-title">漏洞扫描</div><div class="check-standard">每日CVE检查</div></div></div>
+        </div>
+        <div class="compliance-grid">
+            <div class="compliance-card"><div class="compliance-icon">🛡️</div><div class="compliance-name">GDPR</div><div class="compliance-score">98/100</div><div class="compliance-status"><span>✓</span> 合规</div><button class="compliance-btn">查看报告</button></div>
+            <div class="compliance-card"><div class="compliance-icon">📋</div><div class="compliance-name">SOC 2</div><div class="compliance-score">96/100</div><div class="compliance-status"><span>✓</span> 合规</div><button class="compliance-btn">查看报告</button></div>
+            <div class="compliance-card"><div class="compliance-icon">🔐</div><div class="compliance-name">ISO 27001</div><div class="compliance-score">94/100</div><div class="compliance-status"><span>✓</span> 合规</div><button class="compliance-btn">查看报告</button></div>
+        </div>
+        <div class="events-card">
+            <h2 class="card-title">最近安全事件</h2>
+            <div class="event-item"><div class="event-icon green">✓</div><span class="event-date">03/17</span><div class="event-content"><div class="event-title">安全扫描完成 - 无高危漏洞</div></div></div>
+            <div class="event-item"><div class="event-icon green">✓</div><span class="event-date">03/16</span><div class="event-content"><div class="event-title">密钥轮换完成 - 所有服务正常</div></div></div>
+            <div class="event-item"><div class="event-icon yellow">⚠</div><span class="event-date">03/15</span><div class="event-content"><div class="event-title">检测到中等漏洞 - 已自动修复</div></div></div>
+            <div class="event-item"><div class="event-icon green">✓</div><span class="event-date">03/14</span><div class="event-content"><div class="event-title">合规审计通过 - GDPR/SOC2/ISO27001</div></div></div>
+        </div>
+    </div>
+    <!-- Kaelis 统一加载器 -->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard,error-handler"></script>
+</body>
+</html>
+
+
+
+
+

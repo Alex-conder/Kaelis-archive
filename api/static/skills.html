@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelis 智流 - 技能市场</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        header h1 {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+        }
+        
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 0.5rem;
+        }
+        
+        /* Search & Filter */
+        .toolbar {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 0.625rem 2.5rem 0.625rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .search-box button {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        select, input[type="text"] {
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        
+        /* Skills Grid */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .skill-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .skill-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .skill-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .skill-source {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        
+        .source-evolution {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .source-manual {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .skill-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .skill-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-color);
+            border-radius: 8px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .skill-params {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+        }
+        
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+        
+        .skill-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+        
+        /* Rating Stars */
+        .rating {
+            display: flex;
+            gap: 0.25rem;
+            color: var(--warning-color);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .skills-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎨 技能市场</h1>
+            <p>管理和使用由自进化引擎生成的优化技能</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="alert" class="alert"></div>
+        
+        <!-- 统计栏 -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <h3>总技能数</h3>
+                <div class="value" id="totalSkills">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>自进化生成</h3>
+                <div class="value" id="evolutionSkills">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>平均评分</h3>
+                <div class="value" id="avgRating">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>总使用次数</h3>
+                <div class="value" id="totalUsage">-</div>
+            </div>
+        </div>
+        
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索技能...">
+                <button onclick="searchSkills()">🔍</button>
+            </div>
+            <select id="sourceFilter" onchange="filterSkills()">
+                <option value="">所有来源</option>
+                <option value="evolution">自进化生成</option>
+                <option value="manual">手动创建</option>
+            </select>
+            <select id="sortBy" onchange="filterSkills()">
+                <option value="rating">按评分排序</option>
+                <option value="usage">按使用次数排序</option>
+                <option value="success_rate">按成功率排序</option>
+                <option value="created">按创建时间排序</option>
+            </select>
+            <button class="btn btn-primary" onclick="showCreateModal()">+ 新建技能</button>
+        </div>
+        
+        <!-- 技能列表 -->
+        <div id="skillsContainer" class="skills-grid">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+    
+    <!-- 创建技能模态框 -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>创建新技能</h2>
+                <button class="close-btn" onclick="hideCreateModal()">&times;</button>
+            </div>
+            <form id="createForm" onsubmit="createSkill(event)">
+                <div class="form-group">
+                    <label>技能名称</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>任务类型</label>
+                    <input type="text" name="task_type" required placeholder="如: metabolomics_pls_da">
+                </div>
+                <div class="form-group">
+                    <label>参数 (JSON)</label>
+                    <textarea name="params" rows="4" placeholder='{"n_components": 5}'></textarea>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea name="description" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>标签 (逗号分隔)</label>
+                    <input type="text" name="tags" placeholder="tag1, tag2, tag3">
+                </div>
+                <div class="skill-actions">
+                    <button type="submit" class="btn btn-primary">创建</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/skills';
+        
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 3000);
+        }
+        
+        // 加载统计
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/stats`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('totalSkills').textContent = data.data.total || 0;
+                    document.getElementById('evolutionSkills').textContent = data.data.by_source?.evolution || 0;
+                    document.getElementById('avgRating').textContent = (data.data.avg_rating || 0).toFixed(1);
+                    document.getElementById('totalUsage').textContent = data.data.total_usage || 0;
+                }
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+        
+        // 加载技能列表
+        async function loadSkills() {
+            try {
+                const sortBy = document.getElementById('sortBy').value;
+                const source = document.getElementById('sourceFilter').value;
+                
+                let url = `${API_BASE}/?sort_by=${sortBy}`;
+                if (source) url += `&source=${source}`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderSkills(data.data.skills);
+                } else {
+                    document.getElementById('skillsContainer').innerHTML = `
+                        <div class="empty-state">
+                            <h3>无法加载技能</h3>
+                            <p>${data.error || '未知错误'}</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('skillsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <h3>服务未就绪</h3>
+                        <p>请确保后端服务已启动</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderSkills(skills) {
+            const container = document.getElementById('skillsContainer');
+            
+            if (skills.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>暂无技能</h3>
+                        <p>执行自进化任务后会自动生成技能</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = skills.map(skill => `
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-title">${skill.name}</div>
+                        <span class="skill-source source-${skill.source}">
+                            ${skill.source === 'evolution' ? '🧬 自进化' : '👤 手动'}
+                        </span>
+                    </div>
+                    
+                    <div class="skill-meta">
+                        <span>📁 ${skill.task_type}</span>
+                        <span>⭐ ${skill.rating.toFixed(1)}</span>
+                    </div>
+                    
+                    <div class="skill-stats">
+                        <div class="stat">
+                            <div class="stat-value">${skill.usage_count}</div>
+                            <div class="stat-label">使用</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${(skill.success_rate * 100).toFixed(0)}%</div>
+                            <div class="stat-label">成功率</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${skill.params ? Object.keys(skill.params).length : 0}</div>
+                            <div class="stat-label">参数</div>
+                        </div>
+                    </div>
+                    
+                    <div class="skill-params">${JSON.stringify(skill.params, null, 2)}</div>
+                    
+                    ${skill.tags.length > 0 ? `
+                        <div class="skill-tags">
+                            ${skill.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="skill-actions">
+                        <button class="btn btn-primary" onclick='useSkill("${skill.id}")'>使用</button>
+                        <button class="btn btn-secondary" onclick='rateSkill("${skill.id}")'>评分</button>
+                        ${skill.source === 'evolution' ? `
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                                来源: ${skill.evolution_source?.slice(0, 8) || 'N/A'}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function useSkill(skillId) {
+            try {
+                const res = await fetch(`${API_BASE}/${skillId}/use`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ success: true })
+                });
+                
+                if (res.ok) {
+                    showAlert('技能使用已记录');
+                    loadStats();
+                }
+            } catch (e) {
+                showAlert('记录失败', 'error');
+            }
+        }
+        
+        async function rateSkill(skillId) {
+            const rating = prompt('请输入评分 (0-5):', '5');
+            if (!rating) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/${skillId}/rate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: parseFloat(rating) })
+                });
+                
+                if (res.ok) {
+                    showAlert('评分已记录');
+                    loadSkills();
+                    loadStats();
+                }
+            } catch (e) {
+                showAlert('评分失败', 'error');
+            }
+        }
+        
+        async function searchSkills() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) {
+                loadSkills();
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderSkills(data.data.skills);
+                }
+            } catch (e) {
+                showAlert('搜索失败', 'error');
+            }
+        }
+        
+        function filterSkills() {
+            loadSkills();
+        }
+        
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+        }
+        
+        function hideCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+        
+        async function createSkill(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                task_type: formData.get('task_type'),
+                params: JSON.parse(formData.get('params') || '{}'),
+                description: formData.get('description'),
+                tags: formData.get('tags').split(',').map(t => t.trim()).filter(Boolean)
+            };
+            
+            try {
+                const res = await fetch(API_BASE + '/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    showAlert('技能创建成功');
+                    hideCreateModal();
+                    loadSkills();
+                    loadStats();
+                } else {
+                    const err = await res.json();
+                    showAlert(err.error || '创建失败', 'error');
+                }
+            } catch (e) {
+                showAlert('创建失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadSkills();
+        });
+    </script>
+</body>
+</html>

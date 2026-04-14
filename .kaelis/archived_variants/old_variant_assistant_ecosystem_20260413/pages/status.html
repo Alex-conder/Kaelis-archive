@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统状态 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+        .status-header { text-align: center; margin-bottom: 40px; }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #dcfce7; color: #16a34a; border-radius: 30px; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .status-badge::before { content: ''; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-header h1 { font-size: 32px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .status-header p { font-size: 16px; color: #64748b; }
+        .status-uptime { text-align: center; margin-bottom: 40px; }
+        .uptime-value { font-size: 48px; font-weight: 700; color: #1e293b; }
+        .uptime-label { font-size: 14px; color: #64748b; }
+        .services-list { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+        .service-item { display: flex; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f1f5f9; }
+        .service-item:last-child { border-bottom: none; }
+        .service-status { width: 12px; height: 12px; background: #22c55e; border-radius: 50%; margin-right: 16px; }
+        .service-status.degraded { background: #f59e0b; }
+        .service-info { flex: 1; }
+        .service-name { font-size: 16px; font-weight: 600; color: #1e293b; }
+        .service-desc { font-size: 13px; color: #64748b; }
+        .service-uptime { font-size: 14px; color: #22c55e; font-weight: 600; }
+        .incidents-section { margin-top: 40px; }
+        .section-title { font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .incident-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
+        .incident-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .incident-status { padding: 4px 12px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .incident-date { font-size: 13px; color: #64748b; }
+        .incident-title { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .incident-desc { font-size: 14px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">系统状态</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="status-header">
+            <div class="status-badge">所有系统正常运行</div>
+            <h1>Kaelis 状态页面</h1>
+            <p>最后更新: 2026年3月17日 14:35 CST</p>
+        </div>
+        <div class="status-uptime">
+            <div class="uptime-value">99.99%</div>
+            <div class="uptime-label">过去 90 天可用性</div>
+        </div>
+        <div class="services-list">
+            <div class="service-item">
+                <div class="service-status"></div>
+                <div class="service-info"><div class="service-name">API Gateway</div><div class="service-desc">核心 API 服务</div></div>
+                <span class="service-uptime">100%</span>
+            </div>
+            <div class="service-item">
+                <div class="service-status"></div>
+                <div class="service-info"><div class="service-name">AI Services</div><div class="service-desc">AI 模型调用服务</div></div>
+                <span class="service-uptime">99.98%</span>
+            </div>
+            <div class="service-item">
+                <div class="service-status"></div>
+                <div class="service-info"><div class="service-name">Plugin Registry</div><div class="service-desc">插件管理服务</div></div>
+                <span class="service-uptime">99.95%</span>
+            </div>
+            <div class="service-item">
+                <div class="service-status"></div>
+                <div class="service-info"><div class="service-name">Vector Database</div><div class="service-desc">向量数据存储</div></div>
+                <span class="service-uptime">100%</span>
+            </div>
+            <div class="service-item">
+                <div class="service-status"></div>
+                <div class="service-info"><div class="service-name">Authentication</div><div class="service-desc">身份认证服务</div></div>
+                <span class="service-uptime">100%</span>
+            </div>
+        </div>
+        <div class="incidents-section">
+            <h2 class="section-title">最近事件</h2>
+            <div class="incident-card">
+                <div class="incident-header">
+                    <span class="incident-status">已解决</span>
+                    <span class="incident-date">2026-03-15</span>
+                </div>
+                <div class="incident-title">Plugin Registry 响应延迟</div>
+                <div class="incident-desc">部分用户遇到插件加载缓慢的问题，已于 15:30 修复。</div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="basic"></script>
+
+</body>
+</html>
+

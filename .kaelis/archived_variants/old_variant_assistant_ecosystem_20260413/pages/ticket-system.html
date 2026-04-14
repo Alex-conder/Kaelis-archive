@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工单系统 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .tickets-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .tickets-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-ticket-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .tickets-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .tickets-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        .tickets-sidebar { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .sidebar-title { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
+        .filter-item { display: flex; align-items: center; padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 4px; }
+        .filter-item:hover { background: #f8fafc; }
+        .filter-item.active { background: #f3e8ff; }
+        .filter-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-right: 12px; }
+        .filter-name { font-size: 14px; font-weight: 500; color: #1e293b; flex: 1; }
+        .filter-count { padding: 4px 10px; background: #e2e8f0; border-radius: 20px; font-size: 12px; font-weight: 600; color: #64748b; }
+        .tickets-list { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .list-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+        .list-actions { display: flex; gap: 8px; }
+        .list-btn { padding: 8px 16px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .ticket-item { display: flex; align-items: center; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; transition: all 0.2s; }
+        .ticket-item:hover { border-color: #c4b5fd; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .ticket-priority { width: 4px; height: 48px; border-radius: 2px; margin-right: 16px; }
+        .ticket-priority.high { background: #dc2626; }
+        .ticket-priority.medium { background: #d97706; }
+        .ticket-priority.low { background: #16a34a; }
+        .ticket-info { flex: 1; }
+        .ticket-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .ticket-meta { font-size: 13px; color: #64748b; }
+        .ticket-tags { display: flex; gap: 6px; margin-right: 16px; }
+        .ticket-tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .ticket-tag.bug { background: #fee2e2; color: #dc2626; }
+        .ticket-tag.feature { background: #dbeafe; color: #2563eb; }
+        .ticket-tag.support { background: #dcfce7; color: #16a34a; }
+        .ticket-status { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .ticket-status.open { background: #dbeafe; color: #2563eb; }
+        .ticket-status.progress { background: #fef3c7; color: #d97706; }
+        .ticket-status.resolved { background: #dcfce7; color: #16a34a; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">工单系统</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="tickets-header">
+            <h1>?? 工单服务中心</h1>
+            <button class="new-ticket-btn">+ 提交工单</button>
+        </div>
+        <div class="tickets-stats">
+            <div class="stat-card"><div class="stat-value">156</div><div class="stat-label">全部工单</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#2563eb;">23</div><div class="stat-label">待处理</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#d97706;">45</div><div class="stat-label">处理中</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#16a34a;">78</div><div class="stat-label">已解决</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:#dc2626;">10</div><div class="stat-label">紧急</div></div>
+        </div>
+        <div class="tickets-layout">
+            <div class="tickets-sidebar">
+                <h2 class="sidebar-title">?? 工单分类</h2>
+                <div class="filter-item active">
+                    <div class="filter-icon" style="background:#dbeafe;">??</div>
+                    <span class="filter-name">全部工单</span>
+                    <span class="filter-count">156</span>
+                </div>
+                <div class="filter-item">
+                    <div class="filter-icon" style="background:#fee2e2;">??</div>
+                    <span class="filter-name">Bug反馈</span>
+                    <span class="filter-count">42</span>
+                </div>
+                <div class="filter-item">
+                    <div class="filter-icon" style="background:#dbeafe;">?</div>
+                    <span class="filter-name">功能建议</span>
+                    <span class="filter-count">38</span>
+                </div>
+                <div class="filter-item">
+                    <div class="filter-icon" style="background:#dcfce7;">?</div>
+                    <span class="filter-name">使用咨询</span>
+                    <span class="filter-count">56</span>
+                </div>
+                <div class="filter-item">
+                    <div class="filter-icon" style="background:#fef3c7;">??</div>
+                    <span class="filter-name">计费问题</span>
+                    <span class="filter-count">20</span>
+                </div>
+            </div>
+            <div class="tickets-list">
+                <div class="list-header">
+                    <h2 class="list-title">工单列表</h2>
+                    <div class="list-actions">
+                        <button class="list-btn">筛选 ▼</button>
+                        <button class="list-btn">排序 ▼</button>
+                    </div>
+                </div>
+                <div class="ticket-item">
+                    <div class="ticket-priority high"></div>
+                    <div class="ticket-info">
+                        <div class="ticket-title">API响应超时问题</div>
+                        <div class="ticket-meta">#TK-2024-001 ? 张三 ? 2小时前</div>
+                    </div>
+                    <div class="ticket-tags">
+                        <span class="ticket-tag bug">Bug</span>
+                    </div>
+                    <span class="ticket-status open">待处理</span>
+                </div>
+                <div class="ticket-item">
+                    <div class="ticket-priority medium"></div>
+                    <div class="ticket-info">
+                        <div class="ticket-title">建议增加批量导出功能</div>
+                        <div class="ticket-meta">#TK-2024-002 ? 李四 ? 5小时前</div>
+                    </div>
+                    <div class="ticket-tags">
+                        <span class="ticket-tag feature">功能</span>
+                    </div>
+                    <span class="ticket-status progress">处理中</span>
+                </div>
+                <div class="ticket-item">
+                    <div class="ticket-priority low"></div>
+                    <div class="ticket-info">
+                        <div class="ticket-title">如何配置Webhook回调？</div>
+                        <div class="ticket-meta">#TK-2024-003 ? 王五 ? 1天前</div>
+                    </div>
+                    <div class="ticket-tags">
+                        <span class="ticket-tag support">咨询</span>
+                    </div>
+                    <span class="ticket-status resolved">已解决</span>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

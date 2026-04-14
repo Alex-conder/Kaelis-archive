@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>插件商店 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #0A0A0A; min-height: 100vh; color: white; }
+        .top-nav { background: rgba(23,23,23,0.8); backdrop-filter: blur(10px); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #BD95FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; color: white; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+        .store-header { text-align: center; margin-bottom: 48px; }
+        .store-title { font-size: 48px; font-weight: 800; margin-bottom: 16px; }
+        .store-subtitle { font-size: 18px; color: #A1A1AA; }
+        .search-bar { max-width: 600px; margin: 0 auto 40px; display: flex; gap: 12px; }
+        .search-input { flex: 1; padding: 16px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 16px; }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        .search-btn { padding: 16px 32px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .search-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(136,72,249,0.3); }
+        .category-tabs { display: flex; gap: 12px; margin-bottom: 32px; overflow-x: auto; padding-bottom: 8px; }
+        .category-tab { padding: 12px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #A1A1AA; font-size: 14px; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+        .category-tab:hover { border-color: var(--primary); color: white; }
+        .category-tab.active { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-color: transparent; }
+        .plugins-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        .plugin-card { background: rgba(23,23,23,0.8); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s; cursor: pointer; }
+        .plugin-card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 20px 40px rgba(136,72,249,0.2); }
+        .plugin-header { height: 160px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: 64px; }
+        .plugin-body { padding: 20px; }
+        .plugin-name { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .plugin-desc { font-size: 14px; color: #A1A1AA; margin-bottom: 16px; line-height: 1.5; }
+        .plugin-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6B7280; }
+        .plugin-footer { display: flex; gap: 12px; }
+        .install-btn { flex: 1; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .install-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(136,72,249,0.3); }
+        .install-btn.installed { background: #22C55E; }
+        .detail-btn { padding: 12px 16px; background: transparent; color: #A1A1AA; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.3s; }
+        .detail-btn:hover { border-color: var(--primary); color: white; }
+        .featured-section { margin-bottom: 48px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-title { font-size: 24px; font-weight: 700; }
+        .view-all { color: var(--primary); text-decoration: none; font-weight: 500; }
+        .featured-banner { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 20px; padding: 48px; display: flex; align-items: center; gap: 40px; margin-bottom: 32px; }
+        .featured-icon { width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 64px; }
+        .featured-info { flex: 1; }
+        .featured-name { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+        .featured-desc { font-size: 16px; opacity: 0.9; margin-bottom: 24px; }
+        .featured-btn { padding: 16px 32px; background: white; color: var(--primary); border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .featured-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; transform: translateX(150%); transition: transform 0.3s; z-index: 1000; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: #22C55E; }
+        @media (max-width: 1200px) { .plugins-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .plugins-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .plugins-grid { grid-template-columns: 1fr; } .featured-banner { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn">?</button>
+            <span class="logo">?? 插件商店</span>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn">??</button>
+            <button class="nav-btn">??</button>
+            <button class="nav-btn">??</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="store-header">
+            <h1 class="store-title">发现优秀插件</h1>
+            <p class="store-subtitle">扩展 Kaelis 功能，提升工作效率</p>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="搜索插件..." id="searchInput">
+            <button class="search-btn" onclick="searchPlugins()">?? 搜索</button>
+        </div>
+        
+        <div class="featured-section">
+            <div class="section-header">
+                <h2 class="section-title">? 精选推荐</h2>
+                <a href="#" class="view-all">查看全部 →</a>
+            </div>
+            <div class="featured-banner">
+                <div class="featured-icon">??</div>
+                <div class="featured-info">
+                    <h3 class="featured-name">AI 助手 Pro</h3>
+                    <p class="featured-desc">强大的AI对话增强插件，支持多模型切换、自定义提示词模板、对话历史管理等功能。</p>
+                    <button class="featured-btn" onclick="installPlugin('ai-assistant-pro')">立即安装</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category-tabs">
+            <button class="category-tab active" onclick="filterCategory(this, 'all')">全部</button>
+            <button class="category-tab" onclick="filterCategory(this, 'ai')">?? AI工具</button>
+            <button class="category-tab" onclick="filterCategory(this, 'data')">?? 数据分析</button>
+            <button class="category-tab" onclick="filterCategory(this, 'visual')">?? 可视化</button>
+            <button class="category-tab" onclick="filterCategory(this, 'dev')">?? 开发工具</button>
+            <button class="category-tab" onclick="filterCategory(this, 'productivity')">? 效率工具</button>
+            <button class="category-tab" onclick="filterCategory(this, 'security')">?? 安全</button>
+        </div>
+        
+        <div class="plugins-grid" id="pluginsGrid">
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">数据可视化套件</h3>
+                    <p class="plugin-desc">强大的图表库，支持20+种图表类型，让数据更直观</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.9</span>
+                        <span class="meta-item">?? 12.5k</span>
+                        <span class="meta-item">? 免费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('data-viz')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('data-viz')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">智能文档助手</h3>
+                    <p class="plugin-desc">AI驱动的文档生成和编辑工具，提升写作效率</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.8</span>
+                        <span class="meta-item">?? 8.3k</span>
+                        <span class="meta-item">?? 付费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('doc-assistant')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('doc-assistant')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">安全审计工具</h3>
+                    <p class="plugin-desc">自动化安全扫描，保护您的应用免受常见漏洞威胁</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.7</span>
+                        <span class="meta-item">?? 5.2k</span>
+                        <span class="meta-item">? 免费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('security-audit')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('security-audit')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">UI 组件库</h3>
+                    <p class="plugin-desc">精美的React组件集合，快速构建现代化界面</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.9</span>
+                        <span class="meta-item">?? 15.8k</span>
+                        <span class="meta-item">? 免费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('ui-components')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('ui-components')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">?</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">工作流自动化</h3>
+                    <p class="plugin-desc">可视化流程设计器，自动化重复性工作任务</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.6</span>
+                        <span class="meta-item">?? 6.7k</span>
+                        <span class="meta-item">?? 付费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('workflow-auto')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('workflow-auto')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">API 测试工具</h3>
+                    <p class="plugin-desc">强大的API调试和测试工具，支持多种协议</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.8</span>
+                        <span class="meta-item">?? 9.1k</span>
+                        <span class="meta-item">? 免费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('api-tester')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('api-tester')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">数据报表生成器</h3>
+                    <p class="plugin-desc">一键生成专业数据报表，支持多种导出格式</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.5</span>
+                        <span class="meta-item">?? 4.2k</span>
+                        <span class="meta-item">?? 付费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('report-generator')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('report-generator')">详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plugin-card">
+                <div class="plugin-header">??</div>
+                <div class="plugin-body">
+                    <h3 class="plugin-name">A/B 测试工具</h3>
+                    <p class="plugin-desc">科学的实验设计和效果分析，优化产品决策</p>
+                    <div class="plugin-meta">
+                        <span class="meta-item">? 4.7</span>
+                        <span class="meta-item">?? 3.8k</span>
+                        <span class="meta-item">? 免费</span>
+                    </div>
+                    <div class="plugin-footer">
+                        <button class="install-btn" onclick="installPlugin('ab-tester')">安装</button>
+                        <button class="detail-btn" onclick="viewDetail('ab-tester')">详情</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function installPlugin(pluginId) {
+            showToast('正在安装插件...', 'success');
+            setTimeout(() => {
+                showToast('插件安装成功!', 'success');
+            }, 1500);
+        }
+        
+        function viewDetail(pluginId) {
+            showToast('正在加载详情...', 'success');
+        }
+        
+        function searchPlugins() {
+            const query = document.getElementById('searchInput').value;
+            if (query) {
+                showToast(`搜索: ${query}`, 'success');
+            }
+        }
+        
+        function filterCategory(tab, category) {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            showToast(`已切换到: ${tab.textContent}`, 'success');
+        }
+        
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

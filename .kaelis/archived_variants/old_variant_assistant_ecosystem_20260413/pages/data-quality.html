@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据质量 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: #f8fafc; min-height: 100vh; }
+        .top-nav { background: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .menu-btn { width: 40px; height: 40px; border: none; background: #f1f5f9; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .logo { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-right { display: flex; gap: 12px; }
+        .nav-btn { width: 40px; height: 40px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .quality-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .quality-header h1 { font-size: 24px; font-weight: 600; color: #1e293b; }
+        .new-rule-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .quality-score { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .score-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .score-circle { width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(#16a34a 342deg, #e2e8f0 0deg); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; position: relative; }
+        .score-circle::before { content: ''; position: absolute; width: 64px; height: 64px; background: white; border-radius: 50%; }
+        .score-value { position: relative; font-size: 24px; font-weight: 700; color: #16a34a; }
+        .score-label { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .score-desc { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .quality-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .rules-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px; }
+        .rule-item { display: flex; align-items: center; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; }
+        .rule-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px; }
+        .rule-info { flex: 1; }
+        .rule-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .rule-desc { font-size: 12px; color: #64748b; }
+        .rule-status { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .rule-status.pass { background: #dcfce7; color: #16a34a; }
+        .rule-status.fail { background: #fee2e2; color: #dc2626; }
+        .rule-status.warn { background: #fef3c7; color: #d97706; }
+        .issues-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .issue-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+        .issue-item:last-child { border-bottom: none; }
+        .issue-severity { width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; }
+        .issue-severity.critical { background: #dc2626; }
+        .issue-severity.warning { background: #d97706; }
+        .issue-severity.info { background: #3b82f6; }
+        .issue-content { flex: 1; }
+        .issue-title { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .issue-meta { font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><button class="menu-btn">?</button><span class="logo">数据质量</span></div>
+        <div class="nav-right"><button class="nav-btn">??</button><button class="nav-btn">??</button><button class="nav-btn">??</button></div>
+    </nav>
+    <div class="container">
+        <div class="quality-header">
+            <h1>数据质量管理</h1>
+            <button class="new-rule-btn">+ 新建规则</button>
+        </div>
+        <div class="quality-score">
+            <div class="score-card">
+                <div class="score-circle"><span class="score-value">95%</span></div>
+                <div class="score-label">整体质量</div>
+                <div class="score-desc">1,234 张表</div>
+            </div>
+            <div class="score-card">
+                <div class="score-circle" style="background:conic-gradient(#16a34a 342deg, #e2e8f0 0deg);"><span class="score-value" style="color:#16a34a;">98%</span></div>
+                <div class="score-label">完整性</div>
+                <div class="score-desc">无空值</div>
+            </div>
+            <div class="score-card">
+                <div class="score-circle" style="background:conic-gradient(#d97706 288deg, #e2e8f0 0deg);"><span class="score-value" style="color:#d97706;">88%</span></div>
+                <div class="score-label">准确性</div>
+                <div class="score-desc">12 个问题</div>
+            </div>
+            <div class="score-card">
+                <div class="score-circle" style="background:conic-gradient(#16a34a 342deg, #e2e8f0 0deg);"><span class="score-value" style="color:#16a34a;">99%</span></div>
+                <div class="score-label">一致性</div>
+                <div class="score-desc">格式统一</div>
+            </div>
+        </div>
+        <div class="quality-grid">
+            <div class="rules-card">
+                <h2 class="card-title">质量规则</h2>
+                <div class="rule-item">
+                    <div class="rule-icon" style="background:#dbeafe;">??</div>
+                    <div class="rule-info"><div class="rule-name">非空检查</div><div class="rule-desc">关键字段不能为空</div></div>
+                    <span class="rule-status pass">? 通过</span>
+                </div>
+                <div class="rule-item">
+                    <div class="rule-icon" style="background:#dcfce7;">??</div>
+                    <div class="rule-info"><div class="rule-name">数值范围</div><div class="rule-desc">数值在合理范围内</div></div>
+                    <span class="rule-status pass">? 通过</span>
+                </div>
+                <div class="rule-item">
+                    <div class="rule-icon" style="background:#fef3c7;">??</div>
+                    <div class="rule-info"><div class="rule-name">邮箱格式</div><div class="rule-desc">符合邮箱格式规范</div></div>
+                    <span class="rule-status warn">? 警告</span>
+                </div>
+                <div class="rule-item">
+                    <div class="rule-icon" style="background:#fee2e2;">??</div>
+                    <div class="rule-info"><div class="rule-name">唯一性</div><div class="rule-desc">主键无重复</div></div>
+                    <span class="rule-status fail">? 失败</span>
+                </div>
+            </div>
+            <div class="issues-card">
+                <h2 class="card-title">质量问题</h2>
+                <div class="issue-item">
+                    <div class="issue-severity critical"></div>
+                    <div class="issue-content"><div class="issue-title">users.phone 存在重复</div><div class="issue-meta">影响 23 条记录</div></div>
+                </div>
+                <div class="issue-item">
+                    <div class="issue-severity warning"></div>
+                    <div class="issue-content"><div class="issue-title">orders.amount 为负数</div><div class="issue-meta">发现 5 条异常</div></div>
+                </div>
+                <div class="issue-item">
+                    <div class="issue-severity info"></div>
+                    <div class="issue-content"><div class="issue-title">products.desc 为空</div><div class="issue-meta">156 条记录</div></div>
+                </div>
+            </div>
+        </div>
+    </div>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

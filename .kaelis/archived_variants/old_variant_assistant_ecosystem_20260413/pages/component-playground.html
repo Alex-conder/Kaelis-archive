@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组件游乐场 - Kaelis</title>
+    <link rel="stylesheet" href="../assets/styles/variables.css"
+    <link rel="stylesheet" href="../assets/styles/components.css">>
+    <style>
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; 
+            background: #0A0A0A; 
+            min-height: 100vh; 
+            color: white;
+            display: flex;
+        }
+        
+        /* 侧边栏 */
+        .sidebar { 
+            width: 280px; 
+            background: rgba(23,23,23,0.95); 
+            border-right: 1px solid rgba(255,255,255,0.1);
+            height: 100vh;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .sidebar-title { 
+            font-size: 20px; 
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+        .component-list { }
+        .component-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        .component-item:hover, .component-item.active { 
+            background: rgba(136,72,249,0.1);
+        }
+        .component-item.active { border: 1px solid var(--primary); }
+        .component-icon { 
+            width: 40px; 
+            height: 40px; 
+            background: rgba(136,72,249,0.2); 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px;
+        }
+        .component-name { font-size: 14px; }
+        
+        /* 主内容区 */
+        .main { 
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* 预览区 */
+        .preview-area { 
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            position: relative;
+            padding: 40px;
+        }
+        .preview-grid { 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(136,72,249,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(136,72,249,0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+        .preview-content { 
+            background: rgba(23,23,23,0.9); 
+            border-radius: 16px; 
+            padding: 40px;
+            min-width: 300px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        /* 控制面板 */
+        .control-panel { 
+            height: 320px;
+            background: rgba(23,23,23,0.95);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+        }
+        .control-section { 
+            flex: 1;
+            padding: 24px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            overflow-y: auto;
+        }
+        .control-section:last-child { border-right: none; }
+        .control-title { 
+            font-size: 14px; 
+            color: #6B7280; 
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+        
+        /* 控制器 */
+        .control-group { margin-bottom: 20px; }
+        .control-label { 
+            display: block; 
+            font-size: 13px; 
+            color: #A1A1AA; 
+            margin-bottom: 8px;
+        }
+        .control-input { 
+            width: 100%; 
+            padding: 10px 12px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+        }
+        .control-input:focus { 
+            outline: none; 
+            border-color: var(--primary);
+        }
+        .control-select { 
+            width: 100%; 
+            padding: 10px 12px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .control-select option { background: #1a1a2e; }
+        
+        /* 开关 */
+        .control-switch { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            cursor: pointer;
+        }
+        .switch { 
+            width: 44px; 
+            height: 24px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 12px; 
+            position: relative;
+            transition: all 0.3s;
+        }
+        .switch.active { background: var(--primary); }
+        .switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .switch.active::after { left: 22px; }
+        
+        /* 颜色选择器 */
+        .color-picker { 
+            display: flex; 
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .color-option { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 8px; 
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.active { border-color: white; }
+        
+        /* 代码预览 */
+        .code-preview { 
+            background: #1a1a2e; 
+            border-radius: 8px; 
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre;
+            color: #A1A1AA;
+        }
+        .code-tag { color: #f07178; }
+        .code-attr { color: #ffcb6b; }
+        .code-string { color: #c3e88d; }
+        
+        /* 尺寸滑块 */
+        .size-slider { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+        }
+        .slider { 
+            flex: 1; 
+            height: 6px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+        .slider-fill { 
+            height: 100%; 
+            background: var(--primary); 
+            border-radius: 3px;
+            width: 50%;
+        }
+        .slider-thumb { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            width: 16px; 
+            height: 16px; 
+            background: white; 
+            border-radius: 50%; 
+            transform: translate(-50%, -50%);
+            cursor: grab;
+        }
+        
+        /* 按钮样式 */
+        .btn { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary  { @extend .btn-primary; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-success { background: #22C55E; color: white; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-warning { background: #F59E0B; color: white; }
+        
+        .btn-sm { padding: 8px 16px; font-size: 12px; }
+        .btn-lg { padding: 16px 32px; font-size: 16px; }
+        
+        /* 输入框样式 */
+        .input { 
+            padding: 12px 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 14px;
+            width: 100%;
+        }
+        .input:focus { outline: none; border-color: var(--primary); }
+        
+        /* 卡片样式 */
+        .card { 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-title { font-size: 18px; margin-bottom: 8px; }
+        .card-text { font-size: 14px; color: #6B7280; }
+        
+        /* 徽章样式 */
+        .badge { 
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-primary { background: rgba(136,72,249,0.2); color: var(--primary); }
+        .badge-success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .badge-warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .badge-danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+        
+        /* 警告框样式 */
+        .alert { 
+            padding: 16px 20px; 
+            border-radius: 8px; 
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .alert-info { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); }
+        .alert-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+        .alert-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+        .alert-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-title">?? 组件游乐场</div>
+        <div class="component-list">
+            <div class="component-item active" onclick="selectComponent('button')">
+                <div class="component-icon">??</div>
+                <div class="component-name">Button 按钮</div>
+            </div>
+            <div class="component-item" onclick="selectComponent('input')">
+                <div class="component-icon">??</div>
+                <div class="component-name">Input 输入框</div>
+            </div>
+            <div class="component-item" onclick="selectComponent('card')">
+                <div class="component-icon">??</div>
+                <div class="component-name">Card 卡片</div>
+            </div>
+            <div class="component-item" onclick="selectComponent('badge')">
+                <div class="component-icon">???</div>
+                <div class="component-name">Badge 徽章</div>
+            </div>
+            <div class="component-item" onclick="selectComponent('alert')">
+                <div class="component-icon">??</div>
+                <div class="component-name">Alert 警告框</div>
+            </div>
+        </div>
+    </aside>
+    
+    <main class="main">
+        <div class="preview-area">
+            <div class="preview-grid"></div>
+            <div class="preview-content" id="previewContent">
+                <button class="btn btn-primary" id="previewBtn">按钮</button>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="control-section">
+                <div class="control-title">属性配置</div>
+                <div id="controlsContainer">
+                    <!-- 按钮控制 -->
+                    <div class="control-group">
+                        <label class="control-label">按钮文字</label>
+                        <input type="text" class="control-input" id="btnText" value="按钮" oninput="updateButton()">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">按钮类型</label>
+                        <select class="control-select" id="btnType" onchange="updateButton()">
+                            <option value="primary">Primary</option>
+                            <option value="secondary">Secondary</option>
+                            <option value="success">Success</option>
+                            <option value="danger">Danger</option>
+                            <option value="warning">Warning</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">按钮尺寸</label>
+                        <select class="control-select" id="btnSize" onchange="updateButton()">
+                            <option value="">Default</option>
+                            <option value="sm">Small</option>
+                            <option value="lg">Large</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-switch" onclick="toggleSwitch(this)">
+                            <div class="switch" id="btnDisabled"></div>
+                            <span>禁用状态</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="control-title">样式配置</div>
+                <div class="control-group">
+                    <label class="control-label">主题色</label>
+                    <div class="color-picker">
+                        <div class="color-option active" style="background: var(--primary);" onclick="selectColor(this, 'var(--primary)')"></div>
+                        <div class="color-option" style="background: var(--secondary);" onclick="selectColor(this, 'var(--secondary)')"></div>
+                        <div class="color-option" style="background: #22C55E;" onclick="selectColor(this, '#22C55E')"></div>
+                        <div class="color-option" style="background: #F59E0B;" onclick="selectColor(this, '#F59E0B')"></div>
+                        <div class="color-option" style="background: #EF4444;" onclick="selectColor(this, '#EF4444')"></div>
+                        <div class="color-option" style="background: #EC4899;" onclick="selectColor(this, '#EC4899')"></div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">圆角大小</label>
+                    <div class="size-slider">
+                        <div class="slider" onclick="updateRadius(event)">
+                            <div class="slider-fill" id="radiusFill" style="width: 50%"></div>
+                            <div class="slider-thumb" id="radiusThumb" style="left: 50%"></div>
+                        </div>
+                        <span id="radiusValue">8px</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="control-title">代码预览</div>
+                <div class="code-preview" id="codePreview">
+&lt;<span class="code-tag">button</span> <span class="code-attr">class</span>=<span class="code-string">"btn btn-primary"</span>&gt;
+  按钮
+&lt;/<span class="code-tag">button</span>&gt;
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentComponent = 'button';
+        let currentColor = 'var(--primary)';
+        
+        function selectComponent(type) {
+            currentComponent = type;
+            document.querySelectorAll('.component-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.component-item').classList.add('active');
+            
+            const preview = document.getElementById('previewContent');
+            const controls = document.getElementById('controlsContainer');
+            
+            switch(type) {
+                case 'button':
+                    preview.innerHTML = '<button class="btn btn-primary" id="previewBtn">按钮</button>';
+                    controls.innerHTML = `
+                        <div class="control-group">
+                            <label class="control-label">按钮文字</label>
+                            <input type="text" class="control-input" id="btnText" value="按钮" oninput="updateButton()">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">按钮类型</label>
+                            <select class="control-select" id="btnType" onchange="updateButton()">
+                                <option value="primary">Primary</option>
+                                <option value="secondary">Secondary</option>
+                                <option value="success">Success</option>
+                                <option value="danger">Danger</option>
+                                <option value="warning">Warning</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">按钮尺寸</label>
+                            <select class="control-select" id="btnSize" onchange="updateButton()">
+                                <option value="">Default</option>
+                                <option value="sm">Small</option>
+                                <option value="lg">Large</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+                case 'input':
+                    preview.innerHTML = '<input type="text" class="input" placeholder="请输入内容" id="previewInput">';
+                    controls.innerHTML = `
+                        <div class="control-group">
+                            <label class="control-label">占位符</label>
+                            <input type="text" class="control-input" value="请输入内容" oninput="document.getElementById('previewInput').placeholder = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">输入类型</label>
+                            <select class="control-select" onchange="document.getElementById('previewInput').type = this.value">
+                                <option value="text">Text</option>
+                                <option value="password">Password</option>
+                                <option value="email">Email</option>
+                                <option value="number">Number</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+                case 'card':
+                    preview.innerHTML = `
+                        <div class="card" id="previewCard" style="width: 300px;">
+                            <div class="card-title">卡片标题</div>
+                            <div class="card-text">这是一张卡片组件，用于展示相关内容。</div>
+                        </div>
+                    `;
+                    controls.innerHTML = `
+                        <div class="control-group">
+                            <label class="control-label">卡片标题</label>
+                            <input type="text" class="control-input" value="卡片标题" oninput="document.querySelector('.card-title').textContent = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">卡片内容</label>
+                            <input type="text" class="control-input" value="这是一张卡片组件，用于展示相关内容。" oninput="document.querySelector('.card-text').textContent = this.value">
+                        </div>
+                    `;
+                    break;
+                case 'badge':
+                    preview.innerHTML = '<span class="badge badge-primary" id="previewBadge">徽章</span>';
+                    controls.innerHTML = `
+                        <div class="control-group">
+                            <label class="control-label">徽章文字</label>
+                            <input type="text" class="control-input" value="徽章" oninput="document.getElementById('previewBadge').textContent = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">徽章类型</label>
+                            <select class="control-select" onchange="updateBadge(this.value)">
+                                <option value="primary">Primary</option>
+                                <option value="success">Success</option>
+                                <option value="warning">Warning</option>
+                                <option value="danger">Danger</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+                case 'alert':
+                    preview.innerHTML = '<div class="alert alert-info" id="previewAlert">?? 这是一条提示信息</div>';
+                    controls.innerHTML = `
+                        <div class="control-group">
+                            <label class="control-label">警告类型</label>
+                            <select class="control-select" onchange="updateAlert(this.value)">
+                                <option value="info">Info</option>
+                                <option value="success">Success</option>
+                                <option value="warning">Warning</option>
+                                <option value="danger">Danger</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">提示内容</label>
+                            <input type="text" class="control-input" value="这是一条提示信息" oninput="updateAlertText(this.value)">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            updateCodePreview();
+        }
+        
+        function updateButton() {
+            const btn = document.getElementById('previewBtn');
+            const text = document.getElementById('btnText').value;
+            const type = document.getElementById('btnType').value;
+            const size = document.getElementById('btnSize').value;
+            
+            btn.textContent = text;
+            btn.className = 'btn btn-' + type + (size ? ' btn-' + size : '');
+            
+            updateCodePreview();
+        }
+        
+        function updateBadge(type) {
+            const badge = document.getElementById('previewBadge');
+            badge.className = 'badge badge-' + type;
+            updateCodePreview();
+        }
+        
+        function updateAlert(type) {
+            const alert = document.getElementById('previewAlert');
+            const icons = { info: '??', success: '?', warning: '??', danger: '?' };
+            alert.className = 'alert alert-' + type;
+            updateAlertText(alert.textContent.substring(2));
+            updateCodePreview();
+        }
+        
+        function updateAlertText(text) {
+            const alert = document.getElementById('previewAlert');
+            const type = alert.className.replace('alert alert-', '');
+            const icons = { info: '??', success: '?', warning: '??', danger: '?' };
+            alert.textContent = icons[type] + ' ' + text;
+            updateCodePreview();
+        }
+        
+        function toggleSwitch(el) {
+            const switchEl = el.querySelector('.switch');
+            switchEl.classList.toggle('active');
+        }
+        
+        function selectColor(el, color) {
+            document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+            currentColor = color;
+            
+            // 更新预览组件颜色
+            const btn = document.getElementById('previewBtn');
+            if (btn) {
+                btn.style.background = color;
+            }
+        }
+        
+        function updateRadius(event) {
+            const slider = event.currentTarget;
+            const rect = slider.getBoundingClientRect();
+            const percent = (event.clientX - rect.left) / rect.width;
+            const radius = Math.round(percent * 20);
+            
+            document.getElementById('radiusFill').style.width = (percent * 100) + '%';
+            document.getElementById('radiusThumb').style.left = (percent * 100) + '%';
+            document.getElementById('radiusValue').textContent = radius + 'px';
+            
+            const btn = document.getElementById('previewBtn');
+            if (btn) btn.style.borderRadius = radius + 'px';
+        }
+        
+        function updateCodePreview() {
+            const preview = document.getElementById('previewContent');
+            const codePreview = document.getElementById('codePreview');
+            
+            // 简化版代码预览
+            const html = preview.innerHTML
+                .replace(/ class="([^"]+)"/g, ' <span class="code-attr">class</span>=<span class="code-string">"$1"</span>')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/&lt;(\w+)/g, '&lt;<span class="code-tag">$1</span>')
+                .replace(/&lt;\/(\w+)&gt;/g, '&lt;/<span class="code-tag">$1</span>&gt;');
+            
+            codePreview.innerHTML = html;
+        }
+        
+        // 初始化
+        updateCodePreview();
+    </script>></script>
+    <!-- Kaelis 缁熶竴鍔犺浇鍣?-->
+    <script src="../assets/js/kaelis-loader.js" data-modules="standard"></script>
+
+</body>
+</html>
+

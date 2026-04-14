@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelis 科研级系统 v4.1 - 分子对接</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 40px 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 48px; font-weight: 800; color: white; margin-bottom: 12px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .header p { font-size: 18px; color: rgba(255,255,255,0.9); }
+        .badge-docking { display: inline-block; padding: 8px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 14px; color: white; margin-top: 16px; }
+        .stats { display: flex; justify-content: center; gap: 60px; margin-bottom: 40px; }
+        .stat { text-align: center; color: white; }
+        .stat-value { font-size: 42px; font-weight: 700; }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+        .section { background: rgba(255,255,255,0.95); border-radius: 24px; padding: 32px; margin-bottom: 24px; backdrop-filter: blur(10px); }
+        .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .section-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .section-icon.docking { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; }
+        .section-icon.research { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .section-icon.core { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; }
+        .section-title { font-size: 24px; font-weight: 700; color: #1e293b; }
+        .section-desc { font-size: 14px; color: #64748b; margin-top: 4px; }
+        .feature-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .feature-card { display: flex; align-items: center; padding: 20px; background: #f8fafc; border-radius: 16px; text-decoration: none; color: #1e293b; transition: all 0.3s; border: 1px solid transparent; }
+        .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); border-color: #0ea5e9; }
+        .feature-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 16px; }
+        .feature-icon.blue { background: #dbeafe; }
+        .feature-icon.green { background: #dcfce7; }
+        .feature-icon.purple { background: #f3e8ff; }
+        .feature-icon.orange { background: #ffedd5; }
+        .feature-icon.cyan { background: #cffafe; }
+        .feature-info { flex: 1; }
+        .feature-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .feature-desc { font-size: 12px; color: #64748b; }
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-left: 8px; }
+        .badge.new { background: #fef3c7; color: #d97706; }
+        .badge.docking { background: #dbeafe; color: #0284c7; }
+        .methods-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+        .method-tag { padding: 8px 16px; background: #f0f9ff; border-radius: 20px; font-size: 13px; color: #0284c7; font-weight: 500; }
+        .footer { text-align: center; color: rgba(255,255,255,0.8); margin-top: 40px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Kaelis 科研级系统 v4.1</h1>
+            <p>企业级 AI 平台 · 科研数据管理 · 分子对接分析</p>
+            <div class="badge-docking">🧬 新增分子对接分析功能</div>
+        </div>
+        <div class="stats">
+            <div class="stat"><div class="stat-value">67</div><div class="stat-label">总页面数</div></div>
+            <div class="stat"><div class="stat-value">19</div><div class="stat-label">功能模块</div></div>
+            <div class="stat"><div class="stat-value">6</div><div class="stat-label">科研功能</div></div>
+            <div class="stat"><div class="stat-value">5</div><div class="stat-label">对接方法</div></div>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon docking">🧬</div>
+                <div>
+                    <div class="section-title">分子对接分析 <span class="badge docking">NEW</span></div>
+                    <div class="section-desc">基于五种对接方法的药物-靶点相互作用预测系统</div>
+                </div>
+            </div>
+            <div class="feature-grid">
+                <a href="pages/docking-analysis.html" class="feature-card">
+                    <div class="feature-icon blue">📊</div>
+                    <div class="feature-info">
+                        <div class="feature-name">对接分析总览 <span class="badge new">NEW</span></div>
+                        <div class="feature-desc">五种方法、三种药物、五种靶点</div>
+                    </div>
+                </a>
+                <a href="pages/meropenem-docking.html" class="feature-card">
+                    <div class="feature-icon green">💊</div>
+                    <div class="feature-info">
+                        <div class="feature-name">美罗培南对接 <span class="badge new">NEW</span></div>
+                        <div class="feature-desc">碳青霉烯类抗生素对接结果</div>
+                    </div>
+                </a>
+                <a href="pages/vancomycin-docking.html" class="feature-card">
+                    <div class="feature-icon purple">🧪</div>
+                    <div class="feature-info">
+                        <div class="feature-name">万古霉素对接 <span class="badge new">NEW</span></div>
+                        <div class="feature-desc">糖肽类抗生素对接结果</div>
+                    </div>
+                </a>
+                <a href="pages/combination-docking.html" class="feature-card">
+                    <div class="feature-icon cyan">⚗️</div>
+                    <div class="feature-info">
+                        <div class="feature-name">联合用药分析 <span class="badge new">NEW</span></div>
+                        <div class="feature-desc">FICI协同指数、剂量效应</div>
+                    </div>
+                </a>
+            </div>
+            <div class="methods-row">
+                <span class="method-tag">AutoDock Vina</span>
+                <span class="method-tag">GOLD</span>
+                <span class="method-tag">Glide</span>
+                <span class="method-tag">LeadIT</span>
+                <span class="method-tag">PLANTS</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon research">🔬</div>
+                <div>
+                    <div class="section-title">科研功能模块</div>
+                    <div class="section-desc">专为科研工作者设计的数据管理、实验追踪和论文管理功能</div>
+                </div>
+            </div>
+            <div class="feature-grid">
+                <a href="pages/research-data.html" class="feature-card">
+                    <div class="feature-icon blue">📊</div>
+                    <div class="feature-info">
+                        <div class="feature-name">科研数据管理</div>
+                        <div class="feature-desc">数据集浏览、质量评分、存储管理</div>
+                    </div>
+                </a>
+                <a href="pages/experiment-design.html" class="feature-card">
+                    <div class="feature-icon green">🔬</div>
+                    <div class="feature-info">
+                        <div class="feature-name">实验设计与记录</div>
+                        <div class="feature-desc">实验创建、进度追踪、模板管理</div>
+                    </div>
+                </a>
+                <a href="pages/paper-management.html" class="feature-card">
+                    <div class="feature-icon purple">📚</div>
+                    <div class="feature-info">
+                        <div class="feature-name">论文管理与引用</div>
+                        <div class="feature-desc">论文库、引用导出、h-index统计</div>
+                    </div>
+                </a>
+                <a href="pages/peer-review.html" class="feature-card">
+                    <div class="feature-icon orange">🤝</div>
+                    <div class="feature-info">
+                        <div class="feature-name">科研协作与审稿</div>
+                        <div class="feature-desc">同行评审、团队协作、批注讨论</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🎨 Kaelis Research System v4.1 | 67个页面 | 19个模块 | 分子对接分析</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaelis 智流 - 代谢组学分析</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        header h1 {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+        }
+        
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+        
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .drop-zone:hover {
+            border-color: var(--primary-color);
+            background: #f8fafc;
+        }
+        
+        .drop-zone.dragover {
+            border-color: var(--primary-color);
+            background: #dbeafe;
+        }
+        
+        .drop-zone h3 {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .drop-zone p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        /* Quick Test Section */
+        .quick-test {
+            background: linear-gradient(135deg, #dbeafe, #ede9fe);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .quick-test h3 {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quick-test p {
+            color: #1e40af;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Results Section */
+        .results-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        
+        .result-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Image */
+        .result-image {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table th {
+            font-weight: 600;
+            background: var(--bg-color);
+        }
+        
+        /* Button */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🧬 代谢组学分析</h1>
+            <p>mzML 质谱数据解析、峰检测、多元统计分析</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="alert" class="alert"></div>
+        
+        <!-- 快速测试 -->
+        <div class="quick-test">
+            <h3>⚡ 快速测试</h3>
+            <p>使用本地测试文件进行演示分析</p>
+            <button class="btn btn-primary" onclick="runQuickTest()">
+                运行快速测试
+            </button>
+        </div>
+        
+        <!-- 文件上传 -->
+        <div class="upload-section">
+            <h2 style="margin-bottom: 1rem;">📁 上传 mzML 文件</h2>
+            <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                <h3>点击或拖拽文件到此处</h3>
+                <p>支持 .mzML, .mzXML 格式</p>
+            </div>
+            <input type="file" id="fileInput" class="file-input" accept=".mzML,.mzml,.mzXML" onchange="handleFileUpload(event)">
+        </div>
+        
+        <!-- 结果展示 -->
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <!-- 文件信息 -->
+            <div class="result-card">
+                <h2>📊 文件信息</h2>
+                <div class="stats-grid" id="fileStats">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+            
+            <!-- 色谱图 -->
+            <div class="result-card">
+                <h2>📈 总离子流色谱图 (TIC)</h2>
+                <img id="chromatogramPlot" class="result-image" style="display: none;">
+            </div>
+            
+            <!-- 峰列表 -->
+            <div class="result-card">
+                <h2>🔍 检测到的峰</h2>
+                <div id="peaksTable">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 加载状态 -->
+        <div id="loadingSection" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem;">分析中...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/metabolomics';
+        
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 3000);
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingSection').style.display = show ? 'block' : 'none';
+        }
+        
+        function showResults(show) {
+            document.getElementById('resultsSection').style.display = show ? 'grid' : 'none';
+        }
+        
+        // 运行快速测试
+        async function runQuickTest() {
+            showLoading(true);
+            showResults(false);
+            
+            try {
+                const res = await fetch(`${API_BASE}/quick-test`);
+                const data = await res.json();
+                
+                showLoading(false);
+                
+                if (data.success) {
+                    displayResults(data.data);
+                    showAlert('快速测试完成！');
+                } else {
+                    showAlert(data.error || '测试失败', 'error');
+                }
+            } catch (e) {
+                showLoading(false);
+                showAlert('测试失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 处理文件上传
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            showLoading(true);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                // 上传
+                const uploadRes = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const uploadData = await uploadRes.json();
+                
+                if (!uploadData.success) {
+                    showAlert(uploadData.error || '上传失败', 'error');
+                    showLoading(false);
+                    return;
+                }
+                
+                // 分析
+                const analyzeRes = await fetch(`${API_BASE}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filepath: uploadData.data.filepath,
+                        detect_peaks: true,
+                        max_spectra: 100  // 限制解析数量
+                    })
+                });
+                
+                const analyzeData = await analyzeRes.json();
+                
+                showLoading(false);
+                
+                if (analyzeData.success) {
+                    displayResults(analyzeData.data);
+                    showAlert('分析完成！');
+                } else {
+                    showAlert(analyzeData.error || '分析失败', 'error');
+                }
+                
+            } catch (e) {
+                showLoading(false);
+                showAlert('上传失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 显示结果
+        function displayResults(data) {
+            showResults(true);
+            
+            // 文件统计
+            const statsHtml = `
+                <div class="stat-item">
+                    <div class="stat-value">${data.file_info?.file_size_mb || '-'}</div>
+                    <div class="stat-label">文件大小 (MB)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.file_info?.ms1_count || '-'}</div>
+                    <div class="stat-label">MS1 谱图</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.file_info?.rt_start?.toFixed?.(1) || '-'}</div>
+                    <div class="stat-label">起始时间 (min)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.file_info?.rt_end?.toFixed?.(1) || '-'}</div>
+                    <div class="stat-label">结束时间 (min)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.n_peaks || data.peaks?.length || 0}</div>
+                    <div class="stat-label">检测到的峰</div>
+                </div>
+            `;
+            document.getElementById('fileStats').innerHTML = statsHtml;
+            
+            // 色谱图
+            if (data.chromatogram_plot) {
+                document.getElementById('chromatogramPlot').src = `data:image/png;base64,${data.chromatogram_plot}`;
+                document.getElementById('chromatogramPlot').style.display = 'block';
+            }
+            
+            // 峰列表
+            const peaks = data.peaks || data.peaks_preview || [];
+            if (peaks.length > 0) {
+                let tableHtml = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>RT (min)</th>
+                                <th>峰面积</th>
+                                <th>峰高</th>
+                                <th>峰宽 (min)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                peaks.slice(0, 10).forEach(peak => {
+                    tableHtml += `
+                        <tr>
+                            <td>${peak.rt?.toFixed?.(2) || peak.rt}</td>
+                            <td>${peak.intensity?.toExponential?.(2) || peak.intensity}</td>
+                            <td>${peak.height?.toExponential?.(2) || peak.height}</td>
+                            <td>${peak.width?.toFixed?.(2) || peak.width}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHtml += '</tbody></table>';
+                
+                if (peaks.length > 10) {
+                    tableHtml += `<p style="margin-top: 0.5rem; color: var(--text-secondary);">... 还有 ${peaks.length - 10} 个峰</p>`;
+                }
+                
+                document.getElementById('peaksTable').innerHTML = tableHtml;
+            } else {
+                document.getElementById('peaksTable').innerHTML = '<p>未检测到峰</p>';
+            }
+        }
+        
+        // 拖拽上传
+        const dropZone = document.querySelector('.drop-zone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                handleFileUpload({ target: { files: files } });
+            }
+        });
+    </script>
+</body>
+</html>
