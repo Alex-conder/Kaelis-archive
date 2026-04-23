@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useAuthUser } from '@/features/auth/hooks'
 import Layout from './app/Layout'
 import LoginPage from './pages/LoginPage'
@@ -36,7 +36,7 @@ function AppLayout() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppInitializer>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -49,7 +49,7 @@ function App() {
           <Route path="/" element={<Navigate to="/chat" replace />} />
         </Routes>
       </AppInitializer>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
