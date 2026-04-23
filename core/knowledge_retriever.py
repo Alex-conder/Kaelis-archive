@@ -39,7 +39,7 @@ except ImportError:
 
 try:
     from langchain_community.vectorstores import FAISS
-    from langchain_community.embeddings import OpenAIEmbeddings
+    from langchain_openai import OpenAIEmbeddings
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False

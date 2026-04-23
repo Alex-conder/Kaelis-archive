@@ -13,7 +13,7 @@ Usage:
 """
 
 from flask import Blueprint, request, jsonify, g
-from pydantic import BaseModel, ConfigDict, ValidationError, Field
+from pydantic import BaseModel, ValidationError, Field
 from typing import Any, Optional, List, Dict
 from datetime import datetime, timezone
 from functools import wraps
@@ -57,7 +57,6 @@ class MetabolomicsAnalyzeRequest(BaseModel):
     
     
     
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
@@ -89,7 +88,6 @@ class MetabolomicsAnalyzeResponse(BaseModel):
     
     
     
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
@@ -117,7 +115,6 @@ class BaseResponse(BaseModel):
     
     
     
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
