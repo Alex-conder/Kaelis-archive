@@ -421,10 +421,28 @@ function SharedMemorySection() {
     showSubscriptions && autoRefresh,
   )
 
-  // Track new events for highlight animation
+  const prevEventIdsRef = useRef<Set<number>>(new Set())
+
+  // Track new events for highlight animation + desktop notification
   useEffect(() => {
-    setLastEventIds(new Set(spaceEvents.map((e) => e.id)))
-  }, [spaceEvents])
+    const currentIds = new Set(spaceEvents.map((e) => e.id))
+    const newEvents = spaceEvents.filter((e) => !prevEventIdsRef.current.has(e.id))
+
+    if (newEvents.length > 0 && selectedSpace) {
+      // Electron desktop notification (P3)
+      const electronAPI = (window as unknown as { electronAPI?: { showNotification: (t: string, b: string) => void } }).electronAPI
+      if (electronAPI?.showNotification) {
+        const latest = newEvents[0]
+        electronAPI.showNotification(
+          'Kaelis 记忆更新',
+          `共享空间 "${selectedSpace.name}" 有新记忆 "${latest.memory_key}"`
+        )
+      }
+    }
+
+    prevEventIdsRef.current = currentIds
+    setLastEventIds(currentIds)
+  }, [spaceEvents, selectedSpace])
 
   const createSpace = useCreateSharedSpace()
   const deleteMemory = useDeleteSharedMemory(selectedSpace?.space_id || '')

@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 诊断报告
   exportDiagnostics: () => ipcRenderer.invoke('export-diagnostics'),
 
+  // 桌面通知
+  showNotification: (title, body) => ipcRenderer.invoke('show-notification', { title, body }),
+
   // 启动日志监听（仅限启动画面）
   onStartupLog: (callback) => ipcRenderer.on('startup-log', callback),
   onBackendLog: (callback) => ipcRenderer.on('backend-log', callback),

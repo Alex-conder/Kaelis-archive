@@ -12,7 +12,7 @@
  * 8. 启动失败诊断与一键导出
  */
 
-const { app, BrowserWindow, ipcMain, Menu, dialog, shell, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell, Tray, nativeImage, Notification } = require('electron');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const http = require('http');
@@ -591,6 +591,27 @@ function setupIPC() {
   ipcMain.handle('export-diagnostics', async () => {
     const zipPath = await exportDiagnostics('User-initiated diagnostic export from renderer', '');
     return { success: true, path: zipPath };
+  });
+
+  // 桌面通知（P2 语义订阅事件流联动）
+  ipcMain.handle('show-notification', (event, { title, body }) => {
+    if (!Notification.isSupported()) {
+      return { shown: false, reason: 'not_supported' };
+    }
+    const n = new Notification({
+      title: title || 'Kaelis',
+      body: body || '',
+      icon: path.join(__dirname, 'assets', 'icon.png')
+    });
+    n.on('click', () => {
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+    n.show();
+    return { shown: true };
   });
 }
 
