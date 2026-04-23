@@ -464,13 +464,20 @@ class TestTransferLearningInterface:
     
     def test_get_similar_params_no_memory(self):
         """测试无记忆时的参数检索"""
-        tl = TransferLearningInterface()
-        result = tl.get_best_similar_params(
-            {"n_components": 2},
-            "pls_da"
-        )
-        # 无记忆时应返回 None
-        assert result is None
+        import tempfile, shutil
+        from core.transfer_learning import TransferLearning
+        td = tempfile.mkdtemp()
+        try:
+            transfer = TransferLearning(collection_name="test_empty", persist_dir=td)
+            tl = TransferLearningInterface(transfer_instance=transfer)
+            result = tl.get_best_similar_params(
+                {"n_components": 2},
+                "pls_da"
+            )
+            # 无记忆时应返回 None
+            assert result is None
+        finally:
+            shutil.rmtree(td, ignore_errors=True)
     
     def test_task_similarity(self):
         """测试任务相似度计算"""

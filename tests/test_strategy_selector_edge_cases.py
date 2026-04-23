@@ -99,10 +99,11 @@ class TestTransferLearningInterfaceFallback(KaelisTestBase):
 
     def test_get_best_similar_params_no_memory(self):
         """无 memory 时返回 None"""
-        from core.strategy_selector import TransferLearningInterface
-        iface = TransferLearningInterface(transfer_instance=None, memory_manager=None)
-        result = iface.get_best_similar_params({"a": 1}, "test", top_k=3)
-        self.assertIsNone(result)
+        with patch.dict(sys.modules, {"core.transfer_learning": None, "core.memory_manager_v2": None}):
+            from core.strategy_selector import TransferLearningInterface
+            iface = TransferLearningInterface(transfer_instance=None, memory_manager=None)
+            result = iface.get_best_similar_params({"a": 1}, "test", top_k=3)
+            self.assertIsNone(result)
 
     def test_get_best_similar_params_with_mock_memory(self):
         """mock memory 返回成功参数"""
@@ -119,30 +120,33 @@ class TestTransferLearningInterfaceFallback(KaelisTestBase):
 
     def test_get_best_similar_params_no_success(self):
         """memory 返回的结果没有 success 标志"""
-        from core.strategy_selector import TransferLearningInterface
-        mock_mem = MagicMock()
-        mock_mem.retrieve_semantic.return_value = [
-            {"metadata": {"params": {"lr": 0.01}}}
-        ]
-        iface = TransferLearningInterface(transfer_instance=None, memory_manager=mock_mem)
-        result = iface.get_best_similar_params({"a": 1}, "test", top_k=3)
-        self.assertIsNone(result)
+        with patch.dict(sys.modules, {"core.transfer_learning": None}):
+            from core.strategy_selector import TransferLearningInterface
+            mock_mem = MagicMock()
+            mock_mem.retrieve_semantic.return_value = [
+                {"metadata": {"params": {"lr": 0.01}}}
+            ]
+            iface = TransferLearningInterface(transfer_instance=None, memory_manager=mock_mem)
+            result = iface.get_best_similar_params({"a": 1}, "test", top_k=3)
+            self.assertIsNone(result)
 
     def test_get_best_similar_params_memory_raises(self):
         """memory 抛出异常时返回 None"""
-        from core.strategy_selector import TransferLearningInterface
-        mock_mem = MagicMock()
-        mock_mem.retrieve_semantic.side_effect = RuntimeError("db error")
-        iface = TransferLearningInterface(transfer_instance=None, memory_manager=mock_mem)
-        result = iface.get_best_similar_params({"a": 1}, "test", top_k=3)
-        self.assertIsNone(result)
+        with patch.dict(sys.modules, {"core.transfer_learning": None}):
+            from core.strategy_selector import TransferLearningInterface
+            mock_mem = MagicMock()
+            mock_mem.retrieve_semantic.side_effect = RuntimeError("db error")
+            iface = TransferLearningInterface(transfer_instance=None, memory_manager=mock_mem)
+            result = iface.get_best_similar_params({"a": 1}, "test", top_k=3)
+            self.assertIsNone(result)
 
     def test_update_success_case_no_memory(self):
         """无 memory 时返回 False"""
-        from core.strategy_selector import TransferLearningInterface
-        iface = TransferLearningInterface(transfer_instance=None, memory_manager=None)
-        result = iface.update_success_case("test", {}, {}, 0.9)
-        self.assertFalse(result)
+        with patch.dict(sys.modules, {"core.transfer_learning": None, "core.memory_manager_v2": None}):
+            from core.strategy_selector import TransferLearningInterface
+            iface = TransferLearningInterface(transfer_instance=None, memory_manager=None)
+            result = iface.update_success_case("test", {}, {}, 0.9)
+            self.assertFalse(result)
 
     def test_update_success_case_with_mock_memory(self):
         """mock memory 成功存储"""
@@ -157,12 +161,13 @@ class TestTransferLearningInterfaceFallback(KaelisTestBase):
 
     def test_update_success_case_memory_raises(self):
         """memory 抛出异常时返回 False"""
-        from core.strategy_selector import TransferLearningInterface
-        mock_mem = MagicMock()
-        mock_mem.store_semantic.side_effect = RuntimeError("db error")
-        iface = TransferLearningInterface(transfer_instance=None, memory_manager=mock_mem)
-        result = iface.update_success_case("test", {}, {}, 0.9)
-        self.assertFalse(result)
+        with patch.dict(sys.modules, {"core.transfer_learning": None}):
+            from core.strategy_selector import TransferLearningInterface
+            mock_mem = MagicMock()
+            mock_mem.store_semantic.side_effect = RuntimeError("db error")
+            iface = TransferLearningInterface(transfer_instance=None, memory_manager=mock_mem)
+            result = iface.update_success_case("test", {}, {}, 0.9)
+            self.assertFalse(result)
 
 
 class TestStrategySelectorEdgeCases(KaelisTestBase):
