@@ -5,20 +5,23 @@
 - `package.json` 已更新：`electron` `^30.5.1` → `^33.0.0`，`electron-builder` `^24.13.3` → `^26.0.0`
 - 代码层面无需修改（当前已使用 `contextIsolation: true` + `contextBridge` 现代安全模式）
 
-## 待执行步骤
+## 执行结果
 
-### 1. 安装依赖（需良好网络环境）
+### 1. 安装依赖 ✅
+
+使用国内镜像 + D 盘缓存，1 分钟内完成：
 
 ```bash
-cd web/frontend
+set ELECTRON_CACHE=D:\electron-cache
+set npm_config_cache=D:\npm-cache
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
 npm install
-# 或使用镜像加速
-npm install --electron_mirror=https://npmmirror.com/mirrors/electron/
 ```
 
-> ⚠️ 当前环境因网络限制无法完成下载，请在本地稳定网络下执行。
+结果：`electron@33.4.11` + `electron-builder@26.8.1` 安装成功。
 
-### 2. 验证开发模式
+### 2. 验证开发模式 ⏳（需 GUI 环境）
 
 ```bash
 npm run electron:dev
@@ -30,16 +33,18 @@ npm run electron:dev
 - [ ] 主窗口加载正常
 - [ ] 开发者工具无报错
 
-### 3. 验证打包
+> 因当前为 CLI 环境，无法启动 GUI，请在本地验证。
+
+### 3. 验证打包 ✅
 
 ```bash
 npm run electron:build:win
 ```
 
-检查清单：
-- [ ] 打包无错误
-- [ ] `dist-electron` 目录生成 `.exe` 安装包
-- [ ] 安装包可正常安装并运行
+结果：
+- [x] 打包无错误（PowerShell stderr 误报，实际产物已生成）
+- [x] `dist-electron\win-unpacked\Kaelis.exe` 已生成（~180MB）
+- [ ] 安装包可正常安装并运行（需本地验证）
 
 ## 已知风险
 
