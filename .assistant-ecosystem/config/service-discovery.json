@@ -1,0 +1,76 @@
+{
+    "services":  [
+                     {
+                         "last_check":  "2026-03-16T23:35:30.7912310+08:00",
+                         "id":  "svc-gateway-01",
+                         "metadata":  {
+                                          "version":  "2.1.0",
+                                          "region":  "us-east"
+                                      },
+                         "health_check":  {
+                                              "path":  "/health",
+                                              "interval":  30,
+                                              "timeout":  5
+                                          },
+                         "tags":  [
+                                      "core",
+                                      "api"
+                                  ],
+                         "name":  "gateway",
+                         "host":  "localhost",
+                         "port":  18789,
+                         "status":  "healthy",
+                         "protocol":  "http"
+                     },
+                     {
+                         "last_check":  "2026-03-16T23:35:30.7912310+08:00",
+                         "id":  "svc-backend-01",
+                         "metadata":  {
+                                          "version":  "3.0.1",
+                                          "region":  "us-east"
+                                      },
+                         "health_check":  {
+                                              "path":  "/api/health",
+                                              "interval":  30,
+                                              "timeout":  5
+                                          },
+                         "tags":  [
+                                      "core",
+                                      "api"
+                                  ],
+                         "name":  "backend-api",
+                         "host":  "localhost",
+                         "port":  8000,
+                         "status":  "healthy",
+                         "protocol":  "http"
+                     },
+                     {
+                         "last_check":  "2026-03-16T23:35:30.7912310+08:00",
+                         "id":  "svc-ai-01",
+                         "metadata":  {
+                                          "region":  "us-east",
+                                          "gpu":  true,
+                                          "version":  "1.5.0"
+                                      },
+                         "health_check":  {
+                                              "path":  "/health",
+                                              "interval":  30,
+                                              "timeout":  10
+                                          },
+                         "tags":  [
+                                      "ai",
+                                      "ml"
+                                  ],
+                         "name":  "ai-service",
+                         "host":  "localhost",
+                         "port":  9000,
+                         "status":  "healthy",
+                         "protocol":  "http"
+                     }
+                 ],
+    "discovery":  {
+                      "check_interval":  10,
+                      "type":  "consul",
+                      "address":  "localhost:8500"
+                  }
+}

@@ -1,0 +1,155 @@
+{
+    "catalog":  [
+                    {
+                        "description":  "FastAPI-based microservice with built-in observability",
+                        "name":  "Python Microservice",
+                        "id":  "python-service",
+                        "tags":  [
+                                     "backend",
+                                     "python",
+                                     "fastapi"
+                                 ],
+                        "parameters":  [
+                                           {
+                                               "name":  "service_name",
+                                               "type":  "string",
+                                               "required":  true
+                                           },
+                                           {
+                                               "default":  8000,
+                                               "name":  "port",
+                                               "type":  "number"
+                                           },
+                                           {
+                                               "default":  true,
+                                               "name":  "enable_auth",
+                                               "type":  "boolean"
+                                           }
+                                       ]
+                    },
+                    {
+                        "description":  "React 18 + TypeScript frontend with Material UI",
+                        "name":  "React Frontend",
+                        "id":  "react-frontend",
+                        "tags":  [
+                                     "frontend",
+                                     "react",
+                                     "typescript"
+                                 ],
+                        "parameters":  [
+                                           {
+                                               "name":  "app_name",
+                                               "type":  "string",
+                                               "required":  true
+                                           },
+                                           {
+                                               "default":  "http://localhost:8000",
+                                               "name":  "api_url",
+                                               "type":  "string"
+                                           }
+                                       ]
+                    },
+                    {
+                        "description":  "ETL pipeline with Airflow orchestration",
+                        "name":  "Data Pipeline",
+                        "id":  "data-pipeline",
+                        "tags":  [
+                                     "data",
+                                     "etl",
+                                     "airflow"
+                                 ],
+                        "parameters":  [
+                                           {
+                                               "name":  "pipeline_name",
+                                               "type":  "string",
+                                               "required":  true
+                                           },
+                                           {
+                                               "default":  "0 0 * * *",
+                                               "name":  "schedule",
+                                               "type":  "string"
+                                           }
+                                       ]
+                    },
+                    {
+                        "description":  "ML model serving with FastAPI and ONNX",
+                        "name":  "ML Model Service",
+                        "id":  "ml-model",
+                        "tags":  [
+                                     "ml",
+                                     "python",
+                                     "onnx"
+                                 ],
+                        "parameters":  [
+                                           {
+                                               "name":  "model_name",
+                                               "type":  "string",
+                                               "required":  true
+                                           },
+                                           {
+                                               "default":  "pytorch",
+                                               "name":  "framework",
+                                               "options":  [
+                                                               "pytorch",
+                                                               "tensorflow",
+                                                               "sklearn"
+                                                           ],
+                                               "type":  "string"
+                                           }
+                                       ]
+                    }
+                ],
+    "environments":  [
+                         {
+                             "name":  "development",
+                             "auto_provision":  true,
+                             "type":  "shared"
+                         },
+                         {
+                             "name":  "staging",
+                             "auto_provision":  true,
+                             "type":  "shared"
+                         },
+                         {
+                             "name":  "production",
+                             "auto_provision":  false,
+                             "type":  "dedicated",
+                             "approval_required":  true
+                         }
+                     ],
+    "golden_paths":  [
+                         {
+                             "estimated_time":  "30min",
+                             "name":  "web-app",
+                             "steps":  [
+                                           "create-repo",
+                                           "setup-ci",
+                                           "configure-env",
+                                           "deploy-staging"
+                                       ]
+                         },
+                         {
+                             "estimated_time":  "45min",
+                             "name":  "api-service",
+                             "steps":  [
+                                           "create-repo",
+                                           "setup-ci",
+                                           "add-tests",
+                                           "deploy-production"
+                                       ]
+                         },
+                         {
+                             "estimated_time":  "60min",
+                             "name":  "ml-experiment",
+                             "steps":  [
+                                           "create-notebook",
+                                           "setup-mlflow",
+                                           "run-training",
+                                           "register-model"
+                                       ]
+                         }
+                     ],
+    "provisioned":  [
+
+                    ]
+}

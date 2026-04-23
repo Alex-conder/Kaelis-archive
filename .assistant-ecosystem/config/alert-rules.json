@@ -1,0 +1,69 @@
+{
+    "Maintenance":  {
+                        "EndTime":  null,
+                        "Reason":  "",
+                        "StartTime":  null,
+                        "Enabled":  false
+                    },
+    "Suppression":  {
+                        "WindowMinutes":  30,
+                        "MaxAlertsPerWindow":  3,
+                        "Enabled":  true
+                    },
+    "Rules":  [
+                  {
+                      "AutoResolve":  true,
+                      "Id":  "high-cpu",
+                      "Duration":  300,
+                      "Name":  "High CPU Usage",
+                      "Channels":  [
+                                       "console",
+                                       "log"
+                                   ],
+                      "Severity":  "warning",
+                      "Enabled":  true,
+                      "Condition":  "cpu_gt_80"
+                  },
+                  {
+                      "AutoResolve":  true,
+                      "Id":  "critical-cpu",
+                      "Duration":  60,
+                      "Name":  "Critical CPU Usage",
+                      "Channels":  [
+                                       "console",
+                                       "log",
+                                       "notification"
+                                   ],
+                      "Severity":  "critical",
+                      "Enabled":  true,
+                      "Condition":  "cpu_gt_95"
+                  },
+                  {
+                      "AutoResolve":  true,
+                      "Id":  "low-memory",
+                      "Duration":  60,
+                      "Name":  "Low Memory",
+                      "Channels":  [
+                                       "console",
+                                       "log",
+                                       "notification"
+                                   ],
+                      "Severity":  "critical",
+                      "Enabled":  true,
+                      "Condition":  "memory_lt_10"
+                  },
+                  {
+                      "AutoResolve":  true,
+                      "Id":  "disk-full",
+                      "Duration":  600,
+                      "Name":  "Disk Space Low",
+                      "Channels":  [
+                                       "console",
+                                       "log"
+                                   ],
+                      "Severity":  "warning",
+                      "Enabled":  true,
+                      "Condition":  "disk_gt_90"
+                  }
+              ]
+}

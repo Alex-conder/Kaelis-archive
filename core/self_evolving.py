@@ -43,12 +43,8 @@ except ImportError:
     KNOWLEDGE_AVAILABLE = False
     KnowledgeRetriever = None
 
-try:
-    from core.memory_manager_v2 import FourLayerMemoryManager
-    MEMORY_AVAILABLE = True
-except ImportError:
-    MEMORY_AVAILABLE = False
-    FourLayerMemoryManager = None
+from core.memory_manager_v2 import FourLayerMemoryManager
+MEMORY_AVAILABLE = True
 
 try:
     from core.skill_manager import get_skill_manager
@@ -269,6 +265,17 @@ class SelfEvolvingEngine:
                         task_type, best_params, best_result, best_confidence
                     )
                     
+                    # P11-001: 自动写入 L2 Episodic 记忆（触发率 100%）
+                    self._write_episodic_memory(
+                        execution_id=execution_id,
+                        task_type=task_type,
+                        status="success",
+                        params=best_params,
+                        result=best_result,
+                        confidence=best_confidence,
+                        iterations=record.iterations
+                    )
+                    
                     # 自动创建技能（如果技能管理器可用）
                     if SKILL_MANAGER_AVAILABLE and get_skill_manager:
                         try:
@@ -284,6 +291,28 @@ class SelfEvolvingEngine:
                                 record.generated_skill_id = skill.id
                         except Exception as e:
                             logger.warning(f"[{execution_id}] 自动创建技能失败: {e}")
+                    
+                    # P13-001: 自动生成 SKILL.md 文档
+                    try:
+                        from core.skill_generator import get_skill_generator
+                        generator = get_skill_generator(llm_client=self.llm_client)
+                        doc_path = generator.generate(
+                            execution_record=record.to_dict(),
+                            skill_id=getattr(record, 'generated_skill_id', None)
+                        )
+                        if doc_path:
+                            logger.info(f"[{execution_id}] SKILL.md generated: {doc_path}")
+                    except Exception as e:
+                        logger.warning(f"[{execution_id}] SKILL.md generation failed: {e}")
+                    
+                    # P15-001: 导出 RL 轨迹
+                    try:
+                        from core.rl_exporter import get_rl_exporter
+                        exporter = get_rl_exporter()
+                        traj_count = exporter.export_from_execution_record(record.to_dict())
+                        logger.info(f"[{execution_id}] RL trajectories exported: {traj_count}")
+                    except Exception as e:
+                        logger.warning(f"[{execution_id}] RL trajectory export failed: {e}")
                     
                     logger.info(f"[{execution_id}] 任务成功完成，置信度: {best_confidence:.3f}")
                     return record
@@ -335,6 +364,17 @@ class SelfEvolvingEngine:
         record.best_params = best_params
         record.best_result = best_result
         record.completed_at = datetime.now().isoformat()
+        
+        # P11-001: 失败/停滞也写入 L2（用于后续分析）
+        self._write_episodic_memory(
+            execution_id=execution_id,
+            task_type=task_type,
+            status=record.status,
+            params=best_params,
+            result=best_result,
+            confidence=best_confidence,
+            iterations=record.iterations
+        )
         
         logger.info(f"[{execution_id}] 自进化结束，状态: {record.status}, "
                    f"最佳置信度: {best_confidence:.3f}")
@@ -475,6 +515,57 @@ class SelfEvolvingEngine:
         logger.info(f"应用探索模式，扰动因子: {perturbation}")
         return new_params
     
+    def _write_episodic_memory(
+        self,
+        execution_id: str,
+        task_type: str,
+        status: str,
+        params: Dict[str, Any],
+        result: Optional[Dict[str, Any]],
+        confidence: float,
+        iterations: List[Dict]
+    ):
+        """
+        P11-001: 写入 L2 Episodic 记忆
+        
+        每次任务完成后自动触发，触发率 = 100%
+        """
+        if not self.memory:
+            return
+        
+        try:
+            # 构建记忆内容
+            memory_value = {
+                "execution_id": execution_id,
+                "task_type": task_type,
+                "status": status,
+                "params": params,
+                "result_summary": self._summarize_result(result) if result else {},
+                "confidence": confidence,
+                "iteration_count": len(iterations),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # 生成唯一 key
+            memory_key = f"task_{status}_{execution_id}"
+            
+            # 写入 L2
+            self.memory.write(
+                layer="L2",
+                key=memory_key,
+                value=memory_value,
+                metadata={
+                    "source": "self_evolving_engine",
+                    "task_type": task_type,
+                    "status": status,
+                    "confidence": confidence
+                }
+            )
+            logger.info(f"[{execution_id}] L2 Episodic memory written: {memory_key}")
+            
+        except Exception as e:
+            logger.warning(f"[{execution_id}] L2 memory write failed: {e}")
+    
     def _record_success_params(
         self,
         task_type: str,
@@ -498,23 +589,27 @@ class SelfEvolvingEngine:
                     task_type, params, result, confidence
                 )
             
-            # 存储到语义记忆
-            if self.memory and hasattr(self.memory, 'store_semantic'):
-                content = json.dumps({
+            # 存储到语义记忆（使用 FourLayerMemoryManager L3 API）
+            if self.memory:
+                entity_name = f"success_strategy_{task_type}"
+                content = {
                     "task_type": task_type,
                     "params": params,
                     "result_summary": self._summarize_result(result),
                     "confidence": confidence
-                }, ensure_ascii=False)
-                
-                metadata = {
-                    "task_type": task_type,
-                    "success": True,
-                    "confidence": confidence,
-                    "timestamp": datetime.now().isoformat()
                 }
                 
-                self.memory.store_semantic(content, metadata)
+                self.memory.write(
+                    layer="L3",
+                    key=entity_name,
+                    value=content,
+                    metadata={
+                        "type": "SuccessStrategy",
+                        "task_type": task_type,
+                        "confidence": confidence,
+                        "source": "self_evolving_engine"
+                    }
+                )
                 logger.info(f"成功参数已记录到 L3 语义记忆: {task_type}")
             
         except Exception as e:

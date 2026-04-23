@@ -1,0 +1,46 @@
+{
+    "Services":  {
+                     "gateway":  {
+                                     "CircuitBreaker":  {
+                                                            "FailureThreshold":  3,
+                                                            "HalfOpenRequests":  2,
+                                                            "RecoveryTime":  20,
+                                                            "Enabled":  true
+                                                        },
+                                     "Endpoints":  [
+                                                       "localhost:18789"
+                                                   ],
+                                     "LoadBalancer":  "round-robin"
+                                 },
+                     "backend":  {
+                                     "CircuitBreaker":  {
+                                                            "FailureThreshold":  5,
+                                                            "HalfOpenRequests":  3,
+                                                            "RecoveryTime":  30,
+                                                            "Enabled":  true
+                                                        },
+                                     "HealthCheck":  {
+                                                         "Path":  "/health",
+                                                         "Interval":  10,
+                                                         "Timeout":  5,
+                                                         "Enabled":  true
+                                                     },
+                                     "Endpoints":  [
+                                                       "localhost:8000"
+                                                   ],
+                                     "LoadBalancer":  "round-robin"
+                                 }
+                 },
+    "Routes":  [
+                   {
+                       "Path":  "/api/*",
+                       "Service":  "backend",
+                       "StripPrefix":  true
+                   },
+                   {
+                       "Path":  "/health",
+                       "Service":  "gateway",
+                       "StripPrefix":  false
+                   }
+               ]
+}

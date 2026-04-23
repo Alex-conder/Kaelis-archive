@@ -1,0 +1,42 @@
+{
+    "OptimizationRules":  [
+                              {
+                                  "ThresholdMinutes":  30,
+                                  "Name":  "IdleVMShutdown",
+                                  "Enabled":  true
+                              },
+                              {
+                                  "Name":  "StorageCleanup",
+                                  "MaxAgeDays":  7,
+                                  "Enabled":  true
+                              },
+                              {
+                                  "Name":  "RightSizing",
+                                  "TargetUtilization":  70,
+                                  "Enabled":  true
+                              }
+                          ],
+    "Budget":  {
+                   "AlertThreshold":  80,
+                   "Monthly":  100,
+                   "Currency":  "USD"
+               },
+    "Resources":  {
+                      "AI":  {
+                                 "RatePer1KTokens":  0.002,
+                                 "Type":  "API"
+                             },
+                      "Bandwidth":  {
+                                        "RatePerGB":  0.01,
+                                        "Type":  "Egress"
+                                    },
+                      "Storage":  {
+                                      "RatePerGB":  0.02,
+                                      "Type":  "SSD"
+                                  },
+                      "Compute":  {
+                                      "RatePerHour":  0.05,
+                                      "Type":  "VM"
+                                  }
+                  }
+}

@@ -7,7 +7,7 @@ import json
 import asyncio
 from datetime import datetime
 from typing import Dict, Any, Optional
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 
 # 导入核心组件
 from .kg_flywheel_agent import create_kg_flywheel_agent, AgentState
@@ -93,6 +93,50 @@ def chat():
             memory.record_entities(response.reply)
         except Exception as e:
             # 记录失败不影响主流程
+            pass
+        
+        # 写入四层记忆系统（L2 情景记忆）
+        try:
+            from core.memory_manager_v2 import get_memory_manager
+            mm = get_memory_manager()
+            timestamp = datetime.now().isoformat()
+            
+            # 写入用户消息到 L2
+            mm.write(
+                layer="L2",
+                key=f"chat_{response.session_id}_{timestamp}",
+                value={
+                    "role": "user",
+                    "content": message,
+                    "session_id": response.session_id,
+                },
+                metadata={
+                    "source": "chat",
+                    "type": "conversation",
+                    "user_id": user_id,
+                },
+                user_id=user_id,
+            )
+            
+            # 写入 Agent 回复到 L2
+            mm.write(
+                layer="L2",
+                key=f"chat_reply_{response.session_id}_{timestamp}",
+                value={
+                    "role": "assistant",
+                    "content": response.reply,
+                    "session_id": response.session_id,
+                    "state": response.state.value if hasattr(response.state, 'value') else str(response.state),
+                },
+                metadata={
+                    "source": "chat",
+                    "type": "conversation",
+                    "user_id": user_id,
+                },
+                user_id=user_id,
+            )
+        except Exception as e:
+            # 记忆写入失败不影响主流程
             pass
         
         return jsonify({
@@ -481,6 +525,94 @@ def register_websocket_handlers(sock):
                     "message": str(e)
                 }))
                 break
+
+
+# =============================================================================
+# SSE 流式输出
+# =============================================================================
+
+def _stream_chat_reply(user_id: str, session_id: Optional[str], message: str, context: Dict[str, Any]):
+    """SSE 生成器：模拟流式输出"""
+    try:
+        agent = create_kg_flywheel_agent(user_id, session_id, TOOL_REGISTRY)
+        response = asyncio.run(agent.process(message, context))
+
+        # 记录到 L2 情景记忆
+        timestamp = datetime.now().isoformat()
+        try:
+            from core.memory.memory_manager import get_memory_manager
+            mm = get_memory_manager()
+            mm.write("L2", f"chat_{session_id or agent.session_id}_{timestamp}", {
+                "role": "user", "content": message,
+                "session_id": session_id or agent.session_id,
+                "user_id": user_id, "timestamp": timestamp
+            }, metadata={"source": "chat", "session_id": session_id or agent.session_id}, user_id=user_id)
+            mm.write("L2", f"chat_reply_{session_id or agent.session_id}_{timestamp}", {
+                "role": "assistant", "content": response.reply,
+                "state": str(response.state),
+                "session_id": session_id or agent.session_id,
+                "user_id": user_id, "timestamp": timestamp
+            }, metadata={"source": "chat_reply", "session_id": session_id or agent.session_id}, user_id=user_id)
+        except Exception:
+            pass
+
+        # 按段落/句子拆分，逐步发送
+        reply = response.reply
+        paragraphs = reply.split('\n\n')
+        for para in paragraphs:
+            if para.strip():
+                event_data = json.dumps({"type": "content", "content": para + '\n\n'}, ensure_ascii=False)
+                yield f"data: {event_data}\n\n"
+
+        # 发送结束事件，包含完整元数据
+        done_data = json.dumps({
+            "type": "done",
+            "session_id": response.session_id,
+            "state": response.state.value,
+            "data": response.data,
+            "tool_calls": response.tool_calls,
+        }, ensure_ascii=False)
+        yield f"data: {done_data}\n\n"
+        yield "data: [DONE]\n\n"
+    except Exception as e:
+        error_data = json.dumps({"type": "error", "error": str(e)}, ensure_ascii=False)
+        yield f"data: {error_data}\n\n"
+        yield "data: [DONE]\n\n"
+
+
+@kg_flywheel_bp.route('/chat/stream', methods=['POST'])
+def chat_stream():
+    """
+    聊天端点 - SSE 流式输出
+
+    Request Body:
+        {
+            "message": "用户消息",
+            "user_id": "用户ID",
+            "session_id": "会话ID(可选)",
+            "context": {}
+        }
+    """
+    try:
+        data = request.get_json()
+        if not data or 'message' not in data:
+            return jsonify({"error": "缺少 message 字段"}), 400
+
+        user_id = data.get('user_id', 'anonymous')
+        session_id = data.get('session_id')
+        message = data['message']
+        context = data.get('context', {})
+
+        return Response(
+            _stream_chat_reply(user_id, session_id, message, context),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no',
+            }
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # 导出

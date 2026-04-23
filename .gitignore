@@ -52,6 +52,12 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+htmlcov/
+.coverage
+.coverage_baseline
+coverage.xml
+.pytest_cache/
+.tmp_cov*.py
 
 # Large binaries
 *.pdb
@@ -60,3 +66,40 @@ coverage/
 *.pkl
 *.otf
 *.ttf
+
+# AI Assistant Ecosystem — keep rules, ignore caches
+.assistant-ecosystem/cache/
+.assistant-ecosystem/temp/
+.assistant-ecosystem/logs/
+.assistant-ecosystem/backups/
+.assistant-ecosystem/*.log
+.assistant-ecosystem/**/*.log
+.assistant-ecosystem/*.db
+.assistant-ecosystem/*.sqlite
+.assistant-ecosystem/reports/
+.assistant-ecosystem/data/
+
+# Frontend build outputs
+web/frontend/dist/
+web/frontend/dist-electron/
+
+# VSCode extension build
+vscode-kaelis/node_modules/
+vscode-kaelis/out/
+
+# Data artifacts
+data/skills/generated/
+data/skills/backups/
+data/skills/chroma/
+data/memory/
+data/recordings/
+data/rl_trajectories/
+data/insights/
+data/faiss_per_user/
+data/archive/
+*.db
+*.backup.*
+
+# Husky (managed by package manager)
+**/.husky/_/
+

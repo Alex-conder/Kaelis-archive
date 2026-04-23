@@ -1,0 +1,236 @@
+{
+  "version": "2026.3.16-v2",
+  "name": "OpenClaw Assistant Ecosystem",
+  "description": "Unified AI Assistant Ecosystem Configuration",
+  "last_updated": "2026-03-16T12:00:00Z",
+  
+  "paths": {
+    "openclaw_user": "C:\\Users\\11526\\.openclaw",
+    "openclaw_dev": "D:\\OpenClawAssistant",
+    "ecosystem_root": "C:\\Users\\11526\\.assistant-ecosystem",
+    "logs": "C:\\Users\\11526\\.assistant-ecosystem\\logs",
+    "temp": "C:\\Users\\11526\\.assistant-ecosystem\\temp",
+    "backups": "C:\\Users\\11526\\.assistant-ecosystem\\backups"
+  },
+  
+  "components": {
+    "gateway": {
+      "enabled": true,
+      "port": 18789,
+      "token": "8caef5245983e0f571c67bc51c5ab1f9",
+      "mode": "local",
+      "source": "user_install",
+      "path": "C:\\Users\\11526\\.openclaw",
+      "health_check": {
+        "enabled": true,
+        "interval": 30,
+        "timeout": 5,
+        "url": "http://127.0.0.1:18789/health"
+      },
+      "auto_restart": true
+    },
+    "backend_api": {
+      "enabled": true,
+      "port": 8000,
+      "source": "dev_project",
+      "path": "D:\\OpenClawAssistant\\backend",
+      "entry": "start.py",
+      "auto_start": false,
+      "health_check": {
+        "enabled": true,
+        "interval": 30,
+        "timeout": 5,
+        "url": "http://127.0.0.1:8000/api/health"
+      },
+      "auto_restart": false,
+      "dependencies": ["gateway"]
+    },
+    "desktop_ui": {
+      "enabled": true,
+      "source": "dev_project",
+      "path": "D:\\OpenClawAssistant",
+      "entry": "main.py",
+      "auto_start": false,
+      "window": {
+        "title": "OpenClaw Assistant",
+        "width": 1200,
+        "height": 800
+      }
+    },
+    "react_ui": {
+      "enabled": true,
+      "port": 3000,
+      "source": "dev_project",
+      "path": "D:\\OpenClawAssistant\\react_ui",
+      "auto_start": false,
+      "build_path": "D:\\OpenClawAssistant\\react_ui\\build",
+      "health_check": {
+        "enabled": true,
+        "interval": 30,
+        "timeout": 5,
+        "url": "http://127.0.0.1:3000"
+      }
+    },
+    "cli": {
+      "enabled": true,
+      "source": "dev_project",
+      "path": "D:\\OpenClawAssistant\\openclaw_cli.py",
+      "aliases": ["openclaw", "claw"]
+    }
+  },
+  
+  "ai_providers": {
+    "deepseek": {
+      "enabled": true,
+      "api_key": "sk-1668ac8ecd82472686240b576a963233",
+      "base_url": "https://api.deepseek.com/v1",
+      "models": [
+        {
+          "id": "deepseek-chat",
+          "name": "DeepSeek Chat",
+          "max_tokens": 8192,
+          "context_window": 64000
+        },
+        {
+          "id": "deepseek-reasoner",
+          "name": "DeepSeek Reasoner",
+          "max_tokens": 8192,
+          "context_window": 64000,
+          "supports_vision": true
+        }
+      ],
+      "priority": 1,
+      "timeout": 60,
+      "retry": {
+        "max_attempts": 3,
+        "backoff": "exponential"
+      }
+    },
+    "moonshot": {
+      "enabled": true,
+      "api_key": "sk-OjalGZrJOivpl89BMgRROo0X2WfEF4uNm3rBptyFyYqzrLTz",
+      "base_url": "https://api.moonshot.cn/v1",
+      "models": [
+        {
+          "id": "kimi-k2.5",
+          "name": "Kimi K2.5",
+          "max_tokens": 8192,
+          "context_window": 256000,
+          "supports_vision": true
+        }
+      ],
+      "priority": 2,
+      "timeout": 60,
+      "retry": {
+        "max_attempts": 3,
+        "backoff": "exponential"
+      }
+    }
+  },
+  
+  "integrations": {
+    "qqbot": {
+      "enabled": true,
+      "app_id": "1903341441",
+      "path": "C:\\Users\\11526\\.openclaw\\qqbot",
+      "webhook_url": "",
+      "commands": {
+        "prefix": "/",
+        "enabled": true
+      }
+    },
+    "kimi_claw": {
+      "enabled": true,
+      "bridge_mode": "acp",
+      "bridge_url": "wss://www.kimi.com/api-claw/bots/agent-ws",
+      "path": "C:\\Users\\11526\\.openclaw\\plugins\\kimi-claw",
+      "reconnect": {
+        "enabled": true,
+        "interval": 5000,
+        "max_attempts": 0
+      }
+    },
+    "ollama": {
+      "enabled": false,
+      "host": "http://localhost:11434",
+      "models": ["llama2", "codellama", "mistral"]
+    }
+  },
+  
+  "features": {
+    "session_memory": {
+      "enabled": true,
+      "max_sessions": 100,
+      "ttl_days": 30
+    },
+    "skill_store": {
+      "enabled": true,
+      "auto_update": true,
+      "path": "C:\\Users\\11526\\.assistant-ecosystem\\skills"
+    },
+    "plugin_system": {
+      "enabled": true,
+      "hot_reload": false,
+      "path": "C:\\Users\\11526\\.assistant-ecosystem\\plugins"
+    },
+    "multi_channel": {
+      "enabled": true,
+      "channels": ["desktop", "web", "qq", "cli"]
+    },
+    "auto_update": {
+      "enabled": false,
+      "check_interval": "24h",
+      "channel": "stable"
+    },
+    "security_check": {
+      "enabled": true,
+      "violation_detection": true,
+      "content_filter": true
+    },
+    "traffic_control": {
+      "enabled": true,
+      "rate_limit": 100,
+      "burst": 10
+    },
+    "monitoring": {
+      "enabled": true,
+      "metrics": true,
+      "alerts": true,
+      "log_level": "info"
+    }
+  },
+  
+  "sync": {
+    "config_sync": {
+      "enabled": true,
+      "interval": "5m",
+      "sources": ["openclaw_user", "openclaw_dev"]
+    },
+    "session_sync": {
+      "enabled": false,
+      "direction": "user_to_dev"
+    },
+    "plugin_sync": {
+      "enabled": true,
+      "bidirectional": true
+    },
+    "log_aggregation": {
+      "enabled": true,
+      "retention_days": 7,
+      "max_size_mb": 100
+    }
+  },
+  
+  "notifications": {
+    "enabled": true,
+    "desktop": true,
+    "sound": false,
+    "events": ["service_down", "update_available", "security_alert"]
+  },
+  
+  "shortcuts": {
+    "global_hotkey": "Ctrl+Alt+O",
+    "quick_access": true,
+    "tray_icon": true
+  }
+}

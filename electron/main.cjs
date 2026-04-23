@@ -3,12 +3,13 @@
  *
  * 功能：
  * 1. 启动画面与进度显示
- * 2. 管理 Docker 服务（PostgreSQL / Neo4j）
+ * 2. 本地 SQLite 存储模式（Docker 已禁用）
  * 3. 管理 Flask 后端子进程
  * 4. 服务健康检查轮询
  * 5. 加载前端本地构建文件
  * 6. IPC 通信与系统托盘
- * 7. 退出时清理后端进程与 Docker 容器
+ * 7. 退出时清理后端进程
+ * 8. 启动失败诊断与一键导出
  */
 
 const { app, BrowserWindow, ipcMain, Menu, dialog, shell, Tray, nativeImage } = require('electron');
@@ -16,18 +17,35 @@ const path = require('path');
 const { spawn, exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 
 // 全局引用
 let mainWindow = null;
 let splashWindow = null;
 let tray = null;
 let backendProcess = null;
-let cachedDockerComposeCmd = null;
 
 // 路径解析（兼容开发与生产环境）
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const PROJECT_ROOT = isDev ? path.join(__dirname, '../..') : process.resourcesPath;
-const FRONTEND_DIST = path.join(__dirname, '../dist');
+const FRONTEND_DIST = isDev ? path.join(__dirname, '../dist') : path.join(process.resourcesPath, 'web/frontend/dist');
+const LOG_DIR = path.join(PROJECT_ROOT, 'logs');
+
+// 生产模式下尝试多个路径寻找后端
+function findProjectRoot() {
+  if (isDev) return path.join(__dirname, '../..');
+  // 优先使用打包后的 resources/app/backend
+  const packedBackend = path.join(process.resourcesPath, 'app', 'backend');
+  if (fs.existsSync(path.join(packedBackend, 'launch.py'))) {
+    return packedBackend;
+  }
+  // 回退到原始项目目录（如果存在）
+  const originalProject = path.join(process.resourcesPath, '..', '..', '..', 'Kaelis-main');
+  if (fs.existsSync(path.join(originalProject, 'launch.py'))) {
+    return originalProject;
+  }
+  return process.resourcesPath;
+}
 
 // 配置
 const CONFIG = {
@@ -39,9 +57,7 @@ const CONFIG = {
   SPLASH_WIDTH: 500,
   SPLASH_HEIGHT: 350,
   HEALTH_TIMEOUT: 120000,
-  HEALTH_INTERVAL: 1000,
-  DOCKER_DEGRADED_MODE: true,
-  requiredPorts: [5000, 5432, 7474, 7687]
+  HEALTH_INTERVAL: 1000
 };
 
 // ==================== 工具函数 ====================
@@ -53,12 +69,12 @@ function logToSplash(message) {
   }
 }
 
-function waitForService(url, timeout = CONFIG.HEALTH_TIMEOUT, acceptableCodes = [200]) {
+function waitForService(url, timeout = CONFIG.HEALTH_TIMEOUT) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
       const req = http.get(url, { timeout: 2000 }, (res) => {
-        if (acceptableCodes.includes(res.statusCode)) {
+        if (res.statusCode === 200) {
           resolve(true);
         } else {
           retry();
@@ -79,164 +95,156 @@ function waitForService(url, timeout = CONFIG.HEALTH_TIMEOUT, acceptableCodes = 
   });
 }
 
-function execPromise(command, options = {}) {
+function execPromise(command) {
   return new Promise((resolve, reject) => {
-    exec(command, options, (error, stdout, stderr) => {
+    exec(command, (error, stdout, stderr) => {
       if (error) reject(error);
       else resolve(stdout.trim());
     });
   });
 }
 
-function resolveDockerComposeCommand() {
-  if (cachedDockerComposeCmd) return Promise.resolve(cachedDockerComposeCmd);
-  return new Promise((resolve) => {
-    exec('docker compose version', (err) => {
-      cachedDockerComposeCmd = err ? 'docker-compose' : 'docker compose';
-      resolve(cachedDockerComposeCmd);
-    });
-  });
-}
+// ==================== Docker 健壮性管理 ====================
 
-async function checkPortConflicts(ports) {
-  const conflicts = [];
-  for (const port of ports) {
-    try {
-      await new Promise((resolve, reject) => {
-        const net = require('net');
-        const server = net.createServer();
-        server.once('error', (err) => {
-          if (err.code === 'EADDRINUSE') reject(new Error(`Port ${port} is in use`));
-          else reject(err);
-        });
-        server.once('listening', () => {
-          server.close();
-          resolve();
-        });
-        server.listen(port, '127.0.0.1');
+function checkDockerState() {
+  return new Promise((resolve) => {
+    exec('docker info', { timeout: 5000 }, (err, stdout) => {
+      if (!err && stdout.includes('Server Version')) {
+        resolve('running');
+        return;
+      }
+      exec('docker --version', { timeout: 5000 }, (err2) => {
+        resolve(err2 ? 'not_installed' : 'installed_not_running');
       });
-    } catch (e) {
-      conflicts.push(port);
-    }
-  }
-  return conflicts;
-}
-
-async function checkWindowsDefender() {
-  if (process.platform !== 'win32') return { flagged: false };
-  try {
-    const output = await execPromise('powershell -Command "(Get-MpPreference).ExclusionPath"', { timeout: 5000 });
-    const installDir = path.dirname(app.getPath('exe'));
-    const isExcluded = output.includes(installDir) || output.includes(path.dirname(installDir));
-    return { flagged: !isExcluded, installDir };
-  } catch (e) {
-    return { flagged: false, error: e.message };
-  }
-}
-
-// ==================== Docker 管理 ====================
-
-function isDockerInstalled() {
-  return new Promise((resolve) => {
-    exec('docker --version', (err) => {
-      resolve(!err);
     });
   });
+}
+
+function checkPortConflict(port) {
+  return new Promise((resolve) => {
+    const cmd = process.platform === 'win32'
+      ? `netstat -ano | findstr :${port}`
+      : `lsof -i :${port}`;
+    exec(cmd, { timeout: 5000 }, (err, stdout) => {
+      if (!err && stdout.trim()) {
+        resolve(stdout.trim().split('\n')[0] || 'unknown process');
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function showDockerNotRunningDialog() {
+  const result = await dialog.showMessageBox(splashWindow || undefined, {
+    type: 'warning',
+    title: 'Docker Desktop 未运行',
+    message: 'Kaelis 需要 Docker Desktop 来运行数据库服务。',
+    detail: '检测到 Docker 已安装，但当前未运行。请先启动 Docker Desktop，然后点击"重试"。',
+    buttons: ['打开 Docker Desktop', '重试', '退出'],
+    defaultId: 0,
+    cancelId: 2
+  });
+  if (result.response === 0) {
+    // 尝试启动 Docker Desktop（常见路径）
+    const dockerPaths = [
+      path.join(process.env.LOCALAPPDATA || '', 'Docker', 'Docker', 'Docker Desktop.exe'),
+      path.join(process.env.ProgramFiles || '', 'Docker', 'Docker', 'Docker Desktop.exe'),
+      path.join(process.env.ProgramFiles || '', 'Docker', 'Docker', 'frontend', 'Docker Desktop.exe')
+    ];
+    let started = false;
+    for (const p of dockerPaths) {
+      if (fs.existsSync(p)) {
+        spawn('"' + p + '"', [], { shell: true, detached: true });
+        started = true;
+        break;
+      }
+    }
+    if (!started) {
+      shell.openExternal('https://www.docker.com/products/docker-desktop');
+    }
+    return 'open_docker';
+  }
+  if (result.response === 1) {
+    return 'retry';
+  }
+  return 'exit';
 }
 
 function startDockerServices() {
-  return new Promise(async (resolve, reject) => {
-    logToSplash('Checking Docker environment...');
-
-    const hasDocker = await isDockerInstalled();
-    if (!hasDocker) {
-      dialog.showErrorBox(
-        'Docker 未安装',
-        'Kaelis 需要 Docker Desktop 来运行数据库服务。\n\n请下载并安装后重新启动 Kaelis。'
-      );
-      shell.openExternal('https://www.docker.com/products/docker-desktop');
-      if (CONFIG.DOCKER_DEGRADED_MODE) {
-        logToSplash('Docker not found, continuing in degraded mode...');
-        resolve(false);
-        return;
-      }
-      reject(new Error('Docker not installed'));
-      return;
-    }
-
-    const composePath = path.join(PROJECT_ROOT, 'docker-compose.yml');
-    if (!fs.existsSync(composePath)) {
-      logToSplash('Docker Compose file not found, skipping container startup.');
-      resolve(true);
-      return;
-    }
-
-    const composeCmd = await resolveDockerComposeCommand();
-    logToSplash(`Using ${composeCmd} to start services...`);
-
-    let args;
-    if (composeCmd === 'docker compose') {
-      args = ['compose', '-f', composePath, 'up', '-d'];
-    } else {
-      args = ['-f', composePath, 'up', '-d'];
-    }
-
-    logToSplash('Starting Docker services (PostgreSQL, Neo4j)...');
-    const dockerProcess = spawn(composeCmd.split(' ')[0], args, {
-      cwd: PROJECT_ROOT,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-
-    dockerProcess.stdout.on('data', (data) => {
-      console.log(`[Docker] ${data.toString().trim()}`);
-    });
-    dockerProcess.stderr.on('data', (data) => {
-      console.error(`[Docker ERR] ${data.toString().trim()}`);
-    });
-
-    dockerProcess.on('error', (err) => {
-      reject(new Error(`Failed to start Docker services: ${err.message}`));
-    });
-
-    dockerProcess.on('exit', (code) => {
-      if (code !== 0) {
-        if (CONFIG.DOCKER_DEGRADED_MODE) {
-          logToSplash(`Docker compose exited with code ${code}, continuing in degraded mode...`);
-          resolve(false);
-          return;
-        }
-        reject(new Error(`${composeCmd} exited with code ${code}`));
-        return;
-      }
-      logToSplash('Docker containers started, waiting for health checks...');
-
-      // 轮询等待服务就绪 (Neo4j 返回 401 也表示服务已启动)
-      Promise.all([
-        waitForService('http://localhost:7474', 60000, [200, 401]).catch(() => null),
-        waitForService('http://localhost:5432', 60000).catch(() => null)
-      ]).then(() => {
-        logToSplash('Database services are ready!');
-        resolve(true);
-      }).catch(reject);
-    });
+  return new Promise((resolve) => {
+    logToSplash('Docker 服务已禁用 - 使用 SQLite 本地存储模式');
+    resolve(true);
   });
 }
 
 function stopDockerServices() {
-  const composePath = path.join(PROJECT_ROOT, 'docker-compose.yml');
-  if (fs.existsSync(composePath)) {
-    console.log('[Docker] Stopping containers...');
-    resolveDockerComposeCommand().then((composeCmd) => {
-      let cmd;
-      if (composeCmd === 'docker compose') {
-        cmd = `docker compose -f "${composePath}" down`;
-      } else {
-        cmd = `docker-compose -f "${composePath}" down`;
-      }
-      exec(cmd, { cwd: PROJECT_ROOT }, (err) => {
-        if (err) console.error('[Docker ERR] Failed to stop containers:', err.message);
-      });
+  // Docker 已禁用，无需停止容器
+}
+
+async function exportDiagnostics(errorMessage, dockerStderr) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const reportDir = path.join(LOG_DIR, `diagnostic-${timestamp}`);
+  fs.mkdirSync(reportDir, { recursive: true });
+
+  // 收集系统信息
+  const sysInfo = {
+    platform: process.platform,
+    arch: process.arch,
+    electronVersion: process.versions.electron,
+    nodeVersion: process.versions.node,
+    timestamp: new Date().toISOString(),
+    errorMessage: errorMessage || 'N/A',
+    dockerStderr: dockerStderr || 'N/A'
+  };
+  fs.writeFileSync(path.join(reportDir, 'system-info.json'), JSON.stringify(sysInfo, null, 2));
+
+  // 收集日志文件
+  if (fs.existsSync(LOG_DIR)) {
+    const logs = fs.readdirSync(LOG_DIR).filter(f => f.endsWith('.log'));
+    for (const log of logs) {
+      try {
+        fs.copyFileSync(path.join(LOG_DIR, log), path.join(reportDir, log));
+      } catch {}
+    }
+  }
+
+  // Docker 已禁用，跳过 docker info 收集
+  fs.writeFileSync(path.join(reportDir, 'docker-info.txt'), 'Docker disabled in this build.');
+
+  // 压缩为 zip
+  const { execSync } = require('child_process');
+  const zipPath = path.join(LOG_DIR, `diagnostic-${timestamp}.zip`);
+  try {
+    execSync(`powershell -Command "Compress-Archive -Path '${reportDir}\*' -DestinationPath '${zipPath}'"`);
+  } catch {
+    // 如果 powershell 压缩失败，返回目录路径
+    return reportDir;
+  }
+
+  // 清理临时目录
+  fs.rmSync(reportDir, { recursive: true, force: true });
+  return zipPath;
+}
+
+async function showDiagnosticDialog(errorMessage, dockerStderr) {
+  const result = await dialog.showMessageBox(splashWindow || undefined, {
+    type: 'error',
+    title: '启动失败',
+    message: 'Kaelis 启动时遇到问题',
+    detail: `${errorMessage}\n\n您可以导出诊断报告并发送给技术支持。`,
+    buttons: ['导出诊断报告', '退出'],
+    defaultId: 0,
+    cancelId: 1
+  });
+
+  if (result.response === 0) {
+    const zipPath = await exportDiagnostics(errorMessage, dockerStderr);
+    dialog.showMessageBox(splashWindow || undefined, {
+      type: 'info',
+      title: '诊断报告已导出',
+      message: '诊断报告已保存到：',
+      detail: zipPath
     });
   }
 }
@@ -322,7 +330,8 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.cjs')
+      preload: path.join(__dirname, 'preload.cjs'),
+      webSecurity: false
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
   });
@@ -353,7 +362,6 @@ function createMainWindow() {
   });
 
   // 首次启动引导触发
-  const { app } = require('electron');
   const onboardingMarker = path.join(app.getPath('userData'), 'onboarding_completed');
   if (!fs.existsSync(onboardingMarker)) {
     mainWindow.webContents.on('did-finish-load', () => {
@@ -365,8 +373,9 @@ function createMainWindow() {
 // ==================== 后端服务管理 ====================
 
 function resolvePythonExecutable() {
+  const root = findProjectRoot();
   // 优先使用嵌入版 Python
-  const embedPython = path.join(PROJECT_ROOT, 'python', 'python.exe');
+  const embedPython = path.join(root, 'python', 'python.exe');
   if (fs.existsSync(embedPython)) {
     return embedPython;
   }
@@ -375,13 +384,17 @@ function resolvePythonExecutable() {
 }
 
 function resolveBackendScript() {
+  const root = findProjectRoot();
   // 优先使用 PyInstaller 产物
-  const pyinstallerExe = path.join(PROJECT_ROOT, 'backend', 'launch.exe');
+  const pyinstallerExe = path.join(root, 'backend', 'launch.exe');
   if (fs.existsSync(pyinstallerExe)) {
     return { type: 'exe', path: pyinstallerExe };
   }
   // 回退到源码启动
-  const script = path.join(PROJECT_ROOT, 'launch.py');
+  const script = path.join(root, 'launch.py');
+  if (!fs.existsSync(script)) {
+    return { type: 'none', path: script };
+  }
   return { type: 'py', path: script };
 }
 
@@ -390,6 +403,21 @@ function startBackend() {
     logToSplash('Starting backend services...');
 
     const backend = resolveBackendScript();
+    if (backend.type === 'none') {
+      logToSplash('Backend not packaged, checking external backend...');
+      const healthUrl = `${CONFIG.API_BASE_URL}/api/auth/health`;
+      waitForService(healthUrl, 10000)
+        .then(() => {
+          logToSplash('External backend detected!');
+          resolve(true);
+        })
+        .catch(() => {
+          logToSplash('No backend found. Please run: python start_server.py');
+          resolve(false);
+        });
+      return;
+    }
+
     if (!fs.existsSync(backend.path)) {
       reject(new Error(`Backend not found: ${backend.path}`));
       return;
@@ -406,8 +434,9 @@ function startBackend() {
       logToSplash(`Using Python backend (${cmd}).`);
     }
 
+    const root = findProjectRoot();
     backendProcess = spawn(cmd, args, {
-      cwd: PROJECT_ROOT,
+      cwd: root,
       env: {
         ...process.env,
         FLASK_ENV: 'production',
@@ -488,6 +517,19 @@ function setupMenu() {
       label: '帮助',
       submenu: [
         {
+          label: '导出诊断报告',
+          click: async () => {
+            const zipPath = await exportDiagnostics('User-initiated diagnostic export', '');
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: '诊断报告已导出',
+              message: '诊断报告已保存到：',
+              detail: zipPath
+            });
+          }
+        },
+        { type: 'separator' },
+        {
           label: '关于 Kaelis',
           click: () => {
             dialog.showMessageBox(mainWindow, {
@@ -505,20 +547,7 @@ function setupMenu() {
 }
 
 function setupTray() {
-  let trayIcon;
-  const iconPath = path.join(__dirname, 'assets', 'icon.png');
-  if (process.platform === 'darwin') {
-    try {
-      trayIcon = nativeImage.createFromNamedImage('NSImageNameApplicationIcon');
-    } catch (e) {
-      trayIcon = nativeImage.createFromPath(iconPath);
-    }
-  } else {
-    trayIcon = nativeImage.createFromPath(iconPath);
-  }
-  if (process.platform === 'darwin' && trayIcon.setTemplateImage) {
-    trayIcon.setTemplateImage(true);
-  }
+  const trayIcon = nativeImage.createFromNamedImage('NSImageNameApplicationIcon');
   tray = new Tray(trayIcon);
   tray.setToolTip('Kaelis AI Workbench');
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -558,47 +587,21 @@ function setupIPC() {
       return { status: 'unhealthy', error: e.message };
     }
   });
+
+  ipcMain.handle('export-diagnostics', async () => {
+    const zipPath = await exportDiagnostics('User-initiated diagnostic export from renderer', '');
+    return { success: true, path: zipPath };
+  });
 }
 
 // ==================== 应用生命周期 ====================
 
 async function initializeApp() {
   createSplashWindow();
+  // Docker 已禁用，直接使用 SQLite 本地模式
+  await startDockerServices();
 
   try {
-    // 端口冲突预检
-    logToSplash('Checking required ports...');
-    const conflicts = await checkPortConflicts(CONFIG.requiredPorts || [5000, 5432, 7474]);
-    if (conflicts.length > 0) {
-      const msg = `以下端口已被占用: ${conflicts.join(', ')}\n请关闭占用端口的程序后重试。`;
-      logToSplash(msg);
-      dialog.showErrorBox('端口冲突', msg);
-      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
-      app.quit();
-      return;
-    }
-
-    // Windows Defender 白名单提示
-    if (process.platform === 'win32' && !isDev) {
-      const wd = await checkWindowsDefender();
-      if (wd.flagged) {
-        logToSplash('Windows Defender may scan this application...');
-        const choice = await dialog.showMessageBox(splashWindow, {
-          type: 'warning',
-          title: 'Windows Defender 提示',
-          message: 'Windows Defender 可能误报或降低 Kaelis 的启动速度。',
-          detail: '建议将 Kaelis 安装目录添加到 Windows Defender 排除项中。',
-          buttons: ['查看帮助', '忽略并继续'],
-          defaultId: 1,
-          cancelId: 1
-        });
-        if (choice.response === 0) {
-          shell.openExternal('https://support.microsoft.com/zh-cn/windows/排除项');
-        }
-      }
-    }
-
-    await startDockerServices();
     await startBackend();
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.webContents.send('startup-complete');
@@ -607,10 +610,16 @@ async function initializeApp() {
     setupMenu();
     setupTray();
     setupIPC();
+    // 通知渲染进程当前 Docker 可用性
+    if (mainWindow) {
+      mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('docker-status', { available: false });
+      });
+    }
   } catch (err) {
     console.error('[Init Error]', err);
     logToSplash(`Error: ${err.message}`);
-    dialog.showErrorBox('启动失败', `无法启动 Kaelis 服务：\n${err.message}`);
+    dialog.showErrorBox('启动失败', `无法启动 Kaelis 后端服务：\n${err.message}`);
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close();
     }

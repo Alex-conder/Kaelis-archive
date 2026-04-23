@@ -1,0 +1,35 @@
+{
+    "Indexes":  [
+                    {
+                        "AutoUpdate":  true,
+                        "Name":  "documents",
+                        "LastBuild":  null,
+                        "Fields":  [
+                                       "title",
+                                       "content",
+                                       "tags"
+                                   ]
+                    },
+                    {
+                        "AutoUpdate":  true,
+                        "Name":  "commands",
+                        "LastBuild":  null,
+                        "Fields":  [
+                                       "name",
+                                       "description",
+                                       "category"
+                                   ]
+                    }
+                ],
+    "Settings":  {
+                     "MinWordLength":  2,
+                     "MaxResults":  100,
+                     "StopWords":  [
+                                       "the",
+                                       "and",
+                                       "or",
+                                       "a",
+                                       "an"
+                                   ]
+                 }
+}

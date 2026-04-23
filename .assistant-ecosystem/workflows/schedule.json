@@ -1,0 +1,58 @@
+{
+    "tasks":  [
+                  {
+                      "runCount":  0,
+                      "id":  "56cb4a69-59e4-4851-a39a-ed937505030f",
+                      "enabled":  true,
+                      "trigger":  {
+                                      "value":  "00:05:00",
+                                      "type":  "interval"
+                                  },
+                      "createdAt":  "2026-03-16T16:28:17.3069716+08:00",
+                      "lastRun":  null,
+                      "description":  "Check ecosystem health",
+                      "name":  "health-check",
+                      "action":  {
+                                     "value":  "\u0026 \u0027C:\\Users\\11526\\.assistant-ecosystem\\bin\\assistant.ps1\u0027 doctor",
+                                     "type":  "command"
+                                 }
+                  },
+                  {
+                      "runCount":  0,
+                      "id":  "caa6781c-a40a-4ef1-a10e-6e1a98541bd0",
+                      "enabled":  true,
+                      "trigger":  {
+                                      "value":  "02:00:00",
+                                      "type":  "daily"
+                                  },
+                      "createdAt":  "2026-03-16T16:28:17.3630527+08:00",
+                      "lastRun":  null,
+                      "description":  "Daily configuration backup",
+                      "name":  "daily-backup",
+                      "action":  {
+                                     "value":  "\u0026 \u0027C:\\Users\\11526\\.assistant-ecosystem\\bin\\assistant.ps1\u0027 backup",
+                                     "type":  "command"
+                                 }
+                  },
+                  {
+                      "runCount":  0,
+                      "id":  "ea20b1e1-5f17-4cb7-83b4-6f8e436f3399",
+                      "enabled":  true,
+                      "trigger":  {
+                                      "time":  "03:00:00",
+                                      "day":  "Sunday",
+                                      "type":  "weekly"
+                                  },
+                      "createdAt":  "2026-03-16T16:28:17.3723721+08:00",
+                      "lastRun":  null,
+                      "description":  "Weekly temporary files cleanup",
+                      "name":  "weekly-cleanup",
+                      "action":  {
+                                     "value":  "\u0026 \u0027C:\\Users\\11526\\.assistant-ecosystem\\bin\\assistant.ps1\u0027 clean",
+                                     "type":  "command"
+                                 }
+                  }
+              ],
+    "version":  "1.0",
+    "enabled":  true
+}

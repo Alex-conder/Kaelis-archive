@@ -1,0 +1,93 @@
+{
+    "tiers":  [
+                  {
+                      "max_users":  10,
+                      "price":  50,
+                      "name":  "starter",
+                      "max_memory":  16,
+                      "max_cpu":  4
+                  },
+                  {
+                      "max_users":  50,
+                      "price":  200,
+                      "name":  "professional",
+                      "max_memory":  32,
+                      "max_cpu":  8
+                  },
+                  {
+                      "max_users":  200,
+                      "price":  500,
+                      "name":  "enterprise",
+                      "max_memory":  128,
+                      "max_cpu":  32
+                  }
+              ],
+    "tenants":  [
+                    {
+                        "usage":  {
+                                      "cpu_percent":  45,
+                                      "memory_percent":  60,
+                                      "storage_percent":  30
+                                  },
+                        "id":  "tenant-001",
+                        "billing":  {
+                                        "monthly_cost":  500,
+                                        "plan":  "enterprise"
+                                    },
+                        "users":  25,
+                        "created":  "2026-03-16T23:35:30.4889881+08:00",
+                        "name":  "Acme Corp",
+                        "tier":  "enterprise",
+                        "status":  "active",
+                        "resources":  {
+                                          "cpu":  8,
+                                          "memory":  32,
+                                          "storage":  500
+                                      }
+                    },
+                    {
+                        "usage":  {
+                                      "cpu_percent":  30,
+                                      "memory_percent":  40,
+                                      "storage_percent":  20
+                                  },
+                        "id":  "tenant-002",
+                        "billing":  {
+                                        "monthly_cost":  200,
+                                        "plan":  "professional"
+                                    },
+                        "users":  10,
+                        "created":  "2026-03-16T23:35:30.4889881+08:00",
+                        "name":  "TechStart Inc",
+                        "tier":  "professional",
+                        "status":  "active",
+                        "resources":  {
+                                          "cpu":  4,
+                                          "memory":  16,
+                                          "storage":  200
+                                      }
+                    },
+                    {
+                        "usage":  {
+                                      "cpu_percent":  20,
+                                      "memory_percent":  25,
+                                      "storage_percent":  15
+                                  },
+                        "id":  "tenant-003",
+                        "billing":  {
+                                        "monthly_cost":  50,
+                                        "plan":  "starter"
+                                    },
+                        "users":  5,
+                        "created":  "2026-03-16T23:35:30.4889881+08:00",
+                        "name":  "DevTeam Alpha",
+                        "tier":  "starter",
+                        "status":  "trial",
+                        "resources":  {
+                                          "cpu":  2,
+                                          "memory":  8,
+                                          "storage":  50
+                                      }
+                    }
+                ]
+}

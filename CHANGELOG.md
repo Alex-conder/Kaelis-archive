@@ -1,0 +1,60 @@
+# Changelog
+
+## [Unreleased] — Sprint 4
+
+### Added
+- **首次对话记忆确认**：Agent 自动检测用户输入中的姓名、职业、偏好，并显示确认提示
+- **分享记忆卡片**：记忆浏览器详情弹窗支持一键生成精美分享卡片（复制/下载 PNG）
+- **Landing Page**：全新静态官网 `web/landing/index.html`（Hero / 价值主张 / 下载区域 / 页脚）
+- **Product Hunt 上线准备**：完整文案、宣传图设计说明、预热 Tweet 草稿 (`docs/product_hunt_launch.md`)
+- **VSCode 扩展发布准备**：package.json 补充 publisher / repository / icon / galleryBanner / keywords，README 增加 Marketplace 一键安装指引
+
+### Changed
+- **文案升级**："记忆中枢"→"我的第二大脑"，"技能市场"→"能力库"，"自进化"→"持续学习"
+- **主动推送优化**：`ProactiveMemoryEngine` 新增上下文相似度过滤（阈值 0.15），仅推送相关内容
+- **前端代码分割**：`react-markdown` / `react-syntax-highlighter` 拆分为独立 chunk，主包从 1,200 KB 降至 465 KB
+- **SyntaxHighlighter 按需加载**：仅注册 tsx/python/bash/json/yaml/markdown 常用语言，syntax chunk 从 618 KB 降至 55 KB
+- **系统消息样式优化**：记忆确认提示使用绿色主题，错误消息保持红色，其他系统消息使用琥珀色
+
+### Fixed
+- 后端 `kg_flywheel_agent.py` 策略信息透传：每条回复附带 `intent` / `confidence` / `agent_state`
+
+---
+
+## [0.3.0] — Sprint 3
+
+### Added
+- **VSCode 扩展 MVP**：`vscode-kaelis/` 目录，`@kaelis` Chat Participant，支持 MCP stdio + HTTP fallback
+- **SSE 流式输出**：后端 `/api/kg-flywheel/chat/stream` + 前端 `sendMessageStream`（打字机效果）
+- **策略透明标签**：每条 assistant 消息底部展示真实策略（如 "通用对话 · 50%"）
+- **主动推送真实数据**：`MemoryPage` 接入 `/api/memory/proactive/push` 真实 API
+
+### Changed
+- `FlywheelResponse.data` 增加 `strategy` 字段（intent + confidence + agent_state）
+
+---
+
+## [0.2.0] — Sprint 2
+
+### Added
+- **MCP Server 独立化**：`mcp_standalone.py` 可作为独立 stdio 进程启动
+- **记忆浏览器**：`/memory` 页面，L0-L3 切换、FTS5 搜索、详情弹窗
+- **主动记忆推送卡片**：聊天侧边栏 + 记忆页面（mock → 真实 API）
+- **技能市场 UI 骨架**：`/skills` 列表、过滤、搜索
+- **策略解释悬浮标签**：每条 assistant 消息底部展示
+
+### Fixed
+- 聊天自动写入 L2 情景记忆
+- `api/routes/memory.py` 支持 `query: '*'` 返回最近记录
+- `launch.py` / `prod_server.py` `app.secret_key` 修复
+
+---
+
+## [0.1.0] — Sprint 1
+
+### Added
+- React Router + 认证流程（登录/注册/离线）
+- Chat 界面（Markdown + 代码高亮）
+- API 客户端层（axios + Zustand stores）
+- MCP 测试补充至 78.9% 覆盖率
+- Electron 打包产物 `dist-electron/win-unpacked/Kaelis.exe`

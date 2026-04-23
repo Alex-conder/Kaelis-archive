@@ -1,0 +1,61 @@
+{
+    "Ports":  [
+                  18789,
+                  8000,
+                  3000,
+                  5432,
+                  6379
+              ],
+    "Dependencies":  [
+                         {
+                             "Name":  "PowerShell",
+                             "Required":  true,
+                             "MinVersion":  "5.1",
+                             "Command":  "powershell",
+                             "Type":  "runtime",
+                             "VersionArg":  "-Command $PSVersionTable.PSVersion.ToString()"
+                         },
+                         {
+                             "Name":  "Python",
+                             "Required":  true,
+                             "MinVersion":  "3.8",
+                             "Command":  "python",
+                             "Type":  "runtime",
+                             "VersionArg":  "--version"
+                         },
+                         {
+                             "Name":  "Node.js",
+                             "Required":  false,
+                             "MinVersion":  "16.0",
+                             "Command":  "node",
+                             "Type":  "runtime",
+                             "VersionArg":  "--version"
+                         },
+                         {
+                             "Name":  "Git",
+                             "Required":  true,
+                             "MinVersion":  "2.0",
+                             "Command":  "git",
+                             "Type":  "tool",
+                             "VersionArg":  "--version"
+                         },
+                         {
+                             "Name":  "Docker",
+                             "Required":  false,
+                             "MinVersion":  "20.0",
+                             "Command":  "docker",
+                             "Type":  "tool",
+                             "VersionArg":  "--version"
+                         }
+                     ],
+    "Services":  [
+                     {
+                         "Name":  "gateway",
+                         "Url":  "http://localhost:18789/health"
+                     },
+                     {
+                         "Name":  "backend",
+                         "Url":  "http://localhost:8000/health"
+                     }
+                 ]
+}

@@ -6,7 +6,7 @@ Provides bidirectional sync between local and cloud workflows.
 """
 
 from flask import Blueprint, request, jsonify
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 import json
 
@@ -100,9 +100,9 @@ def create_workflow():
             'edges': json.dumps(data.get('edges', [])),
             'is_public': data.get('is_public', False),
             'version': 1,
-            'created_at': datetime.utcnow().isoformat(),
-            'updated_at': datetime.utcnow().isoformat(),
-            'synced_at': datetime.utcnow().isoformat()
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'updated_at': datetime.now(timezone.utc).isoformat(),
+            'synced_at': datetime.now(timezone.utc).isoformat()
         }
         
         result = supabase.table('workflows').insert(workflow_data).execute()
@@ -157,8 +157,8 @@ def update_workflow(workflow_id: str):
             'edges': json.dumps(data.get('edges')) if 'edges' in data else None,
             'is_public': data.get('is_public'),
             'version': server_version + 1,
-            'updated_at': datetime.utcnow().isoformat(),
-            'synced_at': datetime.utcnow().isoformat()
+            'updated_at': datetime.now(timezone.utc).isoformat(),
+            'synced_at': datetime.now(timezone.utc).isoformat()
         }
         
         # 移除None值
@@ -238,7 +238,7 @@ def get_sync_status():
             'success': True,
             'pending_sync': len(result.data) if result.data else 0,
             'workflows': result.data if result.data else [],
-            'server_time': datetime.utcnow().isoformat()
+            'server_time': datetime.now(timezone.utc).isoformat()
         })
     
     except Exception as e:
@@ -290,8 +290,8 @@ def push_workflows():
                     'nodes': json.dumps(wf.get('nodes', [])),
                     'edges': json.dumps(wf.get('edges', [])),
                     'version': server_version + 1,
-                    'updated_at': datetime.utcnow().isoformat(),
-                    'synced_at': datetime.utcnow().isoformat()
+                    'updated_at': datetime.now(timezone.utc).isoformat(),
+                    'synced_at': datetime.now(timezone.utc).isoformat()
                 }
                 
                 result = supabase.table('workflows')\
@@ -312,9 +312,9 @@ def push_workflows():
                     'edges': json.dumps(wf.get('edges', [])),
                     'is_public': wf.get('is_public', False),
                     'version': 1,
-                    'created_at': datetime.utcnow().isoformat(),
-                    'updated_at': datetime.utcnow().isoformat(),
-                    'synced_at': datetime.utcnow().isoformat()
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'updated_at': datetime.now(timezone.utc).isoformat(),
+                    'synced_at': datetime.now(timezone.utc).isoformat()
                 }
                 
                 result = supabase.table('workflows').insert(insert_data).execute()
@@ -418,8 +418,8 @@ def resolve_conflict():
                 'nodes': json.dumps(workflow_data.get('nodes', [])),
                 'edges': json.dumps(workflow_data.get('edges', [])),
                 'version': server_version + 1,
-                'updated_at': datetime.utcnow().isoformat(),
-                'synced_at': datetime.utcnow().isoformat()
+                'updated_at': datetime.now(timezone.utc).isoformat(),
+                'synced_at': datetime.now(timezone.utc).isoformat()
             }
             
             result = supabase.table('workflows')\
@@ -457,5 +457,5 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'supabase': 'connected' if supabase else 'disconnected',
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat()
     })

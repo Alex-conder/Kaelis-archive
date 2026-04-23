@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaelis — 你的 AI 第二大脑</title>
+  <meta name="description" content="Kaelis 是一个具备持续性认知的 AI 伙伴，记住你、理解你、不断成长。">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-glow {
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(96, 165, 250, 0.15), transparent);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+        <span class="font-bold text-lg tracking-tight">Kaelis</span>
+      </div>
+      <div class="flex items-center gap-6 text-sm">
+        <a href="#features" class="text-slate-400 hover:text-white transition-colors">特性</a>
+        <a href="#download" class="text-slate-400 hover:text-white transition-colors">下载</a>
+        <a href="https://github.com/kaelis/kaelis" target="_blank" class="text-slate-400 hover:text-white transition-colors">GitHub</a>
+        <a href="#download" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-medium">立即体验</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 hero-glow">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+        开源 · 跨平台 · 本地优先
+      </div>
+      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
+        你的 AI<br><span class="gradient-text">第二大脑</span>
+      </h1>
+      <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        Kaelis 不只回答问题——它记住你、理解你、不断成长。<br>
+        每一次对话都在累积一个属于你的专属认知模型。
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#download" class="px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 transition-all text-white font-semibold text-lg shadow-lg shadow-blue-600/20">
+          下载桌面端
+        </a>
+        <a href="https://marketplace.visualstudio.com/items?itemName=kaelis.kaelis" target="_blank" class="px-8 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all text-white font-semibold text-lg border border-slate-700">
+          安装 VSCode 扩展
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Props -->
+  <section id="features" class="py-24 border-t border-slate-800/60">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">为什么 Kaelis 与众不同</h2>
+        <p class="text-slate-400">三大核心能力，构建真正的持续性认知</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-blue-500/30 transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">持续性认知</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Kaelis 维护四层记忆架构（感知→工作→语义→情景），你的每一次交互都被记录、关联、沉淀，形成不断成长的个人知识图谱。
+          </p>
+        </div>
+        <div class="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-emerald-500/30 transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">策略透明</h3>
+          <p class="text-slate-400 leading-relaxed">
+            每一条回复都附带决策依据——Kaelis 为什么这样回答、基于哪些记忆、置信度是多少。让你对 AI 的"思考过程"一目了然。
+          </p>
+        </div>
+        <div class="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-purple-500/30 transition-colors">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">无处不在</h3>
+          <p class="text-slate-400 leading-relaxed">
+            桌面端、VSCode 扩展、Claude Desktop MCP Server——同一套认知核心，多场景无缝接入。你的 AI 第二大脑随时在线。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo Video -->
+  <section class="py-24 border-t border-slate-800/60">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">30 秒了解 Kaelis</h2>
+      <p class="text-slate-400 mb-12">从首次对话到深度记忆，看 Kaelis 如何成为你的 AI 伙伴</p>
+      <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 aspect-video flex items-center justify-center group cursor-pointer">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
+        <div class="relative z-10 text-center">
+          <div class="w-20 h-20 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+            <svg class="w-8 h-8 text-blue-400 ml-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+          <p class="text-slate-300 font-medium">演示视频即将上线</p>
+          <p class="text-slate-500 text-sm mt-1">敬请期待</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section id="download" class="py-24 border-t border-slate-800/60">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">开始使用</h2>
+      <p class="text-slate-400 mb-12">选择适合你的平台，即刻拥有你的 AI 第二大脑</p>
+      <div class="grid sm:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold mb-2">Windows</h3>
+          <p class="text-sm text-slate-500 mb-4">Setup.exe · x64</p>
+          <a href="#" class="inline-block px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-sm font-medium border border-slate-700">即将上线</a>
+        </div>
+        <div class="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center">
+          <div class="w-12 h-12 rounded-xl bg-slate-500/10 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold mb-2">macOS</h3>
+          <p class="text-sm text-slate-500 mb-4">.dmg · Apple Silicon / Intel</p>
+          <a href="#" class="inline-block px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-sm font-medium border border-slate-700">即将上线</a>
+        </div>
+        <div class="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+          </div>
+          <h3 class="font-bold mb-2">VSCode</h3>
+          <p class="text-sm text-slate-500 mb-4">Marketplace 一键安装</p>
+          <a href="https://marketplace.visualstudio.com/items?itemName=kaelis.kaelis" target="_blank" class="inline-block px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition-colors text-sm font-medium text-white">立即安装</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 border-t border-slate-800/60">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+        <span class="font-semibold">Kaelis</span>
+      </div>
+      <div class="flex items-center gap-6 text-sm text-slate-500">
+        <a href="https://github.com/kaelis/kaelis" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+        <a href="#" class="hover:text-white transition-colors">文档</a>
+        <a href="#" class="hover:text-white transition-colors">Twitter</a>
+      </div>
+      <p class="text-sm text-slate-600">© 2026 Kaelis. Open Source under MIT.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

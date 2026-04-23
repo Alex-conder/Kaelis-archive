@@ -25,6 +25,19 @@ class StrategyType(Enum):
     FALLBACK = auto()          # 降级策略
 
 
+# 策略能耗基准 (相对单位 0-100)
+STRATEGY_ENERGY_BASELINE: Dict[StrategyType, int] = {
+    StrategyType.PARAM_TUNING: 75,      # 需要多轮 RL 优化，高能耗
+    StrategyType.ACTION_REORDER: 15,    # 纯逻辑重排，低能耗
+    StrategyType.ADD_RETRY: 45,         # 额外执行一轮
+    StrategyType.CHANGE_METHOD: 85,     # 全新方法，最高能耗
+    StrategyType.INCREASE_TIMEOUT: 10,  # 仅增加等待时间
+    StrategyType.DECREASE_COMPLEXITY: 20,  # 简化处理
+    StrategyType.EXPLORATION: 55,       # 随机扰动+评估
+    StrategyType.FALLBACK: 5,           # 最小干预
+}
+
+
 @dataclass
 class Strategy:
     """策略数据类"""
@@ -34,6 +47,11 @@ class Strategy:
     priority: int = 5  # 优先级 1-10
     description: str = ""
     source: str = "auto"  # 来源: auto, rl, transfer, manual
+    estimated_energy_cost: int = 0  # 预估能耗 (相对单位 0-100, Sprint 7 D12)
+
+    def __post_init__(self):
+        if self.estimated_energy_cost == 0:
+            self.estimated_energy_cost = STRATEGY_ENERGY_BASELINE.get(self.type, 50)
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -42,7 +60,8 @@ class Strategy:
             "expected_improvement": self.expected_improvement,
             "priority": self.priority,
             "description": self.description,
-            "source": self.source
+            "source": self.source,
+            "estimated_energy_cost": self.estimated_energy_cost,
         }
 
 
@@ -334,21 +353,23 @@ class StrategySelector:
         }
     
     def select(
-        self, 
-        evaluation: Dict[str, Any], 
+        self,
+        evaluation: Dict[str, Any],
         failed_params: Dict[str, Any],
         history: List[Dict],
-        task_type: str = ""
+        task_type: str = "",
+        energy_budget: Optional[int] = None,
     ) -> Strategy:
         """
         根据评估结果选择改进策略
-        
+
         Args:
             evaluation: 评估结果字典
             failed_params: 失败的参数
             history: 历史迭代记录
             task_type: 任务类型
-            
+            energy_budget: 可选能耗预算 (0-100)，Sprint 7 D12
+
         Returns:
             Strategy: 选择的策略
         """
@@ -361,7 +382,7 @@ class StrategySelector:
             iteration_history=history,
             task_type=task_type
         )
-        
+
         # 如果已经通过，不需要改进
         if ctx.passed:
             return Strategy(
@@ -370,22 +391,57 @@ class StrategySelector:
                 expected_improvement=0.0,
                 priority=1
             )
-        
+
         # 检查是否陷入停滞
         if ctx.is_stuck:
             logger.info("检测到停滞，进入探索模式")
-            return self._create_exploration_strategy(ctx)
-        
+            candidate = self._create_exploration_strategy(ctx)
+            if energy_budget is None or candidate.estimated_energy_cost <= energy_budget:
+                return candidate
+
         # 根据失败原因选择策略类型
         strategy_type = self._select_strategy_type(ctx)
-        
+
         # 根据策略类型构建具体策略
         strategy = self._build_strategy(strategy_type, ctx)
-        
+
+        # Sprint 7 D12: 如果超出能耗预算，尝试降级到更低能耗的替代策略
+        if energy_budget is not None and strategy.estimated_energy_cost > energy_budget:
+            alt = self._find_energy_efficient_alternative(ctx, energy_budget)
+            if alt:
+                logger.info(
+                    "策略 %s (能耗 %d) 超出预算 %d，降级为 %s (能耗 %d)",
+                    strategy.type.name, strategy.estimated_energy_cost, energy_budget,
+                    alt.type.name, alt.estimated_energy_cost,
+                )
+                strategy = alt
+
         # 记录策略历史
         self.strategy_history.append(strategy)
-        
+
         return strategy
+
+    def _find_energy_efficient_alternative(
+        self, ctx: EvaluationContext, energy_budget: int
+    ) -> Optional[Strategy]:
+        """在能耗预算内寻找替代策略。"""
+        candidates = [
+            StrategyType.FALLBACK,
+            StrategyType.ACTION_REORDER,
+            StrategyType.INCREASE_TIMEOUT,
+            StrategyType.DECREASE_COMPLEXITY,
+            StrategyType.ADD_RETRY,
+            StrategyType.EXPLORATION,
+            StrategyType.PARAM_TUNING,
+            StrategyType.CHANGE_METHOD,
+        ]
+        for st in candidates:
+            s = self._build_strategy(st, ctx)
+            if s.estimated_energy_cost <= energy_budget:
+                s.description = f"[节能模式] {s.description}"
+                s.source = "energy_aware"
+                return s
+        return None
     
     def _select_strategy_type(self, ctx: EvaluationContext) -> StrategyType:
         """根据上下文选择策略类型"""

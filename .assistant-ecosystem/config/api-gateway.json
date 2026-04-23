@@ -1,0 +1,80 @@
+{
+    "auth_providers":  [
+                           {
+                               "name":  "api_key",
+                               "enabled":  true
+                           },
+                           {
+                               "name":  "jwt",
+                               "enabled":  true
+                           },
+                           {
+                               "name":  "oauth",
+                               "enabled":  false
+                           }
+                       ],
+    "rate_limits":  {
+                        "default":  {
+                                        "window":  60,
+                                        "requests":  100
+                                    },
+                        "internal":  {
+                                         "window":  60,
+                                         "requests":  10000
+                                     },
+                        "premium":  {
+                                        "window":  60,
+                                        "requests":  1000
+                                    }
+                    },
+    "routes":  [
+                   {
+                       "id":  "route-001",
+                       "rate_limit":  {
+                                          "window":  60,
+                                          "requests":  100
+                                      },
+                       "methods":  [
+                                       "POST",
+                                       "GET"
+                                   ],
+                       "path":  "/api/v1/chat",
+                       "auth_required":  true,
+                       "target":  "http://localhost:8000",
+                       "enabled":  true
+                   },
+                   {
+                       "id":  "route-002",
+                       "rate_limit":  {
+                                          "window":  60,
+                                          "requests":  1000
+                                      },
+                       "methods":  [
+                                       "GET"
+                                   ],
+                       "path":  "/api/v1/health",
+                       "auth_required":  false,
+                       "target":  "http://localhost:18789",
+                       "enabled":  true
+                   },
+                   {
+                       "id":  "route-003",
+                       "rate_limit":  {
+                                          "window":  60,
+                                          "requests":  50
+                                      },
+                       "methods":  [
+                                       "*"
+                                   ],
+                       "path":  "/api/v1/admin/*",
+                       "auth_required":  true,
+                       "target":  "http://localhost:8000",
+                       "enabled":  true
+                   }
+               ],
+    "metrics":  {
+                    "avg_latency_ms":  45,
+                    "error_rate":  0.02,
+                    "total_requests":  15234
+                }
+}

@@ -59,6 +59,47 @@ class KgFlywheelAgent:
     def _generate_session_id(self) -> str:
         return f"kg{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
+    def _extract_user_info(self, text: str) -> Dict[str, str]:
+        """从用户输入中提取姓名、职业、偏好等关键信息"""
+        info: Dict[str, str] = {}
+        text_lower = text.lower()
+        
+        # 姓名提取
+        name_patterns = [
+            r'我叫([^\s，。,；;!?！?]{1,10})',
+            r'我的名字是([^\s，。,；;!?！?]{1,10})',
+            r'我是([^\s，。,；;!?！?]{2,10})(?:，|。|,|\s)',
+        ]
+        for pat in name_patterns:
+            m = re.search(pat, text)
+            if m:
+                info['name'] = m.group(1).strip('，。,. ')
+                break
+        
+        # 职业提取
+        job_patterns = [
+            r'(?:我是|做|从事|职业是|工作)(.*?)(?:工程师|开发|设计师|经理|研究员|医生|教师|律师|会计|分析师|运营|产品|销售|市场)(?:师|员|经理|主管|总监)?',
+            r'(?:我是|做|从事|职业是|工作)(.*?)(?:工作|职业)',
+        ]
+        for pat in job_patterns:
+            m = re.search(pat, text)
+            if m:
+                info['job'] = m.group(0).strip('，。,. ')
+                break
+        
+        # 偏好/技能提取
+        pref_patterns = [
+            r'我(?:喜欢|偏好|习惯|常用|擅长)(.*?)(?:，|。|,|\s|；|;|$)',
+            r'我(?:用|使用)(.*?)(?:，|。|,|\s|；|;|$)',
+        ]
+        for pat in pref_patterns:
+            m = re.search(pat, text)
+            if m:
+                info['preference'] = m.group(1).strip('，。,. ')
+                break
+        
+        return info
+    
     async def process(self, user_input: str, context: Optional[Dict] = None) -> FlywheelResponse:
         """
         Agent 主循环 - Plan → Execute → Reflect
@@ -71,42 +112,75 @@ class KgFlywheelAgent:
         """
         try:
             # Plan: 分析意图
-            intent = self._analyze_intent(user_input)
+            intent, confidence = self._analyze_intent(user_input)
             
             # Execute: 根据意图执行
             if intent == "extract":
-                return await self._run_extraction(user_input)
+                result = await self._run_extraction(user_input)
             elif intent == "query":
-                return await self._run_query(user_input)
+                result = await self._run_query(user_input)
             elif intent == "inspect":
-                return await self._run_inspection()
+                result = await self._run_inspection()
             elif intent == "flywheel":
-                return await self._run_flywheel(user_input)
+                result = await self._run_flywheel(user_input)
             else:
-                return await self._run_general_chat(user_input)
+                result = await self._run_general_chat(user_input)
+            
+            # 注入策略信息到 data
+            result.data["strategy"] = {
+                "intent": intent,
+                "confidence": round(confidence, 2),
+                "agent_state": result.state.value if hasattr(result.state, 'value') else str(result.state),
+            }
+            
+            # 检测用户个人信息
+            user_info = self._extract_user_info(user_input)
+            if user_info:
+                result.data["new_user_info"] = user_info
+            
+            return result
                 
         except Exception as e:
             self.state = AgentState.ERROR
             return FlywheelResponse(
                 reply=f"执行错误: {str(e)}",
                 session_id=self.session_id,
-                state=self.state
+                state=self.state,
+                data={
+                    "strategy": {
+                        "intent": "error",
+                        "confidence": 0.0,
+                        "agent_state": "error",
+                    }
+                }
             )
     
-    def _analyze_intent(self, text: str) -> str:
-        """分析用户意图"""
+    def _analyze_intent(self, text: str) -> tuple[str, float]:
+        """分析用户意图，返回 (意图, 置信度)"""
         text_lower = text.lower()
         keywords = {
             "extract": ["提取", "抽取", "分析文本", "解析", "parse", "extract", "从", "中分析"],
-            "query": ["查询", "查找", "搜索", "query", "search", "find", "查询", "什么关系"],
+            "query": ["查询", "查找", "搜索", "query", "search", "find", "什么关系"],
             "inspect": ["质检", "检查", "质量", "评估", "inspect", "check", "质量如何"],
             "flywheel": ["飞轮", "完整流程", "闭环", "全流程", "flywheel", "pipeline", "执行全部"]
         }
         
+        best_intent = "general"
+        best_score = 0.0
+        
         for intent, kws in keywords.items():
-            if any(kw in text_lower for kw in kws):
-                return intent
-        return "general"
+            matches = sum(1 for kw in kws if kw in text_lower)
+            if matches > 0:
+                score = min(matches / 3.0, 1.0)  # 最多匹配 3 个关键词达到 1.0
+                if score > best_score:
+                    best_score = score
+                    best_intent = intent
+        
+        # general 的默认置信度为 0.5
+        if best_intent == "general":
+            best_score = 0.5
+            
+        return best_intent, best_score
     
     async def _run_extraction(self, text: str) -> FlywheelResponse:
         """Step 1: 提取知识三元组"""

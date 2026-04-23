@@ -1,0 +1,362 @@
+[
+  {
+    "timestamp": "2026-04-20T02:07:48.929038",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.929851",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.930438",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.930846",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.931334",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.931987",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.933031",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.934073",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.934770",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.935461",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.935965",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.936356",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": true,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.936916",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.937550",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.937942",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.938817",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.939666",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.940500",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.941131",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.941705",
+    "task_type": "pls_da",
+    "method_used": "rule",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.6,
+    "latency_ms": 50
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.942433",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.943084",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.943789",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.944304",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.944946",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.945947",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.947109",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.947789",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.948489",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.949252",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.949970",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.950692",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.951427",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.952157",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.953535",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.955046",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.956148",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": true,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.957093",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": true,
+    "actual_pass": false,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.958093",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.85,
+    "latency_ms": 200
+  },
+  {
+    "timestamp": "2026-04-20T02:07:48.958945",
+    "task_type": "pls_da",
+    "method_used": "llm",
+    "predicted_pass": false,
+    "actual_pass": false,
+    "confidence": 0.85,
+    "latency_ms": 200
+  }
+]

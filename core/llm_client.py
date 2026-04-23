@@ -1,0 +1,92 @@
+"""
+LLM 客户端模块
+
+支持 DeepSeek / OpenAI 兼容 API。
+"""
+
+import os
+import logging
+from typing import Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
+
+
+class KaelisLLMClient:
+    """
+    统一的 LLM 客户端，兼容 DeepSeek / OpenAI API。
+    """
+
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
+        self.base_url = base_url or os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
+        self.model = model or os.getenv("LLM_MODEL", "deepseek-chat")
+
+        if not self.api_key:
+            raise ValueError("未配置 LLM API Key，请设置 DEEPSEEK_API_KEY 或 OPENAI_API_KEY 环境变量")
+
+        try:
+            from openai import OpenAI
+            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            logger.info(f"LLM 客户端初始化完成: {self.model} @ {self.base_url}")
+        except ImportError:
+            logger.warning("openai 库未安装，尝试使用 requests 降级模式")
+            self.client = None
+
+    def chat(self, prompt: str, system_prompt: Optional[str] = None, temperature: float = 0.7, json_mode: bool = False, **kwargs) -> str:
+        """
+        发送聊天请求。
+
+        Args:
+            prompt: 用户提示词
+            system_prompt: 系统提示词
+            temperature: 采样温度
+            json_mode: 是否强制 JSON 输出
+            **kwargs: 额外参数
+
+        Returns:
+            str: LLM 返回的文本
+        """
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        try:
+            if self.client:
+                extra = {}
+                if json_mode:
+                    extra["response_format"] = {"type": "json_object"}
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=temperature,
+                    **extra
+                )
+                return response.choices[0].message.content or ""
+            else:
+                # requests 降级模式
+                import requests
+                resp = requests.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": self.model,
+                        "messages": messages,
+                        "temperature": temperature,
+                    },
+                    timeout=60
+                )
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"] or ""
+
+        except Exception as e:
+            logger.error(f"LLM 调用失败: {e}")
+            raise
+
+
+# 模块级单例
+try:
+    llm_client = KaelisLLMClient()
+except Exception as e:
+    logger.warning(f"LLM 客户端单例初始化失败: {e}")
+    llm_client = None

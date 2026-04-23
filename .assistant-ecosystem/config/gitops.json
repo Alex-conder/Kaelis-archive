@@ -1,0 +1,46 @@
+{
+    "repositories":  [
+                         {
+                             "name":  "openclaw-manifests",
+                             "prune":  true,
+                             "self_heal":  true,
+                             "branch":  "main",
+                             "sync_interval":  300,
+                             "auto_sync":  true,
+                             "url":  "https://github.com/user/openclaw-gitops.git"
+                         }
+                     ],
+    "applications":  [
+                         {
+                             "destination":  {
+                                                 "server":  "local",
+                                                 "namespace":  "default"
+                                             },
+                             "path":  "apps/gateway",
+                             "name":  "gateway",
+                             "sync_policy":  {
+                                                 "self_heal":  true,
+                                                 "prune":  true,
+                                                 "automated":  true
+                                             },
+                             "target_revision":  "HEAD"
+                         },
+                         {
+                             "destination":  {
+                                                 "server":  "local",
+                                                 "namespace":  "default"
+                                             },
+                             "path":  "apps/backend",
+                             "name":  "backend",
+                             "sync_policy":  {
+                                                 "self_heal":  true,
+                                                 "prune":  true,
+                                                 "automated":  true
+                                             },
+                             "target_revision":  "HEAD"
+                         }
+                     ],
+    "sync_history":  [
+
+                     ]
+}

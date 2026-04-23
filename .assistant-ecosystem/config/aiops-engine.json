@@ -1,0 +1,40 @@
+{
+    "learning":  {
+                     "model_retrain_interval_hours":  24,
+                     "feedback_loop":  true,
+                     "enabled":  true
+                 },
+    "predictive_maintenance":  {
+                                   "confidence_threshold":  0.8,
+                                   "forecast_days":  7,
+                                   "enabled":  true
+                               },
+    "incidents":  [
+
+                  ],
+    "patterns":  [
+
+                 ],
+    "auto_remediation":  {
+                             "actions":  [
+                                             "restart_service",
+                                             "scale_up",
+                                             "clear_cache"
+                                         ],
+                             "approval_required":  true,
+                             "enabled":  false
+                         },
+    "anomaly_detection":  {
+                              "algorithms":  [
+                                                 "statistical",
+                                                 "ml_based"
+                                             ],
+                              "sensitivity":  "medium",
+                              "thresholds":  {
+                                                 "latency_baseline":  100,
+                                                 "memory_baseline":  60,
+                                                 "cpu_baseline":  30
+                                             },
+                              "enabled":  true
+                          }
+}

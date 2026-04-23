@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 # 尝试导入 ChromaDB
 try:
     import chromadb
-    from chromadb.config import Settings
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
@@ -90,10 +89,9 @@ class TransferLearning:
             import os
             os.makedirs(self.persist_dir, exist_ok=True)
             
-            self.chroma_client = chromadb.Client(Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory=self.persist_dir
-            ))
+            self.chroma_client = chromadb.PersistentClient(
+                path=self.persist_dir
+            )
             
             self.collection = self.chroma_client.get_or_create_collection(
                 name=self.collection_name,

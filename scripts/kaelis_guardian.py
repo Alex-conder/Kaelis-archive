@@ -101,6 +101,61 @@ def check_contracts() -> bool:
     return all((contracts_dir / f).exists() for f in required)
 
 
+def coverage_report() -> int:
+    """运行测试并生成覆盖率周报（T22-005）"""
+    print("[COVERAGE] Running test suite with coverage...")
+    
+    cmd = [
+        sys.executable, "-m", "pytest",
+        "tests/",
+        "-m", "not e2e and not slow",
+        "-q",
+        "--cov=core",
+        "--cov=api",
+        "--cov-report=term-missing:skip-covered",
+    ]
+    
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=300,
+        )
+        
+        # 输出 stdout
+        if result.stdout:
+            print(result.stdout)
+        
+        # 输出 stderr（通常是警告/日志）
+        if result.stderr:
+            # 过滤掉常见的非错误输出
+            lines = result.stderr.strip().splitlines()
+            error_lines = [
+                l for l in lines
+                if not any(x in l for x in ["DeprecationWarning", "Deprecation", "WARN", "INFO"])
+            ]
+            if error_lines:
+                print("[COVERAGE] Stderr:")
+                for line in error_lines:
+                    print(f"  {line}")
+        
+        if result.returncode == 0:
+            print("[COVERAGE] All tests passed.")
+        else:
+            print(f"[COVERAGE] Tests failed with exit code {result.returncode}")
+        
+        return result.returncode
+    except subprocess.TimeoutExpired:
+        print("[COVERAGE] Timeout: tests took longer than 300 seconds")
+        return 1
+    except FileNotFoundError:
+        print("[COVERAGE] pytest not found. Run: pip install pytest pytest-cov")
+        return 1
+
+
 def run_daemon():
     """运行自愈守护进程"""
     print("[DAEMON] Kaelis Guardian Daemon starting...")
@@ -251,6 +306,7 @@ def main():
     parser.add_argument("--daemon", action="store_true", help="Run guardian daemon")
     parser.add_argument("--check-identity", action="store_true", help="Check project identity only")
     parser.add_argument("--electron-check", action="store_true", help="Check Electron module consistency")
+    parser.add_argument("--coverage-report", action="store_true", help="Run tests and print coverage report (T22-005)")
     
     args = parser.parse_args()
     
@@ -267,6 +323,10 @@ def main():
         return 0
     elif args.check_identity:
         return 0 if check_project_identity() else 1
+    elif args.coverage_report:
+        if not check_project_identity():
+            return 1
+        return coverage_report()
     else:
         # Default: run identity check
         return 0 if check_project_identity() else 1

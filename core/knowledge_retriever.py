@@ -33,17 +33,28 @@ except ImportError:
 
 try:
     import chromadb
-    from chromadb.config import Settings
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
 
 try:
-    from langchain.document_loaders import DirectoryLoader, TextLoader
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_community.vectorstores import FAISS
+    from langchain_community.embeddings import OpenAIEmbeddings
+    FAISS_AVAILABLE = True
+except ImportError:
+    FAISS_AVAILABLE = False
+
+try:
+    from langchain_community.document_loaders import DirectoryLoader, TextLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     LANGCHAIN_AVAILABLE = True
 except ImportError:
-    LANGCHAIN_AVAILABLE = False
+    try:
+        from langchain.document_loaders import DirectoryLoader, TextLoader
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        LANGCHAIN_AVAILABLE = True
+    except ImportError:
+        LANGCHAIN_AVAILABLE = False
 
 try:
     from diskcache import Cache
@@ -118,7 +129,85 @@ class LocalDocumentRetriever:
         self.persist_dir = persist_dir
         self.chroma_client = None
         self.collection = None
-        self._init_chromadb()
+        self.faiss_store = None
+        self.use_faiss = os.getenv("USE_FAISS", "false").lower() == "true"
+        
+        if self.use_faiss and FAISS_AVAILABLE:
+            self._init_faiss()
+        else:
+            self._init_chromadb()
+    
+    def _init_faiss(self):
+        """初始化 FAISS 向量存储"""
+        if not FAISS_AVAILABLE:
+            logger.warning("FAISS not available, fallback to ChromaDB")
+            self._init_chromadb()
+            return
+        try:
+            faiss_dir = os.path.join(self.persist_dir, "faiss_index")
+            os.makedirs(faiss_dir, exist_ok=True)
+            
+            # 优先使用 DeepSeek/OpenAI 兼容的嵌入模型
+            api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY", "")
+            base_url = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
+            if api_key:
+                try:
+                    self.embeddings = OpenAIEmbeddings(
+                        openai_api_key=api_key,
+                        openai_api_base=base_url
+                    )
+                    # 测试嵌入是否可用
+                    self.embeddings.embed_query("test")
+                except Exception as emb_err:
+                    logger.warning(f"OpenAI embeddings failed ({emb_err}), using local TF-IDF fallback")
+                    self.embeddings = self._create_tfidf_embeddings()
+            else:
+                logger.info("No API key for embeddings, using local TF-IDF fallback")
+                self.embeddings = self._create_tfidf_embeddings()
+            
+            # 尝试加载已有索引
+            if os.path.exists(os.path.join(faiss_dir, "index.faiss")):
+                self.faiss_store = FAISS.load_local(faiss_dir, self.embeddings, allow_dangerous_deserialization=True)
+                logger.info(f"FAISS index loaded from {faiss_dir}")
+            else:
+                logger.info("FAISS initialized (no existing index)")
+                
+        except Exception as e:
+            logger.error(f"FAISS init failed: {e}, fallback to ChromaDB")
+            self._init_chromadb()
+    
+    def _create_tfidf_embeddings(self):
+        """创建本地 TF-IDF 嵌入模型（无需外部 API）"""
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        
+        class TfidfEmbeddings:
+            def __init__(self, max_features=512):
+                self.vectorizer = TfidfVectorizer(max_features=max_features)
+                self._fitted = False
+            
+            def embed_documents(self, texts):
+                if not self._fitted:
+                    matrix = self.vectorizer.fit_transform(texts)
+                    self._fitted = True
+                else:
+                    matrix = self.vectorizer.transform(texts)
+                return matrix.toarray().tolist()
+            
+            def embed_query(self, text):
+                if not self._fitted:
+                    # 未拟合时返回零向量
+                    return [0.0] * self.vectorizer.max_features
+                matrix = self.vectorizer.transform([text])
+                return matrix.toarray()[0].tolist()
+            
+            def __call__(self, text):
+                """兼容 FAISS 的 callable 接口"""
+                if isinstance(text, str):
+                    return self.embed_query(text)
+                return self.embed_documents(text)
+        
+        logger.info("Using local TF-IDF embeddings for FAISS")
+        return TfidfEmbeddings()
     
     def _init_chromadb(self):
         if not CHROMADB_AVAILABLE:
@@ -126,10 +215,9 @@ class LocalDocumentRetriever:
             return
         try:
             os.makedirs(self.persist_dir, exist_ok=True)
-            self.chroma_client = chromadb.Client(Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory=self.persist_dir
-            ))
+            self.chroma_client = chromadb.PersistentClient(
+                path=self.persist_dir
+            )
             self.collection = self.chroma_client.get_or_create_collection(
                 name=self.collection_name,
                 metadata={"hnsw:space": "cosine"}
@@ -138,15 +226,12 @@ class LocalDocumentRetriever:
             logger.error(f"ChromaDB init failed: {e}")
     
     def index_documents(self, force_reindex: bool = False) -> int:
-        if not self.collection or not LANGCHAIN_AVAILABLE:
+        if not LANGCHAIN_AVAILABLE:
             return 0
         if not os.path.exists(self.doc_dir):
             return 0
         try:
-            if not force_reindex and self.collection.count() > 0:
-                return self.collection.count()
-            
-            from langchain.document_loaders import TextLoader
+            from langchain_community.document_loaders import TextLoader
             documents = []
             for root, _, files in os.walk(self.doc_dir):
                 for file in files:
@@ -168,9 +253,25 @@ class LocalDocumentRetriever:
             chunks = text_splitter.split_documents(documents)
             
             texts = [c.page_content for c in chunks]
-            ids = [f"doc_{i}" for i in range(len(texts))]
             metadatas = [{"source": c.metadata.get("source", "")} for c in chunks]
             
+            # FAISS 模式
+            if self.use_faiss and FAISS_AVAILABLE:
+                self.faiss_store = FAISS.from_texts(
+                    texts, self.embeddings, metadatas=metadatas
+                )
+                faiss_dir = os.path.join(self.persist_dir, "faiss_index")
+                self.faiss_store.save_local(faiss_dir)
+                logger.info(f"FAISS indexed {len(texts)} chunks to {faiss_dir}")
+                return len(texts)
+            
+            # ChromaDB 模式
+            if not self.collection:
+                return 0
+            if not force_reindex and self.collection.count() > 0:
+                return self.collection.count()
+            
+            ids = [f"doc_{i}" for i in range(len(texts))]
             for i in range(0, len(texts), 100):
                 end = min(i + 100, len(texts))
                 self.collection.add(
@@ -186,6 +287,23 @@ class LocalDocumentRetriever:
             return 0
     
     def search(self, query: str, top_k: int = 2) -> List[Dict[str, Any]]:
+        # FAISS 模式
+        if self.use_faiss and self.faiss_store is not None:
+            try:
+                results = self.faiss_store.similarity_search(query, k=top_k)
+                output = []
+                for doc in results:
+                    output.append({
+                        "content": doc.page_content,
+                        "source": doc.metadata.get("source", ""),
+                        "distance": None  # FAISS similarity_search 不返回距离
+                    })
+                return output
+            except Exception as e:
+                logger.error(f"FAISS search failed: {e}")
+                return []
+        
+        # ChromaDB 模式
         if not self.collection:
             return []
         try:

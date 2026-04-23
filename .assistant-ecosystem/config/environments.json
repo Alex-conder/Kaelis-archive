@@ -1,0 +1,65 @@
+{
+    "Current":  "development",
+    "Environments":  {
+                         "staging":  {
+                                         "ConfigPath":  "config\\ecosystem.staging.json",
+                                         "Name":  "Staging",
+                                         "Services":  {
+                                                          "GatewayPort":  8080,
+                                                          "BackendPort":  8081,
+                                                          "FrontendPort":  8082
+                                                      },
+                                         "Description":  "Pre-production testing environment",
+                                         "Features":  {
+                                                          "Debug":  false,
+                                                          "Logging":  "info",
+                                                          "MockServices":  false
+                                                      },
+                                         "Database":  {
+                                                          "Port":  5432,
+                                                          "Host":  "staging-db",
+                                                          "Name":  "openclaw_staging"
+                                                      }
+                                     },
+                         "production":  {
+                                            "ConfigPath":  "config\\ecosystem.prod.json",
+                                            "Name":  "Production",
+                                            "Services":  {
+                                                             "GatewayPort":  80,
+                                                             "BackendPort":  8000,
+                                                             "FrontendPort":  443
+                                                         },
+                                            "Description":  "Production environment",
+                                            "Features":  {
+                                                             "Debug":  false,
+                                                             "Logging":  "warn",
+                                                             "MockServices":  false
+                                                         },
+                                            "Database":  {
+                                                             "Port":  5432,
+                                                             "Host":  "prod-db",
+                                                             "Name":  "openclaw_prod"
+                                                         }
+                                        },
+                         "development":  {
+                                             "ConfigPath":  "config\\ecosystem.json",
+                                             "Name":  "Development",
+                                             "Services":  {
+                                                              "GatewayPort":  18789,
+                                                              "BackendPort":  8000,
+                                                              "FrontendPort":  3000
+                                                          },
+                                             "Description":  "Local development environment",
+                                             "Features":  {
+                                                              "Debug":  true,
+                                                              "Logging":  "verbose",
+                                                              "MockServices":  true
+                                                          },
+                                             "Database":  {
+                                                              "Port":  5432,
+                                                              "Host":  "localhost",
+                                                              "Name":  "openclaw_dev"
+                                                          }
+                                         }
+                     }
+}

@@ -1,0 +1,52 @@
+{
+    "environments":  [
+                         "development",
+                         "staging",
+                         "production"
+                     ],
+    "history":  [
+
+                ],
+    "configs":  [
+                    {
+                        "version":  3,
+                        "key":  "gateway.port",
+                        "type":  "number",
+                        "environment":  "all",
+                        "description":  "Gateway service port",
+                        "value":  18789,
+                        "updated_by":  "admin",
+                        "updated":  "2026-03-16T23:35:31.0959847+08:00"
+                    },
+                    {
+                        "version":  2,
+                        "key":  "backend.api_timeout",
+                        "type":  "number",
+                        "environment":  "all",
+                        "description":  "API request timeout in seconds",
+                        "value":  30,
+                        "updated_by":  "admin",
+                        "updated":  "2026-03-16T23:35:31.0959847+08:00"
+                    },
+                    {
+                        "version":  5,
+                        "key":  "ai.model.default",
+                        "type":  "string",
+                        "environment":  "all",
+                        "description":  "Default AI model",
+                        "value":  "deepseek-chat",
+                        "updated_by":  "admin",
+                        "updated":  "2026-03-16T23:35:31.0959847+08:00"
+                    },
+                    {
+                        "version":  1,
+                        "key":  "features.advanced_analytics",
+                        "type":  "boolean",
+                        "environment":  "production",
+                        "description":  "Enable advanced analytics features",
+                        "value":  true,
+                        "updated_by":  "admin",
+                        "updated":  "2026-03-16T23:35:31.0959847+08:00"
+                    }
+                ]
+}

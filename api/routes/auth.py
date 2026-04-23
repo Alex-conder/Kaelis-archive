@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify, session
 from functools import wraps
 import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 try:
     from supabase import create_client, Client
@@ -92,7 +92,7 @@ def register():
                 'id': result.user.id,
                 'email': email,
                 'username': username or email.split('@')[0],
-                'created_at': datetime.utcnow().isoformat()
+                'created_at': datetime.now(timezone.utc).isoformat()
             }).execute()
         
         return jsonify({
@@ -198,7 +198,7 @@ def update_profile():
         if 'avatar_url' in data:
             update_data['avatar_url'] = data['avatar_url']
         
-        update_data['updated_at'] = datetime.utcnow().isoformat()
+        update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
         
         result = supabase.table('profiles').update(update_data).eq('id', user.id).execute()
         
@@ -283,7 +283,7 @@ def get_onboarding_status():
 def complete_onboarding():
     """标记首次引导完成"""
     try:
-        ONBOARDING_MARKER.write_text(datetime.utcnow().isoformat(), encoding='utf-8')
+        ONBOARDING_MARKER.write_text(datetime.now(timezone.utc).isoformat(), encoding='utf-8')
         return jsonify({
             'success': True,
             'message': 'Onboarding completed'
@@ -303,5 +303,5 @@ def health_check():
         'status': 'healthy' if supabase else 'unavailable',
         'supabase_configured': bool(SUPABASE_URL and SUPABASE_KEY),
         'offline_mode_supported': True,
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat()
     })

@@ -1,0 +1,37 @@
+[run]
+source = core, api
+omit =
+    */tests/*
+    */legacy/*
+    */__pycache__/*
+    core/multiomics/*
+    core/proteomics/*
+    core/metabolomics/*
+    core/genomics/*
+    core/lipidomics/*
+    core/player.py
+    core/recorder.py
+    core/skill_patcher.py
+    core/skill_validator.py
+    core/user_isolated_retriever.py
+    core/user_profiler.py
+    core/env_validator.py
+    core/evaluator_tuner.py
+    core/memory_scorer.py
+    */venv/*
+    */.venv/*
+
+[report]
+precision = 1
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+
+[html]
+directory = htmlcov

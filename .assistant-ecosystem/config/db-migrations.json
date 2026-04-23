@@ -1,0 +1,13 @@
+{
+    "Connection":  {
+                       "Port":  5432,
+                       "Server":  "localhost",
+                       "Username":  "openclaw_user",
+                       "Database":  "openclaw"
+                   },
+    "TargetVersion":  "latest",
+    "CurrentVersion":  "0",
+    "History":  [
+
+                ]
+}

@@ -1,0 +1,80 @@
+# Kaelis 网络安全配置 (P16-002)
+#
+# 目标：最小化攻击暴露面，仅开放必要端口
+# 适用场景：生产环境部署
+#
+# 必要端口：
+#   5000/tcp - Kaelis HTTP API (Waitress)
+#
+# 可选端口（根据功能启用）：
+#   7687/tcp - Neo4j Bolt (如使用 Neo4j 图数据库)
+#   5432/tcp - PostgreSQL (如使用外部 PostgreSQL)
+#
+# 必须关闭的端口：
+#   8000/tcp - 开发服务器
+#   3000/tcp - React dev server
+#   22/tcp   - SSH (通过 VPN 或跳板机访问)
+
+firewall:
+  description: "Kaelis 最小暴露面配置"
+  version: "1.0"
+
+  # 白名单：明确允许的入站端口
+  inbound_allow:
+    - port: 5000
+      protocol: tcp
+      description: "Kaelis API (Waitress)"
+      required: true
+    
+    # Neo4j 可选
+    # - port: 7687
+    #   protocol: tcp
+    #   description: "Neo4j Bolt"
+    #   required: false
+
+  # 黑名单：必须阻止的入站端口
+  inbound_deny:
+    - port: 8000
+      description: "Flask dev server"
+    - port: 3000
+      description: "React dev server"
+    - port: 5001
+      description: "备用开发端口"
+    - port: 8080
+      description: "通用开发端口"
+
+  # 安全加固建议
+  hardening:
+    # 1. 仅监听本地回环（如果通过反向代理访问）
+    bind_localhost_only: false
+    
+    # 2. 启用请求速率限制
+    rate_limit:
+      enabled: true
+      requests_per_minute: 120
+      burst: 20
+    
+    # 3. 连接超时
+    connection_timeout: 30
+    
+    # 4. 最大请求体大小
+    max_body_size_mb: 50
+
+  # Windows 防火墙 PowerShell 命令（参考）
+  windows_powershell:
+    # 允许 5000 端口
+    allow_api: |
+      New-NetFirewallRule -DisplayName "Kaelis API" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow
+    
+    # 阻止开发端口
+    block_dev: |
+      New-NetFirewallRule -DisplayName "Block Dev Ports" -Direction Inbound -LocalPort 8000,3000,5001,8080 -Protocol TCP -Action Block
+
+  # 验证命令
+  verification:
+    # 检查监听端口
+    check_listening: "netstat -an | findstr LISTENING"
+    # 检查防火墙规则
+    check_firewall: "Get-NetFirewallRule | Where-Object {$_.DisplayName -like '*Kaelis*'}"
+    # 端口扫描测试（从外部）
+    port_scan_test: "nmap -p 1-10000 <server_ip>"

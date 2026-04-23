@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 # 尝试导入 ChromaDB
 try:
     import chromadb
-    from chromadb.config import Settings
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
@@ -91,10 +90,10 @@ class SkillStorage:
             return
         
         try:
-            self.chroma_client = chromadb.Client(Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory=str(self.persist_dir / "chroma")
-            ))
+            # ChromaDB >= 1.5 推荐使用 PersistentClient
+            self.chroma_client = chromadb.PersistentClient(
+                path=str(self.persist_dir / "chroma")
+            )
             self.collection = self.chroma_client.get_or_create_collection(
                 name="skills",
                 metadata={"hnsw:space": "cosine"}
@@ -538,6 +537,169 @@ class SkillManager:
             "overall_success_rate": total_success / total_usage if total_usage > 0 else 0,
             "avg_rating": sum(s.rating for s in skills) / len(skills)
         }
+    
+    # ==================== agentskills.io 格式兼容 ====================
+    
+    def export_to_agentskills(self, skill_id: str) -> Optional[Dict[str, Any]]:
+        """
+        导出技能为 agentskills.io 标准格式
+        
+        Args:
+            skill_id: 技能ID
+            
+        Returns:
+            Dict: agentskills.io JSON 对象，失败返回 None
+        """
+        skill = self.storage.get(skill_id)
+        if not skill:
+            return None
+        
+        return {
+            "schema_version": "1.0",
+            "skill": {
+                "id": skill.id,
+                "name": skill.name,
+                "description": skill.description,
+                "task_type": skill.task_type,
+                "parameters": skill.params,
+                "workflow": skill.workflow,
+                "tags": skill.tags,
+                "metadata": {
+                    "created_at": skill.created_at,
+                    "updated_at": skill.updated_at,
+                    "version": skill.version,
+                    "source": skill.source,
+                    "created_by": skill.created_by,
+                    "rating": skill.rating,
+                    "usage_count": skill.usage_count,
+                    "success_count": skill.success_count,
+                    "success_rate": skill.success_rate,
+                    "evolution_source": skill.evolution_source
+                }
+            }
+        }
+    
+    def export_all_agentskills(self) -> Dict[str, Any]:
+        """
+        导出所有技能为 agentskills.io 批量格式
+        
+        Returns:
+            Dict: 包含 skills 数组的标准包
+        """
+        skills = self.storage.get_all()
+        return {
+            "schema_version": "1.0",
+            "export_metadata": {
+                "exported_at": datetime.now().isoformat(),
+                "total_skills": len(skills),
+                "source_system": "Kaelis",
+                "source_version": "8.0.0"
+            },
+            "skills": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "description": s.description,
+                    "task_type": s.task_type,
+                    "parameters": s.params,
+                    "workflow": s.workflow,
+                    "tags": s.tags,
+                    "metadata": {
+                        "created_at": s.created_at,
+                        "updated_at": s.updated_at,
+                        "version": s.version,
+                        "source": s.source,
+                        "created_by": s.created_by,
+                        "rating": s.rating,
+                        "usage_count": s.usage_count,
+                        "success_count": s.success_count,
+                        "success_rate": s.success_rate,
+                        "evolution_source": s.evolution_source
+                    }
+                }
+                for s in skills
+            ]
+        }
+    
+    def import_from_agentskills(self, data: Dict[str, Any]) -> Optional[Skill]:
+        """
+        从 agentskills.io 格式导入技能
+        
+        支持两种输入格式：
+        1. 单技能: {"schema_version": "1.0", "skill": {...}}
+        2. 批量包: {"schema_version": "1.0", "skills": [...]}
+        
+        Args:
+            data: agentskills.io JSON 数据
+            
+        Returns:
+            Skill: 导入的第一个技能（批量导入时），失败返回 None
+        """
+        if not isinstance(data, dict):
+            logger.error("Invalid agentskills data: expected dict")
+            return None
+        
+        schema_version = data.get("schema_version", "1.0")
+        if schema_version not in ("1.0",):
+            logger.warning(f"Unknown agentskills schema version: {schema_version}")
+        
+        # 批量导入
+        if "skills" in data and isinstance(data["skills"], list):
+            imported = []
+            for skill_data in data["skills"]:
+                result = self._import_single_agentskill(skill_data)
+                if result:
+                    imported.append(result)
+            logger.info(f"Bulk imported {len(imported)}/{len(data['skills'])} skills from agentskills")
+            return imported[0] if imported else None
+        
+        # 单技能导入
+        if "skill" in data:
+            return self._import_single_agentskill(data["skill"])
+        
+        # 直接是 skill 对象
+        if "id" in data and "name" in data:
+            return self._import_single_agentskill(data)
+        
+        logger.error("Invalid agentskills data: missing 'skill' or 'skills' key")
+        return None
+    
+    def _import_single_agentskill(self, skill_data: Dict[str, Any]) -> Optional[Skill]:
+        """导入单个 agentskills 技能"""
+        try:
+            skill_id = skill_data.get("id") or hashlib.md5(
+                f"import:{skill_data.get('name')}:{datetime.now().isoformat()}".encode()
+            ).hexdigest()[:16]
+            
+            meta = skill_data.get("metadata", {})
+            
+            skill = Skill(
+                id=skill_id,
+                name=skill_data.get("name", "Unnamed Skill"),
+                task_type=skill_data.get("task_type", "general"),
+                params=skill_data.get("parameters", skill_data.get("params", {})),
+                workflow=skill_data.get("workflow"),
+                description=skill_data.get("description", ""),
+                source="import",
+                rating=meta.get("rating", 0.0),
+                usage_count=meta.get("usage_count", 0),
+                success_count=meta.get("success_count", 0),
+                created_by=meta.get("created_by", "agentskills.io"),
+                created_at=meta.get("created_at", datetime.now().isoformat()),
+                updated_at=meta.get("updated_at", datetime.now().isoformat()),
+                version=meta.get("version", "1.0.0"),
+                tags=skill_data.get("tags", []),
+                evolution_source=meta.get("evolution_source")
+            )
+            
+            if self.storage.save(skill):
+                logger.info(f"Imported skill from agentskills: {skill.id} ({skill.name})")
+                return skill
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to import agentskills skill: {e}")
+            return None
 
 
 # 全局实例

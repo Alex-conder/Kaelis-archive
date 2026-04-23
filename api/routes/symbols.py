@@ -15,7 +15,7 @@ Usage:
 from flask import Blueprint, request, jsonify, g
 from pydantic import BaseModel, ValidationError, Field
 from typing import Any, Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 import logging
 
@@ -131,7 +131,7 @@ def handle_validation_error(e: ValidationError) -> tuple:
         "success": False,
         "error": "Validation failed",
         "details": errors,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }), 400
 
 
@@ -150,7 +150,7 @@ def handle_exception(e: Exception) -> tuple:
         "success": False,
         "error": "Internal server error",
         "message": str(e) if request.app.debug else "An unexpected error occurred",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }), 500
 
 # ============================================================================
@@ -252,7 +252,7 @@ def buildSymbolIndex():
         response = SymbolIndexResponse(
             success=True,
             message="Operation completed successfully",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             # TODO: Add response data here
             data={}
         )
@@ -298,7 +298,7 @@ def querySymbols():
         return jsonify({
             "success": True,
             "message": "Operation completed successfully",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }), 200
         
         
@@ -321,7 +321,7 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "module": "symbols",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "endpoints": [
             
             {"path": "/api/symbols/index", "method": "POST"},

@@ -14,6 +14,13 @@ import subprocess
 import logging
 from pathlib import Path
 
+# 加载 .env 环境变量（必须在其他导入之前）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Fixer D2: 统一日志初始化入口
 try:
     from core.logging_config import init_logging
@@ -118,7 +125,7 @@ def get_dist_path():
 def start_server():
     """启动服务"""
     logger.info("[START] Launching Kaelis services...")
-    logger.info("[INFO] Docker optional - running in lightweight mode (SQLite + Mock Neo4j)")
+    logger.info("[INFO] Running in native mode (SQLite + SQLiteGraphDriver)")
     logger.info("访问地址:")
     logger.info("  - 首页: http://localhost:5000")
     logger.info("  - 设置: http://localhost:5000/settings.html")
@@ -137,8 +144,17 @@ def start_server():
         from api.routes.ai_native import ai_native_bp
         from api.routes.auth import auth_bp
         from api.routes.sync import sync_bp
+        from api.routes.kg_flywheel_routes import kg_flywheel_bp
         
         app = Flask(__name__, static_folder='api/static')
+        app.secret_key = os.environ.get('SECRET_KEY', 'kaelis-dev-secret-key-change-in-production')
+        
+        # 启用 CORS（开发环境跨域支持）
+        try:
+            from flask_cors import CORS
+            CORS(app, resources={r"/api/*": {"origins": "*"}, r"/ai/*": {"origins": "*"}})
+        except ImportError:
+            pass
         app.register_blueprint(evolve_bp)
         app.register_blueprint(skills_bp)
         app.register_blueprint(recorder_bp)
@@ -149,6 +165,36 @@ def start_server():
         app.register_blueprint(ai_native_bp)
         app.register_blueprint(auth_bp)
         app.register_blueprint(sync_bp)
+        app.register_blueprint(kg_flywheel_bp)
+        
+        from api.routes.approval import approval_bp
+        from api.routes.monitoring import monitoring_bp
+        from api.routes.workflow_monitoring import workflow_monitoring_bp
+        app.register_blueprint(approval_bp)
+        app.register_blueprint(monitoring_bp)
+        app.register_blueprint(workflow_monitoring_bp)
+        
+        # 注册 API 中间件
+        try:
+            from core.middleware import register_middleware
+            register_middleware(app)
+        except Exception as e:
+            logger.warning(f"Middleware not registered: {e}")
+        
+        # 初始化数据库连接池
+        try:
+            from core.db_pool import init_pool_for_memory_manager
+            init_pool_for_memory_manager(db_dir="data")
+        except Exception as e:
+            logger.warning(f"DB pool not initialized: {e}")
+        
+        # 启动自动化质检调度器
+        try:
+            from core.monitoring.scheduler import get_quality_scheduler
+            scheduler = get_quality_scheduler()
+            scheduler.start()
+        except Exception as e:
+            logger.warning(f"Quality scheduler not started: {e}")
         
         DIST_DIR = get_dist_path()
         has_react_frontend = os.path.exists(os.path.join(DIST_DIR, 'index.html'))
@@ -186,29 +232,49 @@ def start_server():
             """知识图谱飞轮入口"""
             return send_from_directory('api/static', 'kg-flywheel.html')
         
-        @app.route('/api/kg-flywheel/health')
-        def kg_flywheel_health():
-            """KgFlywheel 健康检查"""
+        @app.route('/api/health', methods=['GET'])
+        def health_check():
+            """统一健康检查端点"""
+            from datetime import datetime
+            import platform
+            
+            checks = {
+                "self_evolving": False,
+                "skill_manager": False,
+                "knowledge_retriever": False
+            }
+            
             try:
-                from api.routes.kg_flywheel_tools import neo4j_driver
-                neo4j_driver.verify_connectivity()
-                db_status = "connected"
-            except Exception as e:
-                db_status = f"disconnected: {str(e)}"
+                from core.self_evolving import SelfEvolvingEngine
+                checks["self_evolving"] = True
+            except Exception:
+                pass
+            
+            try:
+                from core.skill_manager import get_skill_manager
+                checks["skill_manager"] = True
+            except Exception:
+                pass
+            
+            try:
+                from core.knowledge_retriever import KnowledgeRetriever
+                checks["knowledge_retriever"] = True
+            except Exception:
+                pass
+            
+            all_healthy = all(checks.values())
             
             return {
-                "status": "healthy" if db_status == "connected" else "degraded",
-                "service": "kg-flywheel",
-                "database": db_status,
-                "endpoints": [
-                    "/api/kg-flywheel/chat",
-                    "/api/kg-flywheel/extract",
-                    "/api/kg-flywheel/query",
-                    "/api/kg-flywheel/inspect"
-                ]
+                "status": "healthy" if all_healthy else "degraded",
+                "version": "8.0.0",
+                "timestamp": datetime.now().isoformat(),
+                "checks": checks,
+                "mode": "lightweight",
+                "host": platform.node()
             }
         
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        use_reloader = '--no-reload' not in sys.argv
+        app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=use_reloader)
         
     except Exception as e:
         logger.error(f"[FAIL] Launch failed: {e}")

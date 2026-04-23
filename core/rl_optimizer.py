@@ -119,7 +119,7 @@ class RLOptimizer:
                         
                 except Exception as e:
                     logger.debug(f"Objective eval failed: {e}")
-                    scores.append(float('-inf'))
+                    # 不加入 scores，保持 scores 与 samples 长度一致
             
             if not samples:
                 logger.error("No valid samples in iteration")
@@ -251,6 +251,121 @@ class RLOptimizer:
     def get_optimization_history(self) -> List[Dict]:
         """获取优化历史"""
         return [r.to_dict() for r in self.optimization_history]
+    
+    def learn_from_trajectories(
+        self,
+        task_type: str,
+        trajectories: List[Dict[str, Any]],
+        param_names: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        P15-002: 从 RL 轨迹学习参数偏好
+        
+        分析历史轨迹，提取高奖励状态的参数特征，
+        用于指导后续优化初始分布。
+        
+        Args:
+            task_type: 任务类型
+            trajectories: RL 轨迹列表 [(state, action, reward, next_state, done)]
+            param_names: 关注的参数名列表
+            
+        Returns:
+            Dict: 学习结果，包含参数偏好和建议边界
+        """
+        if not trajectories:
+            logger.warning(f"No trajectories for {task_type}")
+            return {}
+        
+        # 按奖励排序，提取高奖励轨迹
+        sorted_traj = sorted(trajectories, key=lambda t: t.get("reward", 0), reverse=True)
+        top_20_percent = max(1, len(sorted_traj) // 5)
+        elite_traj = sorted_traj[:top_20_percent]
+        
+        # 提取参数统计
+        param_stats = {}
+        
+        for traj in elite_traj:
+            state = traj.get("state", {})
+            params = state.get("params", {})
+            
+            for key, value in params.items():
+                if param_names and key not in param_names:
+                    continue
+                
+                if key not in param_stats:
+                    param_stats[key] = []
+                
+                if isinstance(value, (int, float)):
+                    param_stats[key].append(float(value))
+        
+        # 计算统计量
+        learned_bounds = {}
+        param_preferences = {}
+        
+        for key, values in param_stats.items():
+            if not values:
+                continue
+            
+            arr = np.array(values)
+            mean = float(np.mean(arr))
+            std = float(np.std(arr))
+            
+            # 建议边界：均值 ± 2*std
+            lower = max(mean - 2 * std, min(values))
+            upper = min(mean + 2 * std, max(values))
+            
+            learned_bounds[key] = (lower, upper)
+            param_preferences[key] = {
+                "mean": mean,
+                "std": std,
+                "suggested_min": lower,
+                "suggested_max": upper,
+                "sample_count": len(values)
+            }
+        
+        result = {
+            "task_type": task_type,
+            "trajectories_analyzed": len(trajectories),
+            "elite_trajectories": len(elite_traj),
+            "learned_bounds": learned_bounds,
+            "param_preferences": param_preferences
+        }
+        
+        logger.info(
+            f"Learned from {len(trajectories)} trajectories for {task_type}: "
+            f"{len(learned_bounds)} params"
+        )
+        return result
+    
+    def suggest_initial_params(
+        self,
+        task_type: str,
+        default_bounds: Dict[str, Tuple[float, float]],
+        trajectories: Optional[List[Dict]] = None
+    ) -> Dict[str, float]:
+        """
+        基于学习结果建议初始参数
+        
+        如果有轨迹数据，使用学习到的偏好；
+        否则使用边界的中间值。
+        """
+        if trajectories:
+            learned = self.learn_from_trajectories(task_type, trajectories)
+            learned_bounds = learned.get("learned_bounds", {})
+        else:
+            learned_bounds = {}
+        
+        suggested = {}
+        for param, (low, high) in default_bounds.items():
+            if param in learned_bounds:
+                # 使用学习到的边界中心
+                l, h = learned_bounds[param]
+                suggested[param] = (l + h) / 2
+            else:
+                # 默认中间值
+                suggested[param] = (low + high) / 2
+        
+        return suggested
 
 
 if __name__ == "__main__":

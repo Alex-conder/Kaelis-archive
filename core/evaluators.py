@@ -304,25 +304,33 @@ class HybridEvaluator(BaseEvaluator):
         # 首先尝试规则评估
         rule_result = self.rule_evaluator.evaluate(result, criteria)
         
-        # 如果规则评估成功或明确失败（不是因为缺少变量），直接返回
-        if rule_result.confidence == 1.0 or rule_result.details.get("error") != "missing_variable":
+        # 规则评估成功（通过或高置信度）→ 直接返回
+        if rule_result.passed and rule_result.confidence > 0:
             return rule_result
         
-        # 规则评估失败（如缺少变量），使用 LLM 评估
-        logger.info("规则评估失败，回退到 LLM 评估")
-        llm_result = self.llm_evaluator.evaluate(result, criteria)
+        # 分析失败原因
+        error_type = rule_result.details.get("error", "")
+        error_str = str(error_type).lower()
+        is_syntax_error = "invalid syntax" in error_str or "syntaxerror" in error_str
+        is_missing_var = error_type == "missing_variable"
         
-        # 合并结果
-        return EvaluationResult(
-            passed=llm_result.passed,
-            confidence=llm_result.confidence * 0.9,  # 混合评估置信度略降
-            reason=f"[LLM回退] {llm_result.reason}",
-            details={
-                **llm_result.details,
-                "rule_fallback_reason": rule_result.reason,
-                "evaluator": "hybrid"
-            }
-        )
+        # 语法错误或变量缺失时，自动降级到 LLM
+        if is_syntax_error or is_missing_var:
+            logger.info(f"规则评估失败（{error_type}），降级到 LLM 评估")
+            llm_result = self.llm_evaluator.evaluate(result, criteria)
+            return EvaluationResult(
+                passed=llm_result.passed,
+                confidence=llm_result.confidence * 0.9,
+                reason=f"[Hybrid-LLM降级] {llm_result.reason}",
+                details={
+                    **llm_result.details,
+                    "rule_fallback_reason": rule_result.reason,
+                    "evaluator": "hybrid_llm_fallback"
+                }
+            )
+        
+        # 其他情况返回规则结果
+        return rule_result
 
 
 # 评估器工厂

@@ -1,0 +1,97 @@
+{
+  "name": "kaelis",
+  "displayName": "Kaelis",
+  "description": "Kaelis AI Agent — Your memory-enhanced coding companion",
+  "version": "0.1.0",
+  "publisher": "kaelis",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Chat"
+  ],
+  "activationEvents": [
+    "onChatParticipant:kaelis"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "kaelis",
+        "name": "Kaelis",
+        "fullName": "Kaelis Agent",
+        "description": "AI agent with four-layer memory, self-evolution, and multi-omics knowledge.",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "searchMemory",
+            "description": "Search your Kaelis memory for relevant context"
+          },
+          {
+            "name": "listSkills",
+            "description": "List available skills in the Kaelis skill market"
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Kaelis",
+      "properties": {
+        "kaelis.mcpServerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to mcp_standalone.py (auto-detected if empty)"
+        },
+        "kaelis.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python interpreter path for MCP Server"
+        },
+        "kaelis.userId": {
+          "type": "string",
+          "default": "",
+          "description": "Your Kaelis user ID (used for memory isolation)"
+        },
+        "kaelis.apiBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:5000",
+          "description": "Kaelis Flask API base URL (fallback when MCP unavailable)"
+        }
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaelis/kaelis.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kaelis/kaelis/issues"
+  },
+  "homepage": "https://kaelis.ai",
+  "license": "MIT",
+  "icon": "resources/kaelis-icon.png",
+  "galleryBanner": {
+    "color": "#0f172a",
+    "theme": "dark"
+  },
+  "keywords": [
+    "ai",
+    "memory",
+    "agent",
+    "knowledge graph",
+    "mcp",
+    "chat"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.3.0"
+  }
+}

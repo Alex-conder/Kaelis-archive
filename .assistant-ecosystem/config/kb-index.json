@@ -1,0 +1,59 @@
+{
+    "articles":  [
+                     {
+                         "id":  "kb-001",
+                         "updated":  "2026-03-16T23:21:11.9678401+08:00",
+                         "tags":  [
+                                      "setup",
+                                      "installation",
+                                      "beginner"
+                                  ],
+                         "content":  "# Getting Started with OpenClaw\r\n\r\n## Prerequisites\r\n- Windows 10/11 or Linux/macOS with PowerShell\r\n- Python 3.9+\r\n- Node.js 18+\r\n\r\n## Quick Setup\r\n1. Run \u0027assistant.ps1 setup\u0027 to configure the environment\r\n2. Start services with \u0027assistant.ps1 start all\u0027\r\n3. Access the dashboard at http://localhost:3000\r\n\r\n## Next Steps\r\n- Explore the ecosystem tools\r\n- Configure AI providers\r\n- Set up monitoring",
+                         "created":  "2026-03-16T23:21:11.9678401+08:00",
+                         "category":  "getting-started",
+                         "title":  "Getting Started with OpenClaw"
+                     },
+                     {
+                         "id":  "kb-002",
+                         "updated":  "2026-03-16T23:21:11.9678401+08:00",
+                         "tags":  [
+                                      "gateway",
+                                      "network",
+                                      "error",
+                                      "connection"
+                                  ],
+                         "content":  "# Troubleshooting Gateway Connection Issues\r\n\r\n## Common Symptoms\r\n- Gateway status shows \"unhealthy\"\r\n- Cannot connect to port 18789\r\n- Connection timeout errors\r\n\r\n## Solutions\r\n\r\n### 1. Check Gateway Process\r\n`powershell\r\nGet-Process | Where-Object { search.ProcessName -match \"claw\" }\r\n`\r\n\r\n### 2. Verify Port Availability\r\n`powershell\r\nTest-NetConnection -ComputerName localhost -Port 18789\r\n`\r\n\r\n### 3. Restart Gateway\r\n`powershell\r\n.\\assistant.ps1 restart gateway\r\n`\r\n\r\n### 4. Check Logs\r\n`powershell\r\n.\\log-analyzer.ps1 tail -Service gateway\r\n`\r",
+                         "created":  "2026-03-16T23:21:11.9678401+08:00",
+                         "category":  "troubleshooting",
+                         "title":  "Troubleshooting Gateway Connection Issues"
+                     },
+                     {
+                         "id":  "kb-003",
+                         "updated":  "2026-03-16T23:21:11.9678401+08:00",
+                         "tags":  [
+                                      "production",
+                                      "deployment",
+                                      "security",
+                                      "performance"
+                                  ],
+                         "content":  "# Production Deployment Best Practices\r\n\r\n## Security\r\n1. Enable SSL/TLS certificates\r\n2. Configure firewall rules\r\n3. Use strong API keys\r\n4. Enable audit logging\r\n\r\n## Performance\r\n1. Set up caching (Redis)\r\n2. Configure load balancing\r\n3. Enable CDN for static assets\r\n4. Optimize database queries\r\n\r\n## Monitoring\r\n1. Set up health checks\r\n2. Configure alerting\r\n3. Enable metrics collection\r\n4. Create runbooks\r\n\r\n## Backup\r\n1. Schedule regular backups\r\n2. Test restore procedures\r\n3. Store backups offsite\r\n4. Document recovery steps",
+                         "created":  "2026-03-16T23:21:11.9678401+08:00",
+                         "category":  "best-practices",
+                         "title":  "Best Practices for Production Deployment"
+                     },
+                     {
+                         "id":  "runbook-001",
+                         "updated":  "2026-03-16T23:21:11.9678401+08:00",
+                         "tags":  [
+                                      "incident",
+                                      "outage",
+                                      "emergency",
+                                      "response"
+                                  ],
+                         "content":  "# Runbook: Service Outage Response\r\n\r\n## Severity Levels\r\n- **P0**: Complete outage, all services down\r\n- **P1**: Major functionality impaired\r\n- **P2**: Minor issues, workarounds available\r\n\r\n## Immediate Actions (First 5 minutes)\r\n\r\n1. **Assess Impact**\r\n   - Check monitoring dashboard\r\n   - Identify affected services\r\n   - Determine user impact\r\n\r\n2. **Notify Team**\r\n   - Page on-call engineer\r\n   - Post in #incidents channel\r\n   - Update status page\r\n\r\n3. **Gather Information**\r\n   - Recent deployments\r\n   - Infrastructure changes\r\n   - Error logs\r\n\r\n## Diagnostic Steps\r\n\r\n### Check Service Health\r\n`powershell\r\n.\\health-aggregator.ps1\r\n`\r\n\r\n### Review Recent Logs\r\n`powershell\r\n.\\log-analyzer.ps1 errors -Last 1h\r\n`\r\n\r\n### Check Resource Usage\r\n`powershell\r\n.\\resource-quota.ps1 status\r\n`\r\n\r\n## Recovery Procedures\r\n\r\n### Restart Services\r\n`powershell\r\n.\\assistant.ps1 restart all\r\n`\r\n\r\n### Rollback Deployment\r\n`powershell\r\n.\\gitops-controller.ps1 rollback application HEAD~1\r\n`\r\n\r\n### Failover to DR\r\n`powershell\r\n.\\disaster-recovery.ps1 activate-dr\r\n`\r\n\r\n## Post-Incident\r\n1. Document timeline\r\n2. Identify root cause\r\n3. Implement preventive measures\r\n4. Update runbooks",
+                         "created":  "2026-03-16T23:21:11.9678401+08:00",
+                         "category":  "runbooks",
+                         "title":  "Runbook: Service Outage Response"
+                     }
+                 ]
+}

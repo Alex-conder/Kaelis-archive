@@ -1,0 +1,84 @@
+{
+    "frameworks":  [
+                       {
+                           "priority":  "high",
+                           "name":  "SOC2",
+                           "enabled":  true
+                       },
+                       {
+                           "priority":  "high",
+                           "name":  "ISO27001",
+                           "enabled":  true
+                       },
+                       {
+                           "priority":  "high",
+                           "name":  "GDPR",
+                           "enabled":  true
+                       },
+                       {
+                           "priority":  "medium",
+                           "name":  "HIPAA",
+                           "enabled":  false
+                       }
+                   ],
+    "last_check":  "2026-03-16T23:01:24.4287993+08:00",
+    "overall_score":  0,
+    "rules":  [
+                  {
+                      "check":  "key_rotation",
+                      "category":  "security",
+                      "description":  "API keys must be rotated every 90 days",
+                      "id":  "SEC-001",
+                      "severity":  "high"
+                  },
+                  {
+                      "check":  "ssl_validity",
+                      "category":  "security",
+                      "description":  "SSL certificates must be valid",
+                      "id":  "SEC-002",
+                      "severity":  "critical"
+                  },
+                  {
+                      "check":  "secret_scan",
+                      "category":  "security",
+                      "description":  "No hardcoded secrets in code",
+                      "id":  "SEC-003",
+                      "severity":  "critical"
+                  },
+                  {
+                      "check":  "audit_enabled",
+                      "category":  "logging",
+                      "description":  "Audit logs must be enabled",
+                      "id":  "LOG-001",
+                      "severity":  "high"
+                  },
+                  {
+                      "check":  "log_retention",
+                      "category":  "logging",
+                      "description":  "Logs must be retained for 90 days",
+                      "id":  "LOG-002",
+                      "severity":  "medium"
+                  },
+                  {
+                      "check":  "backup_schedule",
+                      "category":  "backup",
+                      "description":  "Daily backups must be configured",
+                      "id":  "BKU-001",
+                      "severity":  "high"
+                  },
+                  {
+                      "check":  "mfa_enabled",
+                      "category":  "access",
+                      "description":  "Multi-factor authentication enabled",
+                      "id":  "ACC-001",
+                      "severity":  "high"
+                  },
+                  {
+                      "check":  "rbac_config",
+                      "category":  "access",
+                      "description":  "Role-based access control configured",
+                      "id":  "ACC-002",
+                      "severity":  "medium"
+                  }
+              ]
+}

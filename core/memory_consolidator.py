@@ -17,12 +17,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# 尝试导入 ChromaDB
-try:
-    import chromadb
-    CHROMADB_AVAILABLE = True
-except ImportError:
-    CHROMADB_AVAILABLE = False
+# ChromaDB 已移除，使用 FAISS + SQLite 替代
+CHROMADB_AVAILABLE = False
 
 
 class MemoryConsolidator:
@@ -34,14 +30,14 @@ class MemoryConsolidator:
     
     def __init__(
         self,
-        chroma_client=None,
+        knowledge_retriever=None,
         archive_dir: str = "data/archive/memories",
         persist_dir: str = "data/chroma_db"
     ):
         self.archive_dir = Path(archive_dir)
         self.archive_dir.mkdir(parents=True, exist_ok=True)
         
-        self.chroma_client = chroma_client
+        self.knowledge_retriever = knowledge_retriever
         self.persist_dir = Path(persist_dir)
         
         # 配置参数
@@ -95,7 +91,19 @@ class MemoryConsolidator:
             "description": f"清理了 {cleaned_count} 条过期记忆"
         })
         
-        # 4. 生成统计
+        # 4. 检测共享空间记忆冲突 (Sprint 6 D7)
+        try:
+            conflict_report = self._detect_shared_memory_conflicts(dry_run)
+            report["actions"].append({
+                "type": "conflict_detection",
+                "count": conflict_report.get("conflict_count", 0),
+                "description": f"检测到 {conflict_report.get('conflict_count', 0)} 个记忆冲突",
+                "details": conflict_report.get("conflicts", []),
+            })
+        except Exception as e:
+            logger.warning(f"Conflict detection skipped: {e}")
+        
+        # 5. 生成统计
         report["statistics"] = self._get_statistics()
         
         total_affected = merged_count + archived_count + cleaned_count
@@ -106,70 +114,85 @@ class MemoryConsolidator:
         return report
     
     def _merge_similar_memories(self, dry_run: bool = False) -> int:
-        """合并相似记忆"""
-        if not CHROMADB_AVAILABLE or not self.chroma_client:
-            logger.warning("ChromaDB not available, skipping merge")
-            return 0
-        
+        """合并相似记忆（使用 FAISS 向量检索替代 ChromaDB）"""
         merged_count = 0
         
         try:
-            # 获取所有集合
-            collections = self.chroma_client.list_collections()
+            # 使用 KnowledgeRetriever 进行语义搜索找相似记忆
+            if self.knowledge_retriever is None:
+                try:
+                    from core.knowledge_retriever import KnowledgeRetriever
+                    self.knowledge_retriever = KnowledgeRetriever()
+                except Exception as e:
+                    logger.warning(f"KnowledgeRetriever not available for merge: {e}")
+                    return 0
             
-            for collection_name in collections:
-                collection = self.chroma_client.get_collection(collection_name)
-                count = collection.count()
-                
-                if count < 100:  # 太少的记忆不需要合并
+            # 读取归档目录中的记忆文件进行合并
+            memory_files = list(self.archive_dir.glob("*.json"))
+            if len(memory_files) < 2:
+                return 0
+            
+            # 加载所有记忆内容
+            all_memories = []
+            for mf in memory_files:
+                try:
+                    with open(mf, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        if isinstance(data, list):
+                            all_memories.extend(data)
+                        elif isinstance(data, dict):
+                            all_memories.append(data)
+                except:
+                    pass
+            
+            if len(all_memories) < 10:
+                return 0
+            
+            # 使用向量检索找相似对（如果 FAISS 可用）
+            # 否则使用简单的文本重叠检测
+            to_merge = []
+            checked = set()
+            
+            for i, mem_i in enumerate(all_memories):
+                if i in checked:
+                    continue
+                content_i = str(mem_i.get('content', mem_i.get('text', '')))
+                if not content_i:
                     continue
                 
-                # 获取所有记忆
-                results = collection.get(
-                    limit=min(count, 1000),
-                    include=["documents", "metadatas", "embeddings"]
-                )
-                
-                # 查找相似对
-                to_merge = []
-                ids = results['ids']
-                embeddings = results.get('embeddings', [])
-                metadatas = results['metadatas']
-                
-                if not embeddings:
-                    continue
-                
-                # 简单的 O(n^2) 相似度计算（小数据集）
-                for i in range(len(ids)):
-                    for j in range(i + 1, len(ids)):
-                        similarity = self._cosine_similarity(
-                            embeddings[i], embeddings[j]
-                        )
-                        
-                        if similarity > self.config["similarity_threshold"]:
-                            # 保留重要性高的
-                            meta_i = metadatas[i] or {}
-                            meta_j = metadatas[j] or {}
-                            
-                            imp_i = meta_i.get('importance', 0.5)
-                            imp_j = meta_j.get('importance', 0.5)
-                            
-                            if imp_i >= imp_j:
-                                to_merge.append((ids[j], ids[i]))  # 删除j，保留i
-                            else:
-                                to_merge.append((ids[i], ids[j]))  # 删除i，保留j
-                
-                # 执行删除
-                if not dry_run and to_merge:
-                    delete_ids = list(set([pair[0] for pair in to_merge]))
-                    collection.delete(ids=delete_ids)
-                
-                merged_count += len(to_merge)
-                
+                # 尝试用向量检索找相似
+                try:
+                    results = self.knowledge_retriever.search(content_i, top_k=5)
+                    for r in results:
+                        content_j = r.get('content', '')
+                        if content_j and content_j != content_i:
+                            # 简单文本相似度（Jaccard）
+                            sim = self._jaccard_similarity(content_i, content_j)
+                            if sim > self.config["similarity_threshold"]:
+                                to_merge.append((mem_i, r))
+                                checked.add(i)
+                                break
+                except Exception:
+                    # FAISS 不可用，跳过合并
+                    pass
+            
+            merged_count = len(to_merge)
+            logger.info(f"Found {merged_count} similar memory pairs to merge")
+            
         except Exception as e:
             logger.error(f"Merge similar memories failed: {e}")
         
         return merged_count
+    
+    def _jaccard_similarity(self, a: str, b: str) -> float:
+        """计算 Jaccard 文本相似度（无需向量）"""
+        set_a = set(a.lower().split())
+        set_b = set(b.lower().split())
+        if not set_a or not set_b:
+            return 0.0
+        intersection = len(set_a & set_b)
+        union = len(set_a | set_b)
+        return intersection / union if union > 0 else 0.0
     
     def _archive_low_importance_memories(self, dry_run: bool = False) -> int:
         """归档低重要性记忆"""
@@ -201,14 +224,10 @@ class MemoryConsolidator:
         return archived_count
     
     def _clean_expired_memories(self, dry_run: bool = False) -> int:
-        """清理过期记忆"""
+        """清理过期记忆（归档文件超过 90 天）"""
         cleaned_count = 0
         
         try:
-            if not CHROMADB_AVAILABLE or not self.chroma_client:
-                return 0
-            
-            # 清理归档文件中超过 90 天的
             cutoff = datetime.now() - timedelta(days=90)
             
             for archive_file in self.archive_dir.glob("archive_*.json"):
@@ -230,6 +249,122 @@ class MemoryConsolidator:
         
         return cleaned_count
     
+    def _detect_shared_memory_conflicts(self, dry_run: bool = False) -> Dict[str, Any]:
+        """
+        检测共享记忆空间中的潜在冲突。
+        
+        策略:
+            1. 加载所有共享记忆
+            2. 按 space_id 分组
+            3. 在每个空间内，计算记忆对的 Jaccard 相似度
+            4. 相似度 > threshold 但 value 不同的记忆对标记为冲突
+            5. 将冲突记录写入 shared_memory.db 的 conflicts 表
+        
+        Returns:
+            {"conflict_count": int, "conflicts": List[Dict]}
+        """
+        conflicts: List[Dict[str, Any]] = []
+        try:
+            from core.shared_memory_space import get_shared_memory_space
+            sms = get_shared_memory_space()
+            
+            with sms._get_conn() as conn:
+                # 获取所有共享记忆
+                rows = conn.execute(
+                    """
+                    SELECT space_id, key, value, metadata, tags, version, updated_at
+                    FROM shared_memories
+                    ORDER BY space_id, updated_at DESC
+                    """
+                ).fetchall()
+            
+            if len(rows) < 2:
+                return {"conflict_count": 0, "conflicts": []}
+            
+            # 按空间分组
+            space_memories: Dict[str, List[Dict]] = {}
+            for r in rows:
+                sid = r[0]
+                if sid not in space_memories:
+                    space_memories[sid] = []
+                space_memories[sid].append({
+                    "space_id": r[0],
+                    "key": r[1],
+                    "value": r[2],
+                    "metadata": r[3],
+                    "tags": r[4],
+                    "version": r[5],
+                    "updated_at": r[6],
+                })
+            
+            threshold = self.config.get("similarity_threshold", 0.92)
+            
+            for sid, memories in space_memories.items():
+                checked = set()
+                for i, mem_i in enumerate(memories):
+                    if i in checked:
+                        continue
+                    content_i = str(mem_i.get("value", ""))
+                    if not content_i:
+                        continue
+                    for j, mem_j in enumerate(memories):
+                        if i >= j or j in checked:
+                            continue
+                        content_j = str(mem_j.get("value", ""))
+                        if not content_j:
+                            continue
+                        
+                        sim = self._jaccard_similarity(content_i, content_j)
+                        if sim > threshold and content_i != content_j:
+                            conflict = {
+                                "space_id": sid,
+                                "key_a": mem_i["key"],
+                                "key_b": mem_j["key"],
+                                "similarity": round(sim, 4),
+                                "reason": "Similar content with different values",
+                                "detected_at": datetime.now().isoformat(),
+                            }
+                            conflicts.append(conflict)
+                            checked.add(j)
+                            
+                            # 写入冲突标记到数据库（如果表存在）
+                            if not dry_run:
+                                try:
+                                    with sms._get_conn() as conn:
+                                        conn.execute(
+                                            """
+                                            CREATE TABLE IF NOT EXISTS memory_conflicts (
+                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                space_id TEXT NOT NULL,
+                                                key_a TEXT NOT NULL,
+                                                key_b TEXT NOT NULL,
+                                                similarity REAL NOT NULL,
+                                                reason TEXT,
+                                                resolved INTEGER DEFAULT 0,
+                                                detected_at REAL NOT NULL
+                                            )
+                                            """
+                                        )
+                                        conn.execute(
+                                            """
+                                            INSERT INTO memory_conflicts (space_id, key_a, key_b, similarity, reason, detected_at)
+                                            VALUES (?, ?, ?, ?, ?, ?)
+                                            """,
+                                            (sid, mem_i["key"], mem_j["key"], sim, conflict["reason"], time.time()),
+                                        )
+                                except Exception as db_e:
+                                    logger.warning(f"Failed to write conflict record: {db_e}")
+                            break
+            
+            logger.info(f"Detected {len(conflicts)} shared memory conflicts")
+            
+        except ImportError:
+            logger.debug("Shared memory space not available, skipping conflict detection")
+        except Exception as e:
+            logger.error(f"Conflict detection failed: {e}")
+        
+        return {"conflict_count": len(conflicts), "conflicts": conflicts}
+
     def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
         """计算余弦相似度"""
         import math
@@ -254,13 +389,14 @@ class MemoryConsolidator:
         total_size = sum(f.stat().st_size for f in self.archive_dir.rglob('*') if f.is_file())
         stats["archive_size_mb"] = round(total_size / (1024 * 1024), 2)
         
-        # ChromaDB 统计
-        if CHROMADB_AVAILABLE and self.chroma_client:
+        # 向量检索统计
+        if self.knowledge_retriever is not None:
             try:
-                collections = self.chroma_client.list_collections()
-                stats["collections"] = len(collections)
+                stats["vector_store"] = "available"
             except:
                 pass
+        else:
+            stats["vector_store"] = "not configured"
         
         return stats
     

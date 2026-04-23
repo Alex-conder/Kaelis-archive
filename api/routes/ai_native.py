@@ -11,7 +11,7 @@ Provides AI-friendly endpoints for:
 """
 
 from flask import Blueprint, jsonify, request
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import json
 import re
@@ -459,7 +459,7 @@ def record_block_event():
     telemetry_file.parent.mkdir(parents=True, exist_ok=True)
     
     # Generate event ID
-    event_id = f"EVT-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{hash(data.get('file_path', '')) % 10000:04d}"
+    event_id = f"EVT-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{hash(data.get('file_path', '')) % 10000:04d}"
     
     try:
         with open(telemetry_file, 'a', encoding='utf-8') as f:
@@ -473,7 +473,7 @@ def record_block_event():
                 "message": data.get('message'),
                 "ai_original": data.get('ai_original_output'),
                 "corrected": data.get('corrected_output'),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "session_id": data.get('session_id')
             }
             f.write(json.dumps(record, ensure_ascii=False) + '\n')
@@ -491,7 +491,7 @@ def health_check():
     """API 健康检查"""
     return jsonify({
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "1.0.0",
         "endpoints": [
             "/ai/contract/m0",

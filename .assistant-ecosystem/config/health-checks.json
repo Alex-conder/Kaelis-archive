@@ -1,0 +1,50 @@
+{
+    "Checks":  [
+                   {
+                       "Id":  "system",
+                       "Name":  "System Resources",
+                       "Command":  "Get-SystemHealth",
+                       "Type":  "local",
+                       "Interval":  60,
+                       "Enabled":  true
+                   },
+                   {
+                       "Id":  "gateway",
+                       "Name":  "Gateway Service",
+                       "Interval":  30,
+                       "Type":  "http",
+                       "Url":  "http://localhost:18789/health",
+                       "Enabled":  true
+                   },
+                   {
+                       "Id":  "backend",
+                       "Name":  "Backend Service",
+                       "Interval":  30,
+                       "Type":  "http",
+                       "Url":  "http://localhost:8000/health",
+                       "Enabled":  true
+                   },
+                   {
+                       "Id":  "database",
+                       "Name":  "Database Connection",
+                       "Interval":  60,
+                       "Host":  "localhost",
+                       "Type":  "tcp",
+                       "Port":  5432,
+                       "Enabled":  true
+                   },
+                   {
+                       "Id":  "disk",
+                       "Name":  "Disk Space",
+                       "Command":  "Get-DiskHealth",
+                       "Type":  "local",
+                       "Interval":  300,
+                       "Enabled":  true
+                   }
+               ],
+    "Aggregation":  {
+                        "HealthyThreshold":  80,
+                        "DegradedThreshold":  50,
+                        "HistorySize":  100
+                    }
+}

@@ -120,13 +120,13 @@ hallucination_detection:
 sandbox:
   enabled: true
   
-  # Docker 配置
-  docker:
-    image: "python:3.11-slim"
-    memory_limit: "512m"
-    cpu_limit: "1.0"
-    network_disabled: true
-    timeout: 300
+  # Docker 配置（已禁用：本环境无虚拟化支持）
+  # docker:
+  #   image: "python:3.11-slim"
+  #   memory_limit: "512m"
+  #   cpu_limit: "1.0"
+  #   network_disabled: true
+  #   timeout: 300
   
   # 本地降级配置
   local_fallback: true

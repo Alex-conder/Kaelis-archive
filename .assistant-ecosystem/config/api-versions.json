@@ -1,0 +1,46 @@
+{
+    "CurrentVersion":  "v2",
+    "Compatibility":  {
+                          "SunsetWarningDays":  90,
+                          "DefaultVersion":  "v2",
+                          "MinSupported":  "v1"
+                      },
+    "Versions":  {
+                     "v3":  {
+                                "Features":  [
+                                                 "basic",
+                                                 "advanced",
+                                                 "websocket",
+                                                 "graphql"
+                                             ],
+                                "EndOfLife":  null,
+                                "BasePath":  "/api/v3",
+                                "Released":  "2026-03-01",
+                                "DeprecatedDate":  null,
+                                "Status":  "beta"
+                            },
+                     "v1":  {
+                                "Features":  [
+                                                 "basic",
+                                                 "legacy"
+                                             ],
+                                "EndOfLife":  "2026-06-01",
+                                "BasePath":  "/api/v1",
+                                "Released":  "2025-01-01",
+                                "DeprecatedDate":  "2025-12-01",
+                                "Status":  "deprecated"
+                            },
+                     "v2":  {
+                                "Features":  [
+                                                 "basic",
+                                                 "advanced",
+                                                 "websocket"
+                                             ],
+                                "EndOfLife":  null,
+                                "BasePath":  "/api/v2",
+                                "Released":  "2026-01-01",
+                                "DeprecatedDate":  null,
+                                "Status":  "current"
+                            }
+                 }
+}

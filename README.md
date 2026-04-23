@@ -1,6 +1,8 @@
 # 🌊 Kaelis 智流 - AI Agent 操作系统
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](web/frontend/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-v4-38B2AC.svg)](web/frontend/)
 [![Tests](https://img.shields.io/badge/Tests-27%2F27%20passed-brightgreen.svg)](tests/)
 [![Metabolomics](https://img.shields.io/badge/Metabolomics-mzML%20supported-blueviolet.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -10,6 +12,27 @@
 > **统一执行内核**: ACK v2.1 前馈确定性认知内核
 
 Kaelis 智流是一个具备**四层记忆架构**和**自我进化能力**的 AI Agent 操作系统，采用**九层架构**设计。系统能够自动评估任务结果、检索知识、改进策略、验证效果，实现完整的自进化闭环。
+
+## 🚀 快速开始
+
+### 后端启动
+
+```bash
+pip install -r requirements.txt
+python prod_server.py
+# 服务运行在 http://localhost:5000
+```
+
+### 前端启动
+
+```bash
+cd web/frontend
+npm install
+npm run dev          # Web 开发模式
+npm run electron:dev # Electron 桌面端
+```
+
+[查看前端开发指南](web/frontend/README.md)
 
 ## 🆕 统一 CLI (v1.0)
 
@@ -341,6 +364,25 @@ curl -X POST -F "file=@sample.mzML" http://localhost:5000/api/metabolomics/uploa
 - [x] **方向4**: 移动监控面板（API）✅
 - [x] **方向5**: 演示视频和文档 ✅
 - [x] **代谢组学**: mzML 解析与自进化分析 ✅
+
+---
+
+## 🚀 最近更新 (Sprint 3-4)
+
+### Sprint 4 — 激活·传播·获客
+- **记忆确认**：首次对话自动检测并确认记住的用户信息（姓名/职业/偏好）
+- **分享卡片**：记忆浏览器支持一键生成精美分享卡片（复制/下载）
+- **Landing Page**：全新官网 `web/landing/index.html`，含 Hero / 价值主张 / 下载区域
+- **文案升级**："记忆中枢"→"我的第二大脑"，"技能市场"→"能力库"
+- **主动推送优化**：基于上下文相似度过滤，仅推送相关内容
+- **VSCode 扩展**：package.json 已配置 Marketplace 发布字段，README 增加一键安装指引
+- **Product Hunt**：完整上线文案与预热 Tweet 草稿已准备 (`docs/product_hunt_launch.md`)
+
+### Sprint 3 — 多端接入·流式输出
+- **VSCode 扩展 MVP**：`@kaelis` Chat Participant，支持 MCP stdio + HTTP fallback
+- **SSE 流式输出**：后端 `/api/kg-flywheel/chat/stream` + 前端 `sendMessageStream`
+- **策略透明**：每条回复显示真实策略标签（如 "通用对话 · 50%"）
+- **主动推送真实数据**：接入 `/api/memory/proactive/push` 真实 API
 
 ---
 

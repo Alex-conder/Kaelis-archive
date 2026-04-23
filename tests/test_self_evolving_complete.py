@@ -147,6 +147,40 @@ class TestLLMBasedEvaluator:
         parsed = evaluator._parse_llm_response(response)
         assert parsed["passed"] is False
 
+    def test_llm_evaluator_no_llm(self):
+        """没有 LLM 时返回失败"""
+        from unittest.mock import patch
+        with patch("core.evaluators.LLM_AVAILABLE", False), \
+             patch("core.evaluators.llm_client", None):
+            evaluator = LLMBasedEvaluator(llm_client_instance=None)
+            result = evaluator.evaluate({"x": 1}, "x > 0")
+            assert result.passed is False
+            assert result.confidence == 0.0
+
+    def test_llm_evaluator_chat_exception(self):
+        """LLM chat 抛出异常"""
+        class BadLLM:
+            def chat(self, **kwargs):
+                raise RuntimeError("network error")
+        evaluator = LLMBasedEvaluator(BadLLM())
+        result = evaluator.evaluate({"x": 1}, "x > 0")
+        assert result.passed is False
+        assert "network error" in result.reason
+
+    def test_parse_invalid_json_response(self):
+        """无效 JSON 响应解析"""
+        evaluator = LLMBasedEvaluator()
+        parsed = evaluator._parse_llm_response("not json at all")
+        assert parsed["passed"] is False
+        assert parsed["confidence"] == 0.0
+
+    def test_parse_brace_response(self):
+        """从大括号提取 JSON"""
+        evaluator = LLMBasedEvaluator()
+        parsed = evaluator._parse_llm_response('some text {"passed": true, "confidence": 0.9} more text')
+        assert parsed["passed"] is True
+        assert parsed["confidence"] == 0.9
+
 
 class TestEvaluatorFactory:
     """测试评估器工厂"""

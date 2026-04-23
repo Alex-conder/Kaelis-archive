@@ -1,0 +1,50 @@
+{
+    "keys":  [
+                 {
+                     "created":  "2026-01-01",
+                     "last_rotated":  "2026-01-01",
+                     "name":  "gateway_token",
+                     "status":  "active",
+                     "type":  "api_key"
+                 },
+                 {
+                     "created":  "2026-01-15",
+                     "last_rotated":  "2026-01-15",
+                     "name":  "deepseek_api",
+                     "status":  "active",
+                     "type":  "api_key"
+                 },
+                 {
+                     "created":  "2026-01-01",
+                     "last_rotated":  "2026-01-01",
+                     "name":  "jwt_secret",
+                     "status":  "active",
+                     "type":  "jwt_secret"
+                 }
+             ],
+    "history":  [
+
+                ],
+    "rotation_policy":  {
+                            "db_passwords":  {
+                                                 "auto_rotate":  false,
+                                                 "notify_before_days":  30,
+                                                 "interval_days":  365
+                                             },
+                            "ssl_certificates":  {
+                                                     "auto_rotate":  false,
+                                                     "notify_before_days":  30,
+                                                     "interval_days":  365
+                                                 },
+                            "jwt_secrets":  {
+                                                "auto_rotate":  false,
+                                                "notify_before_days":  14,
+                                                "interval_days":  180
+                                            },
+                            "api_keys":  {
+                                             "auto_rotate":  true,
+                                             "notify_before_days":  7,
+                                             "interval_days":  90
+                                         }
+                        }
+}

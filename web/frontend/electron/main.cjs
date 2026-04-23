@@ -3,12 +3,12 @@
  *
  * 功能：
  * 1. 启动画面与进度显示
- * 2. 管理 Docker 服务（PostgreSQL / Neo4j）
+ * 2. 本地 SQLite 存储模式（Docker 已禁用）
  * 3. 管理 Flask 后端子进程
  * 4. 服务健康检查轮询
  * 5. 加载前端本地构建文件
  * 6. IPC 通信与系统托盘
- * 7. 退出时清理后端进程与 Docker 容器
+ * 7. 退出时清理后端进程
  * 8. 启动失败诊断与一键导出
  */
 
@@ -30,6 +30,22 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const PROJECT_ROOT = isDev ? path.join(__dirname, '../..') : process.resourcesPath;
 const FRONTEND_DIST = isDev ? path.join(__dirname, '../dist') : path.join(process.resourcesPath, 'web/frontend/dist');
 const LOG_DIR = path.join(PROJECT_ROOT, 'logs');
+
+// 生产模式下尝试多个路径寻找后端
+function findProjectRoot() {
+  if (isDev) return path.join(__dirname, '../..');
+  // 优先使用打包后的 resources/app/backend
+  const packedBackend = path.join(process.resourcesPath, 'app', 'backend');
+  if (fs.existsSync(path.join(packedBackend, 'launch.py'))) {
+    return packedBackend;
+  }
+  // 回退到原始项目目录（如果存在）
+  const originalProject = path.join(process.resourcesPath, '..', '..', '..', 'Kaelis-main');
+  if (fs.existsSync(path.join(originalProject, 'launch.py'))) {
+    return originalProject;
+  }
+  return process.resourcesPath;
+}
 
 // 配置
 const CONFIG = {
@@ -156,138 +172,14 @@ async function showDockerNotRunningDialog() {
 }
 
 function startDockerServices() {
-  return new Promise(async (resolve, reject) => {
-    logToSplash('Checking Docker environment...');
-
-    const dockerState = await checkDockerState();
-    if (dockerState === 'not_installed') {
-      dialog.showErrorBox(
-        'Docker 未安装',
-        'Kaelis 需要 Docker Desktop 来运行数据库服务。\n\n请下载并安装后重新启动 Kaelis。'
-      );
-      shell.openExternal('https://www.docker.com/products/docker-desktop');
-      reject(new Error('Docker not installed'));
-      return;
-    }
-
-    if (dockerState === 'installed_not_running') {
-      let action = await showDockerNotRunningDialog();
-      if (action === 'open_docker') {
-        logToSplash('Waiting for Docker Desktop to start...');
-        // 等待 Docker 启动，最多 60 秒
-        let retries = 30;
-        while (retries > 0) {
-          await new Promise(r => setTimeout(r, 2000));
-          const newState = await checkDockerState();
-          if (newState === 'running') {
-            logToSplash('Docker Desktop is now running.');
-            break;
-          }
-          retries--;
-        }
-        if (retries === 0) {
-          dialog.showErrorBox('启动超时', 'Docker Desktop 未能在 60 秒内启动，请手动启动后重试。');
-          reject(new Error('Docker Desktop start timeout'));
-          return;
-        }
-      } else if (action === 'retry') {
-        const retryState = await checkDockerState();
-        if (retryState !== 'running') {
-          reject(new Error('Docker Desktop still not running after retry'));
-          return;
-        }
-      } else {
-        reject(new Error('User cancelled Docker startup'));
-        app.quit();
-        return;
-      }
-    }
-
-    const composePath = path.join(PROJECT_ROOT, 'docker-compose.yml');
-    if (!fs.existsSync(composePath)) {
-      logToSplash('Docker Compose file not found, skipping container startup.');
-      resolve(true);
-      return;
-    }
-
-    // 端口冲突检测
-    logToSplash('Checking port availability...');
-    const conflicts = [];
-    for (const port of [5432, 7474, 7687]) {
-      const occupant = await checkPortConflict(port);
-      if (occupant) {
-        conflicts.push({ port, occupant });
-      }
-    }
-    if (conflicts.length > 0) {
-      const details = conflicts.map(c => `端口 ${c.port} 被占用: ${c.occupant}`).join('\n');
-      dialog.showErrorBox(
-        '端口冲突',
-        `Kaelis 启动数据库服务时发现端口冲突：\n\n${details}\n\n请关闭占用程序或修改 docker-compose.yml 中的端口映射后重试。`
-      );
-      reject(new Error(`Port conflicts: ${conflicts.map(c => c.port).join(', ')}`));
-      return;
-    }
-
-    logToSplash('Starting Docker services (PostgreSQL, Neo4j)...');
-    logToSplash('Downloading images if needed, please wait...');
-
-    const dockerProcess = spawn('docker-compose', ['-f', composePath, 'up', '-d'], {
-      cwd: PROJECT_ROOT,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-
-    let stderrOutput = '';
-
-    dockerProcess.stdout.on('data', (data) => {
-      const line = data.toString().trim();
-      console.log(`[Docker] ${line}`);
-      logToSplash(line);
-    });
-    dockerProcess.stderr.on('data', (data) => {
-      const line = data.toString().trim();
-      console.error(`[Docker ERR] ${line}`);
-      stderrOutput += line + '\n';
-      logToSplash(line);
-    });
-
-    dockerProcess.on('error', (err) => {
-      showDiagnosticDialog(`Failed to start Docker services: ${err.message}`, stderrOutput);
-      reject(new Error(`Failed to start Docker services: ${err.message}`));
-    });
-
-    dockerProcess.on('exit', (code) => {
-      if (code !== 0) {
-        showDiagnosticDialog(`docker-compose exited with code ${code}`, stderrOutput);
-        reject(new Error(`docker-compose exited with code ${code}`));
-        return;
-      }
-      logToSplash('Docker containers started, waiting for health checks...');
-
-      // 轮询等待服务就绪
-      Promise.all([
-        waitForService('http://localhost:7474', 60000).catch(() => null),
-        waitForService('http://localhost:5432', 60000).catch(() => null)
-      ]).then(() => {
-        logToSplash('Database services are ready!');
-        resolve(true);
-      }).catch((err) => {
-        showDiagnosticDialog(`Database health check failed: ${err.message}`, stderrOutput);
-        reject(err);
-      });
-    });
+  return new Promise((resolve) => {
+    logToSplash('Docker 服务已禁用 - 使用 SQLite 本地存储模式');
+    resolve(true);
   });
 }
 
 function stopDockerServices() {
-  const composePath = path.join(PROJECT_ROOT, 'docker-compose.yml');
-  if (fs.existsSync(composePath)) {
-    console.log('[Docker] Stopping containers...');
-    exec(`docker-compose -f "${composePath}" down`, { cwd: PROJECT_ROOT }, (err) => {
-      if (err) console.error('[Docker ERR] Failed to stop containers:', err.message);
-    });
-  }
+  // Docker 已禁用，无需停止容器
 }
 
 async function exportDiagnostics(errorMessage, dockerStderr) {
@@ -317,13 +209,8 @@ async function exportDiagnostics(errorMessage, dockerStderr) {
     }
   }
 
-  // 尝试收集 docker info
-  try {
-    const dockerInfo = await execPromise('docker info');
-    fs.writeFileSync(path.join(reportDir, 'docker-info.txt'), dockerInfo);
-  } catch (e) {
-    fs.writeFileSync(path.join(reportDir, 'docker-info.txt'), `Failed to get docker info: ${e.message}`);
-  }
+  // Docker 已禁用，跳过 docker info 收集
+  fs.writeFileSync(path.join(reportDir, 'docker-info.txt'), 'Docker disabled in this build.');
 
   // 压缩为 zip
   const { execSync } = require('child_process');
@@ -486,8 +373,9 @@ function createMainWindow() {
 // ==================== 后端服务管理 ====================
 
 function resolvePythonExecutable() {
+  const root = findProjectRoot();
   // 优先使用嵌入版 Python
-  const embedPython = path.join(PROJECT_ROOT, 'python', 'python.exe');
+  const embedPython = path.join(root, 'python', 'python.exe');
   if (fs.existsSync(embedPython)) {
     return embedPython;
   }
@@ -496,13 +384,17 @@ function resolvePythonExecutable() {
 }
 
 function resolveBackendScript() {
+  const root = findProjectRoot();
   // 优先使用 PyInstaller 产物
-  const pyinstallerExe = path.join(PROJECT_ROOT, 'backend', 'launch.exe');
+  const pyinstallerExe = path.join(root, 'backend', 'launch.exe');
   if (fs.existsSync(pyinstallerExe)) {
     return { type: 'exe', path: pyinstallerExe };
   }
   // 回退到源码启动
-  const script = path.join(PROJECT_ROOT, 'launch.py');
+  const script = path.join(root, 'launch.py');
+  if (!fs.existsSync(script)) {
+    return { type: 'none', path: script };
+  }
   return { type: 'py', path: script };
 }
 
@@ -511,6 +403,21 @@ function startBackend() {
     logToSplash('Starting backend services...');
 
     const backend = resolveBackendScript();
+    if (backend.type === 'none') {
+      logToSplash('Backend not packaged, checking external backend...');
+      const healthUrl = `${CONFIG.API_BASE_URL}/api/auth/health`;
+      waitForService(healthUrl, 10000)
+        .then(() => {
+          logToSplash('External backend detected!');
+          resolve(true);
+        })
+        .catch(() => {
+          logToSplash('No backend found. Please run: python start_server.py');
+          resolve(false);
+        });
+      return;
+    }
+
     if (!fs.existsSync(backend.path)) {
       reject(new Error(`Backend not found: ${backend.path}`));
       return;
@@ -527,8 +434,9 @@ function startBackend() {
       logToSplash(`Using Python backend (${cmd}).`);
     }
 
+    const root = findProjectRoot();
     backendProcess = spawn(cmd, args, {
-      cwd: PROJECT_ROOT,
+      cwd: root,
       env: {
         ...process.env,
         FLASK_ENV: 'production',
@@ -690,32 +598,8 @@ function setupIPC() {
 
 async function initializeApp() {
   createSplashWindow();
-  let dockerReady = false;
-
-  try {
-    await startDockerServices();
-    dockerReady = true;
-  } catch (dockerErr) {
-    console.error('[Docker Error]', dockerErr);
-    logToSplash(`Docker Error: ${dockerErr.message}`);
-    const choice = await dialog.showMessageBox(splashWindow || undefined, {
-      type: 'warning',
-      title: 'Docker 服务启动失败',
-      message: '无法启动数据库服务（PostgreSQL / Neo4j）',
-      detail: `${dockerErr.message}\n\n您可以选择继续进入受限模式（部分功能如知识图谱将不可用），或导出诊断报告并退出。`,
-      buttons: ['继续（受限模式）', '导出诊断报告并退出'],
-      defaultId: 0,
-      cancelId: 1
-    });
-    if (choice.response === 1) {
-      await showDiagnosticDialog(dockerErr.message, '');
-      if (splashWindow && !splashWindow.isDestroyed()) {
-        splashWindow.close();
-      }
-      app.quit();
-      return;
-    }
-  }
+  // Docker 已禁用，直接使用 SQLite 本地模式
+  await startDockerServices();
 
   try {
     await startBackend();
@@ -729,7 +613,7 @@ async function initializeApp() {
     // 通知渲染进程当前 Docker 可用性
     if (mainWindow) {
       mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.send('docker-status', { available: dockerReady });
+        mainWindow.webContents.send('docker-status', { available: false });
       });
     }
   } catch (err) {

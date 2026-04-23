@@ -6,6 +6,8 @@ import os
 import json
 import uuid
 import asyncio
+import sqlite3
+import re
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -61,6 +63,211 @@ class MockResult:
         return self._data[0] if self._data else None
 
 
+# ===========================================
+# SQLite 图数据库驱动（持久化三元组）
+# ===========================================
+class SQLiteGraphDriver:
+    """SQLite 图数据库驱动 - 持久化三元组存储"""
+    
+    def __init__(self, db_path: str = None):
+        self.db_path = db_path or os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "data", "kaelis_graph.db"
+        )
+        self._init_db()
+    
+    def _init_db(self):
+        """初始化数据库表结构"""
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS kg_entities (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    type TEXT,
+                    source TEXT,
+                    user_id TEXT DEFAULT 'anonymous',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(name, user_id)
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS kg_triples (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject TEXT NOT NULL,
+                    predicate TEXT NOT NULL,
+                    object TEXT NOT NULL,
+                    subject_type TEXT,
+                    object_type TEXT,
+                    confidence REAL DEFAULT 1.0,
+                    source TEXT,
+                    user_id TEXT DEFAULT 'anonymous',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            # P12-001: 为现有表添加 user_id 列（幂等操作）
+            try:
+                conn.execute("ALTER TABLE kg_entities ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
+            except sqlite3.OperationalError:
+                pass  # 列已存在
+            try:
+                conn.execute("ALTER TABLE kg_triples ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
+            except sqlite3.OperationalError:
+                pass  # 列已存在
+            
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_kg_subject ON kg_triples(subject)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_kg_predicate ON kg_triples(predicate)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_kg_object ON kg_triples(object)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_name ON kg_entities(name)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_type ON kg_entities(type)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_kg_user ON kg_entities(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_kg_triples_user ON kg_triples(user_id)")
+            conn.commit()
+    
+    def session(self):
+        return SQLiteSession(self.db_path)
+    
+    def verify_connectivity(self):
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("SELECT 1")
+            return True
+        except Exception:
+            return False
+
+
+class SQLiteSession:
+    """SQLite 会话 - 兼容 Neo4j Session 接口"""
+    
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+    
+    def __enter__(self):
+        self.conn = sqlite3.connect(self.db_path)
+        self.conn.row_factory = sqlite3.Row
+        return self
+    
+    def __exit__(self, *args):
+        if hasattr(self, 'conn'):
+            self.conn.close()
+    
+    def run(self, query: str, **params):
+        """执行 Cypher 查询（转换为 SQLite SQL）"""
+        sql, sql_params = self._cypher_to_sql(query, params)
+        
+        if sql is None:
+            # DDL 或无需返回的语句
+            return SQLiteResult([])
+        
+        cursor = self.conn.execute(sql, sql_params)
+        rows = [dict(row) for row in cursor.fetchall()]
+        self.conn.commit()
+        return SQLiteResult(rows)
+    
+    def _cypher_to_sql(self, query: str, params: dict):
+        """Cypher 到 SQL 的简化转换"""
+        q_upper = query.upper()
+        q_lower = query.lower()
+        
+        # CREATE INDEX (skip, already handled in init)
+        if "CREATE INDEX" in q_upper:
+            return None, []
+        
+        # MERGE single entity: MERGE (n:Entity {name: $name})
+        merge_entity_match = re.search(
+            r"MERGE\s*\(\s*\w+:\s*Entity\s+\{([^}]+)\}\s*\)", 
+            query, re.IGNORECASE
+        )
+        if merge_entity_match:
+            props_str = merge_entity_match.group(1)
+            # Extract properties from pattern like name: $subject, type: $subj_type
+            name_val = params.get("subject") or params.get("name") or params.get("object")
+            type_val = params.get("subj_type") or params.get("obj_type") or params.get("type") or "Unknown"
+            source_val = params.get("source", "")
+            
+            if name_val:
+                sql = """
+                    INSERT OR IGNORE INTO kg_entities (name, type, source, created_at)
+                    VALUES (?, ?, ?, datetime('now'))
+                """
+                return sql, [name_val, type_val, source_val]
+        
+        # MERGE relation: MATCH (s:Entity {name: $subject}), (o:Entity {name: $object})
+        #                MERGE (s)-[r:RELATES {type: $predicate, confidence: $conf}]->(o)
+        if "MERGE" in q_upper and "RELATES" in q_upper:
+            subject = params.get("subject", "")
+            obj = params.get("object", "")
+            predicate = params.get("predicate", "") or params.get("type", "")
+            confidence = params.get("conf", 1.0)
+            source = params.get("source", "")
+            subj_type = params.get("subj_type", "")
+            obj_type = params.get("obj_type", "")
+            
+            # First ensure entities exist
+            self.conn.execute(
+                "INSERT OR IGNORE INTO kg_entities (name, type, source, created_at) VALUES (?, ?, ?, datetime('now'))",
+                (subject, subj_type, source)
+            )
+            self.conn.execute(
+                "INSERT OR IGNORE INTO kg_entities (name, type, source, created_at) VALUES (?, ?, ?, datetime('now'))",
+                (obj, obj_type, source)
+            )
+            
+            sql = """
+                INSERT OR IGNORE INTO kg_triples 
+                (subject, predicate, object, subject_type, object_type, confidence, source, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            """
+            return sql, [subject, predicate, obj, subj_type, obj_type, confidence, source]
+        
+        # MATCH count entities: MATCH (n:Entity) RETURN count(n) as cnt
+        if "MATCH (n:Entity)" in q_upper and "count(n)" in q_lower and "as cnt" in q_lower:
+            return "SELECT COUNT(*) as cnt FROM kg_entities", []
+        
+        # MATCH count relations: MATCH ()-[r:RELATES]->() RETURN count(r) as cnt
+        if "MATCH ()-[r:RELATES]->()" in q_upper and "count(r)" in q_lower:
+            return "SELECT COUNT(*) as cnt FROM kg_triples WHERE predicate = 'RELATES'", []
+        
+        # MATCH isolated entities: MATCH (n:Entity) WHERE NOT (n)--() RETURN count(n) as cnt
+        if "NOT (n)--()" in q_upper:
+            return """
+                SELECT COUNT(*) as cnt FROM kg_entities e
+                WHERE e.name NOT IN (
+                    SELECT DISTINCT subject FROM kg_triples
+                    UNION
+                    SELECT DISTINCT object FROM kg_triples
+                )
+            """, []
+        
+        # MATCH low confidence: MATCH ()-[r:RELATES]->() WHERE r.confidence < 0.5 RETURN count(r) as cnt
+        if "confidence < 0.5" in q_lower:
+            return "SELECT COUNT(*) as cnt FROM kg_triples WHERE predicate = 'RELATES' AND confidence < 0.5", []
+        
+        # MATCH entities: MATCH (n:Entity) RETURN n
+        if "MATCH (n:Entity)" in q_upper and "RETURN n" in q_upper:
+            return "SELECT * FROM kg_entities LIMIT 100", []
+        
+        # Generic MATCH fallback
+        if "MATCH" in q_upper:
+            return "SELECT * FROM kg_entities LIMIT 10", []
+        
+        # Default: no-op
+        return None, []
+
+
+class SQLiteResult:
+    """SQLite 查询结果 - 兼容 Neo4j Result 接口"""
+    
+    def __init__(self, data: List[Dict]):
+        self._data = data
+    
+    def data(self):
+        return self._data
+    
+    def single(self):
+        return self._data[0] if self._data else None
+
+
 class Neo4jUnavailableError(RuntimeError):
     """Neo4j 不可用时抛出的显式异常"""
     pass
@@ -80,14 +287,43 @@ neo4j_connection_status = {"connected": False, "error": None, "driver_type": "no
 
 def get_neo4j_driver(force_reconnect=False, allow_mock=False):
     """
-    获取 Neo4j 驱动实例（按需连接）
-    如果连接失败，默认抛出 Neo4jUnavailableError，禁止静默降级到 Mock
+    获取图数据库驱动实例（按需连接）
+    支持 Neo4j、SQLite 三元组、Mock 三种模式
     """
     global neo4j_driver, neo4j_connection_status
     
     # 如果已有连接且不需要强制重连，直接返回
     if neo4j_driver is not None and not force_reconnect:
         return neo4j_driver
+    
+    # 检查图数据库类型配置
+    db_type = os.getenv("GRAPH_DB_TYPE", "").lower()
+    
+    # 优先使用 SQLite 持久化模式
+    if db_type == "sqlite":
+        try:
+            driver = SQLiteGraphDriver()
+            driver.verify_connectivity()
+            neo4j_driver = driver
+            neo4j_connection_status = {
+                "connected": True,
+                "error": None,
+                "driver_type": "sqlite",
+                "uri": driver.db_path
+            }
+            print(f"[KgFlywheel] Connected to SQLite graph DB: {driver.db_path}")
+            return driver
+        except Exception as e:
+            neo4j_connection_status = {
+                "connected": False,
+                "error": f"SQLite graph DB failed: {e}",
+                "driver_type": "none"
+            }
+            error_msg = f"SQLite graph DB initialization failed: {e}"
+            if allow_mock:
+                neo4j_driver = MockNeo4jDriver()
+                return neo4j_driver
+            raise Neo4jUnavailableError(error_msg)
     
     # 尝试连接真实 Neo4j
     try:
@@ -155,7 +391,7 @@ try:
 except Neo4jUnavailableError as e:
     import logging
     logging.getLogger(__name__).warning(
-        f"WARNING: Neo4j is unavailable, graph features are DISABLED. {e}"
+        f"WARNING: Graph database is unavailable, graph features are DISABLED. {e}"
     )
     neo4j_driver = None
 
@@ -268,16 +504,39 @@ async def extract_triples(text: str, source: str = "", user_id: str = None) -> D
     """
     提取知识三元组
     
-    实际实现应调用 LLM 服务进行实体关系抽取
-    这里使用模拟实现
+    优先使用 DeepSeek LLM 进行 NER 和关系抽取，
+    LLM 不可用时回退到正则模拟。
     """
+    import time
+    start_time = time.time()
     task_id = str(uuid.uuid4())[:8]
     
-    # 模拟 LLM 提取
-    # 实际应调用: llm_service.extract_entities(text)
-    triples = _mock_extract(text)
+    try:
+        # 尝试使用 LLM 提取
+        triples = _llm_extract(text)
+        
+        # LLM 失败时回退到模拟提取
+        if not triples:
+            triples = _mock_extract(text)
+        
+        # 监控埋点
+        try:
+            from core.monitoring.metrics import KG_METRICS
+            KG_METRICS.extraction_total.labels(status='success').inc()
+            KG_METRICS.extraction_duration.observe(time.time() - start_time)
+        except Exception:
+            pass
+    except Exception as e:
+        # 监控埋点 - 失败
+        try:
+            from core.monitoring.metrics import KG_METRICS
+            KG_METRICS.extraction_total.labels(status='failed').inc()
+            KG_METRICS.extraction_duration.observe(time.time() - start_time)
+        except Exception:
+            pass
+        raise
     
-    # 写入 Neo4j
+    # 写入图数据库
     with neo4j_driver.session() as session:
         for triple in triples:
             # MERGE 实体
@@ -311,6 +570,64 @@ async def extract_triples(text: str, source: str = "", user_id: str = None) -> D
         "source": source,
         "timestamp": datetime.now().isoformat()
     }
+
+
+def _llm_extract(text: str) -> List[Dict]:
+    """使用 DeepSeek LLM 提取知识三元组"""
+    try:
+        from core.llm_client import llm_client
+        if not llm_client:
+            return []
+        
+        system_prompt = """You are a knowledge extraction assistant.
+Extract subject-predicate-object triples from the given text.
+Return ONLY a JSON array. Each item must have:
+- subject: entity name
+- predicate: relation type
+- object: entity name  
+- confidence: 0.0-1.0
+- subj_type: entity type (Person/Organization/Location/Concept/Technology/etc.)
+- obj_type: entity type
+
+Example output:
+[
+  {"subject": "Baidu", "predicate": "open-sourced", "object": "HugeGraph", "confidence": 0.95, "subj_type": "Organization", "obj_type": "Technology"}
+]"""
+        
+        prompt = f"Extract triples from this text:\n\n{text}\n\nReturn JSON array only:"
+        
+        response = llm_client.chat(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=0.3,
+            json_mode=True
+        )
+        
+        import json
+        triples = json.loads(response)
+        
+        # Validate format
+        if not isinstance(triples, list):
+            return []
+        
+        valid_triples = []
+        for t in triples:
+            if isinstance(t, dict) and "subject" in t and "predicate" in t and "object" in t:
+                valid_triples.append({
+                    "subject": str(t["subject"]),
+                    "predicate": str(t["predicate"]),
+                    "object": str(t["object"]),
+                    "confidence": float(t.get("confidence", 0.8)),
+                    "subj_type": str(t.get("subj_type", "Concept")),
+                    "obj_type": str(t.get("obj_type", "Concept"))
+                })
+        
+        return valid_triples
+        
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"LLM extract failed, fallback to mock: {e}")
+        return []
 
 
 def _mock_extract(text: str) -> List[Dict]:

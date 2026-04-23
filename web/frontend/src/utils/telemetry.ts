@@ -3,7 +3,7 @@
  * Fixer D3: 消除前端行为黑洞，为数据驱动决策铺路
  */
 
-export function track(eventName: string, properties?: Record<string, any>) {
+export function track(eventName: string, properties?: Record<string, unknown>) {
   const payload = {
     event: eventName,
     properties: properties || {},

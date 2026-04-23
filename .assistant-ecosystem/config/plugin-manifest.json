@@ -1,0 +1,71 @@
+﻿{
+  "manifest_version": "2.0",
+  "plugin_system": {
+    "name": "OpenClaw Cross-Platform Plugin System",
+    "description": "Universal plugin architecture supporting Windows, Linux, macOS, and Web",
+    "platforms": ["windows", "linux", "macos", "web", "docker"],
+    "api_version": "2.0.0"
+  },
+  "platforms": {
+    "windows": {
+      "executable_formats": [".ps1", ".exe", ".dll", ".bat"],
+      "shell": "powershell",
+      "path_separator": "\\",
+      "env_var_syntax": "$env:NAME",
+      "supported_runtimes": ["powershell", "dotnet", "python", "node"]
+    },
+    "linux": {
+      "executable_formats": [".sh", ".bin", ".so", ".py", ".js"],
+      "shell": "bash",
+      "path_separator": "/",
+      "env_var_syntax": "$NAME",
+      "supported_runtimes": ["bash", "python", "node", "dotnet"]
+    },
+    "macos": {
+      "executable_formats": [".sh", ".app", ".dylib", ".py", ".js"],
+      "shell": "zsh",
+      "path_separator": "/",
+      "env_var_syntax": "$NAME",
+      "supported_runtimes": ["zsh", "bash", "python", "node", "dotnet"]
+    },
+    "web": {
+      "executable_formats": [".js", ".wasm", ".html"],
+      "shell": "javascript",
+      "path_separator": "/",
+      "env_var_syntax": "process.env.NAME",
+      "supported_runtimes": ["javascript", "webassembly"]
+    },
+    "docker": {
+      "executable_formats": [".sh", ".py", ".js", ".ps1"],
+      "shell": "sh",
+      "path_separator": "/",
+      "env_var_syntax": "$NAME",
+      "supported_runtimes": ["bash", "python", "node", "powershell"]
+    }
+  },
+  "plugin_types": {
+    "native": {
+      "description": "Platform-specific executables",
+      "security": "sandboxed",
+      "performance": "high"
+    },
+    "cross_platform": {
+      "description": "Single code base runs on all platforms",
+      "security": "sandboxed",
+      "performance": "medium",
+      "technologies": ["python", "node", "dotnet", "webassembly"]
+    },
+    "web": {
+      "description": "Browser-based plugins",
+      "security": "isolated",
+      "performance": "medium",
+      "technologies": ["javascript", "webassembly"]
+    },
+    "containerized": {
+      "description": "Docker container plugins",
+      "security": "isolated",
+      "performance": "medium",
+      "technologies": ["docker"]
+    }
+  }
+}

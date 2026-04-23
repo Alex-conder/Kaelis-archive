@@ -1,0 +1,104 @@
+{
+    "teams":  [
+                  {
+                      "name":  "platform",
+                      "owner":  "ops@company.com",
+                      "budget_allocation":  40
+                  },
+                  {
+                      "name":  "backend",
+                      "owner":  "backend@company.com",
+                      "budget_allocation":  30
+                  },
+                  {
+                      "name":  "ml",
+                      "owner":  "ml@company.com",
+                      "budget_allocation":  30
+                  }
+              ],
+    "budgets":  [
+                    {
+                        "amount":  5000,
+                        "currency":  "USD",
+                        "alert_thresholds":  [
+                                                 50,
+                                                 80,
+                                                 100
+                                             ],
+                        "name":  "production",
+                        "period":  "monthly"
+                    },
+                    {
+                        "amount":  1000,
+                        "currency":  "USD",
+                        "alert_thresholds":  [
+                                                 50,
+                                                 80,
+                                                 100
+                                             ],
+                        "name":  "development",
+                        "period":  "monthly"
+                    },
+                    {
+                        "amount":  2000,
+                        "currency":  "USD",
+                        "alert_thresholds":  [
+                                                 50,
+                                                 80,
+                                                 100
+                                             ],
+                        "name":  "ai_services",
+                        "period":  "monthly"
+                    }
+                ],
+    "reports":  [
+
+                ],
+    "optimization_rules":  [
+                               {
+                                   "name":  "idle_resources",
+                                   "threshold_hours":  24,
+                                   "action":  "notify",
+                                   "enabled":  true
+                               },
+                               {
+                                   "threshold_percent":  20,
+                                   "name":  "oversized_instances",
+                                   "action":  "recommend",
+                                   "enabled":  true
+                               },
+                               {
+                                   "min_usage_percent":  70,
+                                   "name":  "reserved_capacity",
+                                   "action":  "recommend",
+                                   "enabled":  true
+                               },
+                               {
+                                   "workload_types":  [
+                                                          "batch",
+                                                          "ci"
+                                                      ],
+                                   "name":  "spot_instances",
+                                   "action":  "recommend",
+                                   "enabled":  true
+                               }
+                           ],
+    "cost_centers":  [
+                         {
+                             "tags":  {
+                                          "environment":  "prod",
+                                          "team":  "platform"
+                                      },
+                             "name":  "Infrastructure",
+                             "id":  "CC001"
+                         },
+                         {
+                             "tags":  {
+                                          "environment":  "dev",
+                                          "team":  "backend"
+                                      },
+                             "name":  "Development",
+                             "id":  "CC002"
+                         }
+                     ]
+}

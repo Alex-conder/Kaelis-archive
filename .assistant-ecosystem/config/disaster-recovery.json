@@ -1,0 +1,65 @@
+{
+    "recovery_procedures":  {
+                                "database":  [
+                                                 "Restore from backup",
+                                                 "Verify integrity",
+                                                 "Enable replication"
+                                             ],
+                                "backend_api":  [
+                                                    "Restore database",
+                                                    "Apply migrations",
+                                                    "Start service"
+                                                ],
+                                "gateway":  [
+                                                "Restore config",
+                                                "Restart service",
+                                                "Verify health"
+                                            ]
+                            },
+    "rpo_minutes":  60,
+    "critical_components":  [
+                                {
+                                    "priority":  1,
+                                    "name":  "gateway",
+                                    "dependencies":  [
+
+                                                     ]
+                                },
+                                {
+                                    "priority":  2,
+                                    "name":  "backend_api",
+                                    "dependencies":  [
+                                                         "gateway"
+                                                     ]
+                                },
+                                {
+                                    "priority":  1,
+                                    "name":  "database",
+                                    "dependencies":  [
+
+                                                     ]
+                                },
+                                {
+                                    "priority":  1,
+                                    "name":  "config",
+                                    "dependencies":  [
+
+                                                     ]
+                                }
+                            ],
+    "last_dr_test":  null,
+    "backup_locations":  [
+                             {
+                                 "path":  "C:\\Users\\11526\\.assistant-ecosystem\\backups",
+                                 "name":  "local",
+                                 "type":  "primary"
+                             },
+                             {
+                                 "path":  "D:\\\\Backups\\\\OpenClaw",
+                                 "name":  "secondary",
+                                 "type":  "secondary"
+                             }
+                         ],
+    "test_schedule":  "monthly",
+    "rto_minutes":  30
+}

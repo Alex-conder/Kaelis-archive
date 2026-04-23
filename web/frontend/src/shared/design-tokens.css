@@ -1,0 +1,44 @@
+/**
+ * Kaelis Design Tokens v1.0
+ * Source of truth for the design system.
+ * Synced from DESIGN_SPEC.md v2.0 + archived variables.css
+ * Primary: #8848F9 | Accent Blue: #3B82F6 | Dark Theme
+ */
+
+@theme inline {
+  /* Kaelis Core Colors */
+  --color-kaelis-purple: #8848F9;
+  --color-kaelis-purple-light: #BD95FF;
+  --color-kaelis-purple-dark: #6d35d6;
+  --color-kaelis-blue: #3B82F6;
+  --color-kaelis-bg: #0a0a0a;
+  --color-kaelis-bg-secondary: #171717;
+  --color-kaelis-bg-tertiary: #262626;
+  --color-kaelis-text: #ffffff;
+  --color-kaelis-text-secondary: #a1a1a1;
+  --color-kaelis-text-muted: #737373;
+
+  /* Glow Effects */
+  --color-glow-purple: rgba(136, 72, 249, 0.2);
+  --color-glow-blue: rgba(59, 130, 246, 0.2);
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Spacing Scale */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Radius Scale */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}

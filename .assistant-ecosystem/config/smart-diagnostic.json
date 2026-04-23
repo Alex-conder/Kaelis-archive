@@ -1,0 +1,265 @@
+{
+    "diagnostic_history":  [
+                               {
+                                   "snapshot":  {
+                                                    "resources":  {
+                                                                      "cpu_percent":  21.8,
+                                                                      "disk_used_percent":  77.4,
+                                                                      "memory_total_gb":  15.75,
+                                                                      "memory_used_gb":  10.66
+                                                                  },
+                                                    "network":  {
+
+                                                                },
+                                                    "timestamp":  "2026-03-16T22:55:17.4072219+08:00",
+                                                    "logs":  [
+
+                                                             ],
+                                                    "services":  {
+                                                                     "backend":  {
+                                                                                     "error":  "操作超时。",
+                                                                                     "status":  "unhealthy"
+                                                                                 },
+                                                                     "react":  {
+                                                                                   "error":  "操作超时。",
+                                                                                   "status":  "unhealthy"
+                                                                               },
+                                                                     "gateway":  {
+                                                                                     "status":  "healthy",
+                                                                                     "response_time":  0
+                                                                                 }
+                                                                 }
+                                                },
+                                   "timestamp":  "2026-03-16T22:55:17.4072219+08:00",
+                                   "findings":  [
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "IsReadOnly",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "IsFixedSize",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "IsSynchronized",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "Keys",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  [
+                                                                        "操作超时。",
+                                                                        "操作超时。"
+                                                                    ],
+                                                        "component":  "Values",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "SyncRoot",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "Count",
+                                                        "severity":  "high"
+                                                    }
+                                                ]
+                               },
+                               {
+                                   "snapshot":  {
+                                                    "resources":  {
+                                                                      "cpu_percent":  9.62,
+                                                                      "disk_used_percent":  77.41,
+                                                                      "memory_total_gb":  15.75,
+                                                                      "memory_used_gb":  10.61
+                                                                  },
+                                                    "network":  {
+
+                                                                },
+                                                    "timestamp":  "2026-03-16T23:01:12.5064488+08:00",
+                                                    "logs":  [
+
+                                                             ],
+                                                    "services":  {
+                                                                     "backend":  {
+                                                                                     "error":  "操作超时。",
+                                                                                     "status":  "unhealthy"
+                                                                                 },
+                                                                     "react":  {
+                                                                                   "error":  "操作超时。",
+                                                                                   "status":  "unhealthy"
+                                                                               },
+                                                                     "gateway":  {
+                                                                                     "status":  "healthy",
+                                                                                     "response_time":  0
+                                                                                 }
+                                                                 }
+                                                },
+                                   "timestamp":  "2026-03-16T23:01:12.5064488+08:00",
+                                   "findings":  [
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "IsReadOnly",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "IsFixedSize",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "IsSynchronized",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "Keys",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  [
+                                                                        "操作超时。",
+                                                                        "操作超时。"
+                                                                    ],
+                                                        "component":  "Values",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "SyncRoot",
+                                                        "severity":  "high"
+                                                    },
+                                                    {
+                                                        "issue":  "Service unhealthy",
+                                                        "details":  null,
+                                                        "component":  "Count",
+                                                        "severity":  "high"
+                                                    }
+                                                ]
+                               }
+                           ],
+    "knowledge_base":  {
+                           "common_issues":  [
+                                                 {
+                                                     "auto_fix":  true,
+                                                     "name":  "Gateway not responding",
+                                                     "id":  "ISSUE-001",
+                                                     "checks":  [
+                                                                    "gateway_port",
+                                                                    "gateway_process"
+                                                                ]
+                                                 },
+                                                 {
+                                                     "auto_fix":  false,
+                                                     "name":  "Backend API slow",
+                                                     "id":  "ISSUE-002",
+                                                     "checks":  [
+                                                                    "backend_response_time",
+                                                                    "database_connection"
+                                                                ]
+                                                 },
+                                                 {
+                                                     "auto_fix":  false,
+                                                     "name":  "High memory usage",
+                                                     "id":  "ISSUE-003",
+                                                     "checks":  [
+                                                                    "memory_usage",
+                                                                    "process_list"
+                                                                ]
+                                                 },
+                                                 {
+                                                     "auto_fix":  true,
+                                                     "name":  "Disk space low",
+                                                     "id":  "ISSUE-004",
+                                                     "checks":  [
+                                                                    "disk_usage",
+                                                                    "log_size"
+                                                                ]
+                                                 }
+                                             ],
+                           "symptoms":  [
+                                            {
+                                                "solutions":  [
+                                                                  "Check service status",
+                                                                  "Verify port availability",
+                                                                  "Check firewall rules"
+                                                              ],
+                                                "pattern":  "connection refused",
+                                                "severity":  "high",
+                                                "category":  "network"
+                                            },
+                                            {
+                                                "solutions":  [
+                                                                  "Increase timeout",
+                                                                  "Check resource usage",
+                                                                  "Optimize query"
+                                                              ],
+                                                "pattern":  "timeout",
+                                                "severity":  "medium",
+                                                "category":  "performance"
+                                            },
+                                            {
+                                                "solutions":  [
+                                                                  "Restart service",
+                                                                  "Check for memory leaks",
+                                                                  "Increase memory limit"
+                                                              ],
+                                                "pattern":  "memory leak",
+                                                "severity":  "critical",
+                                                "category":  "resource"
+                                            },
+                                            {
+                                                "solutions":  [
+                                                                  "Clean up logs",
+                                                                  "Remove old backups",
+                                                                  "Expand storage"
+                                                              ],
+                                                "pattern":  "disk full",
+                                                "severity":  "critical",
+                                                "category":  "storage"
+                                            },
+                                            {
+                                                "solutions":  [
+                                                                  "Check file permissions",
+                                                                  "Verify user rights",
+                                                                  "Review ACL"
+                                                              ],
+                                                "pattern":  "permission denied",
+                                                "severity":  "high",
+                                                "category":  "security"
+                                            },
+                                            {
+                                                "solutions":  [
+                                                                  "Renew certificate",
+                                                                  "Update SSL config",
+                                                                  "Restart service"
+                                                              ],
+                                                "pattern":  "certificate expired",
+                                                "severity":  "critical",
+                                                "category":  "security"
+                                            }
+                                        ]
+                       },
+    "ai_enabled":  true
+}
