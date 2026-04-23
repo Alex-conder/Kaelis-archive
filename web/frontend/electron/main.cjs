@@ -412,7 +412,7 @@ function startBackend() {
           resolve(true);
         })
         .catch(() => {
-          logToSplash('No backend found. Please run: python start_server.py');
+          logToSplash('No backend found. Please run: python launch.py');
           resolve(false);
         });
       return;
