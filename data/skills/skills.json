@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-04-22T19:46:53.764036",
+  "updated_at": "2026-04-23T20:05:34.775710",
   "skills": [
     {
       "id": "581b9c2c7a1385ec",
@@ -21793,6 +21793,368 @@
       "created_by": "user",
       "created_at": "2026-04-22T19:46:53.764031",
       "updated_at": "2026-04-22T19:46:53.764032",
+      "version": "1.0.0",
+      "tags": [],
+      "evolution_source": null
+    },
+    {
+      "id": "d04893d4afdebad2",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_1\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T18:33:44.701113",
+      "updated_at": "2026-04-23T18:33:44.701115",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_1"
+    },
+    {
+      "id": "bee7f2428bf093ba",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_status\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T18:33:46.631690",
+      "updated_at": "2026-04-23T18:33:46.631692",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_status"
+    },
+    {
+      "id": "8c1217000047b25a",
+      "name": "test_skill",
+      "task_type": "test",
+      "params": {},
+      "workflow": null,
+      "description": "",
+      "source": "manual",
+      "rating": 0.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "user",
+      "created_at": "2026-04-23T18:34:15.254115",
+      "updated_at": "2026-04-23T18:34:15.254118",
+      "version": "1.0.0",
+      "tags": [],
+      "evolution_source": null
+    },
+    {
+      "id": "031791074d1af986",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_1\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T18:42:57.153173",
+      "updated_at": "2026-04-23T18:42:57.153176",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_1"
+    },
+    {
+      "id": "6b5cd45cec50ef94",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_status\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T18:42:59.963386",
+      "updated_at": "2026-04-23T18:42:59.963393",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_status"
+    },
+    {
+      "id": "4c3cd6d268c99d1a",
+      "name": "test_skill",
+      "task_type": "test",
+      "params": {},
+      "workflow": null,
+      "description": "",
+      "source": "manual",
+      "rating": 0.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "user",
+      "created_at": "2026-04-23T18:43:25.883037",
+      "updated_at": "2026-04-23T18:43:25.883038",
+      "version": "1.0.0",
+      "tags": [],
+      "evolution_source": null
+    },
+    {
+      "id": "3ee57ca60b67c43d",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_1\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T18:47:44.289985",
+      "updated_at": "2026-04-23T18:47:44.289988",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_1"
+    },
+    {
+      "id": "a571deed3e9250ab",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_status\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T18:47:46.660014",
+      "updated_at": "2026-04-23T18:47:46.660018",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_status"
+    },
+    {
+      "id": "2d188a4f686ec5f4",
+      "name": "test_skill",
+      "task_type": "test",
+      "params": {},
+      "workflow": null,
+      "description": "",
+      "source": "manual",
+      "rating": 0.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "user",
+      "created_at": "2026-04-23T18:48:17.443139",
+      "updated_at": "2026-04-23T18:48:17.443143",
+      "version": "1.0.0",
+      "tags": [],
+      "evolution_source": null
+    },
+    {
+      "id": "757466f5b7c09c48",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_1\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T19:07:58.701755",
+      "updated_at": "2026-04-23T19:07:58.701757",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_1"
+    },
+    {
+      "id": "004f1ab59219580f",
+      "name": "test_task_进化_test_evo",
+      "task_type": "test_task",
+      "params": {
+        "x": 1
+      },
+      "workflow": {
+        "type": "evolution_optimized",
+        "initial_params": {
+          "x": 1
+        },
+        "optimized_params": {
+          "x": 1
+        },
+        "evolution_iterations": 1,
+        "criteria": ""
+      },
+      "description": "由自进化引擎自动生成\n执行ID: test_evolve_status\n迭代次数: 1\n最终置信度: 0.900\n状态: success",
+      "source": "evolution",
+      "rating": 4.5,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "self_evolving_engine",
+      "created_at": "2026-04-23T19:08:01.282071",
+      "updated_at": "2026-04-23T19:08:01.282074",
+      "version": "1.0.0",
+      "tags": [
+        "auto-generated",
+        "evolution",
+        "test_task"
+      ],
+      "evolution_source": "test_evolve_status"
+    },
+    {
+      "id": "04e20c7bac06343f",
+      "name": "test_skill",
+      "task_type": "test",
+      "params": {},
+      "workflow": null,
+      "description": "",
+      "source": "manual",
+      "rating": 0.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "user",
+      "created_at": "2026-04-23T19:08:30.932166",
+      "updated_at": "2026-04-23T19:08:30.932167",
+      "version": "1.0.0",
+      "tags": [],
+      "evolution_source": null
+    },
+    {
+      "id": "46c02518b36489ff",
+      "name": "test_skill",
+      "task_type": "test",
+      "params": {},
+      "workflow": null,
+      "description": "",
+      "source": "manual",
+      "rating": 0.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "user",
+      "created_at": "2026-04-23T20:05:34.775705",
+      "updated_at": "2026-04-23T20:05:34.775706",
       "version": "1.0.0",
       "tags": [],
       "evolution_source": null

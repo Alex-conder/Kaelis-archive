@@ -13,7 +13,7 @@ Usage:
 """
 
 from flask import Blueprint, request, jsonify, g
-from pydantic import BaseModel, ValidationError, Field
+from pydantic import BaseModel, ConfigDict, ValidationError, Field
 from typing import Any, Optional, List, Dict
 from datetime import datetime, timezone
 from functools import wraps
@@ -57,11 +57,7 @@ class KGExtractRequest(BaseModel):
     
     
     
-    class Config:
-        """Pydantic configuration"""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
@@ -93,11 +89,7 @@ class KGExtractResponse(BaseModel):
     
     
     
-    class Config:
-        """Pydantic configuration"""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
@@ -117,11 +109,7 @@ class KGQueryRequest(BaseModel):
     
     
     
-    class Config:
-        """Pydantic configuration"""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
@@ -153,11 +141,7 @@ class KGQueryResponse(BaseModel):
     
     
     
-    class Config:
-        """Pydantic configuration"""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 
@@ -185,11 +169,7 @@ class BaseResponse(BaseModel):
     
     
     
-    class Config:
-        """Pydantic configuration"""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
         
 
 

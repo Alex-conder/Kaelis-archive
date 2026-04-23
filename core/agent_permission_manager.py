@@ -393,7 +393,8 @@ class AgentPermissionManager:
         elif "/system" in path_lower or "/config" in path_lower:
             resource = "system_config"
         else:
-            resource = "memory_read"
+            # 非核心资源路径：写操作映射到 memory_write，读操作映射到 memory_read
+            resource = "memory_write" if method in ("POST", "PUT", "DELETE", "PATCH") else "memory_read"
 
         action_map = {
             "GET": ResourceAction.READ,

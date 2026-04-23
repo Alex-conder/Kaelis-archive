@@ -1,103 +1,57 @@
 import { useState, useEffect } from 'react'
-import { Wrench, Star, Zap, Download, Search } from 'lucide-react'
-
-interface Skill {
-  id: string
-  name: string
-  description: string
-  task_type: string
-  rating: number
-  success_rate: number
-  usage_count: number
-  source: string
-  version?: string
-}
-
-const MOCK_SKILLS: Skill[] = [
-  {
-    id: 'skill_001',
-    name: 'Python 异步诊断',
-    description: '分析 asyncio 代码中的潜在死锁和性能瓶颈，提供优化建议。',
-    task_type: 'code_review',
-    rating: 4.8,
-    success_rate: 0.94,
-    usage_count: 128,
-    source: 'evolution',
-    version: '2.1.0',
-  },
-  {
-    id: 'skill_002',
-    name: 'SQLite 查询优化',
-    description: '自动分析 SQL 查询计划，建议索引和查询重写方案。',
-    task_type: 'database',
-    rating: 4.5,
-    success_rate: 0.89,
-    usage_count: 87,
-    source: 'community',
-    version: '1.3.2',
-  },
-  {
-    id: 'skill_003',
-    name: 'Markdown 文档生成',
-    description: '根据代码结构和注释自动生成 API 文档和 README。',
-    task_type: 'documentation',
-    rating: 4.2,
-    success_rate: 0.91,
-    usage_count: 203,
-    source: 'evolution',
-    version: '3.0.1',
-  },
-  {
-    id: 'skill_004',
-    name: 'ChromaDB 向量检索',
-    description: '优化向量查询参数，提升 RAG 系统的召回率和准确率。',
-    task_type: 'ml_ops',
-    rating: 4.6,
-    success_rate: 0.87,
-    usage_count: 56,
-    source: 'community',
-    version: '1.0.5',
-  },
-  {
-    id: 'skill_005',
-    name: 'Flask API 安全审计',
-    description: '扫描 Flask 路由中的常见安全漏洞（CSRF、SQL注入、XSS）。',
-    task_type: 'security',
-    rating: 4.9,
-    success_rate: 0.96,
-    usage_count: 312,
-    source: 'official',
-    version: '2.5.0',
-  },
-]
+import { Wrench, Star, Zap, Download, Search, Loader2, AlertCircle } from 'lucide-react'
+import { skillsApi, type Skill } from '@/features/skills/api'
 
 export default function SkillsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [skills, setSkills] = useState<Skill[]>(MOCK_SKILLS)
+  const [skills, setSkills] = useState<Skill[]>([])
   const [filter, setFilter] = useState<string>('all')
+  const [loading, setLoading] = useState(false)
+  const [installingId, setInstallingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // In production, this would call the skills API
-    // For now, filter the mock data
-    let filtered = MOCK_SKILLS
-    if (filter !== 'all') {
-      filtered = filtered.filter((s) => s.source === filter)
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q) ||
-          s.task_type.toLowerCase().includes(q)
-      )
-    }
-    setSkills(filtered)
-  }, [searchQuery, filter])
+    setLoading(true)
+    skillsApi
+      .listSkills({ sort_by: 'rating', limit: 50 })
+      .then((res) => {
+        if (res.success && res.data) {
+          setSkills(res.data.skills)
+        } else {
+          setError(res.error || 'Failed to load skills')
+        }
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
 
-  const handleInstall = (skillId: string) => {
-    // TODO: call skills API to install
-    alert(`Installing skill: ${skillId}`)
+  const filteredSkills = skills.filter((s) => {
+    if (filter !== 'all' && s.source !== filter) return false
+    if (!searchQuery.trim()) return true
+    const q = searchQuery.toLowerCase()
+    return (
+      s.name.toLowerCase().includes(q) ||
+      s.description.toLowerCase().includes(q) ||
+      s.task_type.toLowerCase().includes(q)
+    )
+  })
+
+  const handleInstall = async (skillId: string) => {
+    setInstallingId(skillId)
+    try {
+      const res = await skillsApi.installSkill(skillId)
+      if (res.success) {
+        setSkills((prev) =>
+          prev.map((s) => (s.id === skillId ? { ...s, usage_count: s.usage_count + 1 } : s))
+        )
+      } else {
+        alert(res.error || 'Install failed')
+      }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Install failed')
+    } finally {
+      setInstallingId(null)
+    }
   }
 
   return (
@@ -146,8 +100,22 @@ export default function SkillsPage() {
           </div>
         </div>
 
+        {/* Loading / Error */}
+        {loading && (
+          <div className="flex items-center justify-center py-12 text-slate-400 gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">加载能力库...</span>
+          </div>
+        )}
+        {error && !loading && (
+          <div className="flex items-center justify-center py-12 text-red-400 gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
+
         {/* Skills Grid */}
-        {skills.length === 0 ? (
+        {!loading && !error && filteredSkills.length === 0 ? (
           <div className="text-center py-20 text-slate-500">
             <Zap className="w-12 h-12 mx-auto mb-4 opacity-40 text-emerald-400" />
             <p className="text-slate-300 font-medium">能力库正在等你探索</p>
@@ -155,7 +123,7 @@ export default function SkillsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
-            {skills.map((skill) => (
+            {filteredSkills.map((skill) => (
               <div
                 key={skill.id}
                 className="bg-slate-800/50 rounded-xl border border-slate-700 p-5 hover:border-emerald-500/30 transition-colors"
@@ -197,10 +165,15 @@ export default function SkillsPage() {
                   <span className="text-xs text-slate-600">v{skill.version}</span>
                   <button
                     onClick={() => handleInstall(skill.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm transition-colors"
+                    disabled={installingId === skill.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    安装
+                    {installingId === skill.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
+                    {installingId === skill.id ? '安装中' : '安装'}
                   </button>
                 </div>
               </div>

@@ -35,7 +35,7 @@ logger = logging.getLogger('launcher')
 
 def check_dependencies():
     """检查关键依赖"""
-    required = ['flask', 'chromadb', 'simpleeval']
+    required = ['flask', 'simpleeval']
     missing = []
     
     for package in required:

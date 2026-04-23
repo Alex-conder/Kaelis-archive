@@ -215,13 +215,13 @@ class TestMemoryPipeline:
         })
         assert resp.status_code == 200
 
-        # 4. 搜索验证（top_k 设大些以避免旧数据排名靠前导致截断）
+        # 4. 搜索验证（使用 '*' 查询最近记录，避免 FTS5 rank 排序导致旧数据截断）
         resp = self._post_json(client, "/api/memory/search", {
-            "layer": "L1", "query": "roundtrip", "top_k": 20
+            "layer": "L1", "query": "*", "top_k": 50
         })
         assert resp.status_code == 200
         results = resp.get_json().get("data", [])
-        assert any(r.get("key") == key for r in results)
+        assert any(r.get("key") == key for r in results), f"Key {key} not found in recent L1 records"
 
         # 5. 删除 L0
         resp = self._post_json(client, "/api/memory/delete", {

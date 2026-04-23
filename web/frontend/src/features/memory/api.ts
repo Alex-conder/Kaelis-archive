@@ -87,4 +87,10 @@ export const sharedMemoryApi = {
 
   resolveConflict: (spaceId: string, conflictId: number) =>
     apiClient.post(`/api/shared-memory/spaces/${spaceId}/conflicts/${conflictId}/resolve`),
+
+  heartbeat: (spaceId: string) =>
+    apiClient.post(`/api/shared-memory/spaces/${spaceId}/members/heartbeat`),
+
+  getMemberStatus: (spaceId: string) =>
+    apiClient.get(`/api/shared-memory/spaces/${spaceId}/members/status`),
 }

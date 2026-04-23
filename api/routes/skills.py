@@ -433,6 +433,51 @@ def get_statistics():
         }), 500
 
 
+@skills_bp.route('/<skill_id>/install', methods=['POST'])
+def install_skill(skill_id):
+    """
+    安装/激活技能
+    
+    将技能标记为已安装，增加使用计数。
+    """
+    if not SKILL_MANAGER_AVAILABLE:
+        return jsonify({
+            "success": False,
+            "error": "SkillManager not available"
+        }), 503
+    
+    try:
+        manager = get_skill_manager()
+        
+        # 检查技能是否存在
+        skill = manager.get_skill(skill_id)
+        if not skill:
+            return jsonify({
+                "success": False,
+                "error": f"Skill {skill_id} not found"
+            }), 404
+        
+        # 记录技能使用（作为安装/激活的标记）
+        manager.use_skill(skill_id, success=True)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Skill '{skill.name}' installed successfully",
+            "data": {
+                "skill_id": skill_id,
+                "name": skill.name,
+                "installed": True
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Install skill failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @skills_bp.route('/evolution', methods=['GET'])
 def get_evolution_skills():
     """获取所有由自进化生成的技能"""

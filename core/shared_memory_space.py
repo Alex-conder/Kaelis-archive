@@ -95,11 +95,12 @@ class SharedMemorySpace:
                 );
 
                 CREATE TABLE IF NOT EXISTS shared_space_members (
-                    space_id TEXT NOT NULL,
-                    user_id  TEXT NOT NULL,
-                    role     TEXT NOT NULL CHECK(role IN ('owner','admin','writer','reader')),
-                    added_at REAL NOT NULL,
-                    added_by TEXT NOT NULL,
+                    space_id   TEXT NOT NULL,
+                    user_id    TEXT NOT NULL,
+                    role       TEXT NOT NULL CHECK(role IN ('owner','admin','writer','reader')),
+                    added_at   REAL NOT NULL,
+                    added_by   TEXT NOT NULL,
+                    last_seen  REAL,
                     PRIMARY KEY (space_id, user_id),
                     FOREIGN KEY (space_id) REFERENCES shared_spaces(space_id) ON DELETE CASCADE
                 );
@@ -133,6 +134,13 @@ class SharedMemorySpace:
                     created_at  REAL NOT NULL
                 );
             """)
+
+            # Migrate: add last_seen column if missing (backward compat)
+            try:
+                conn.execute("SELECT last_seen FROM shared_space_members LIMIT 1")
+            except sqlite3.OperationalError:
+                conn.execute("ALTER TABLE shared_space_members ADD COLUMN last_seen REAL")
+                logger.info("Migrated shared_space_members: added last_seen column")
 
             # Try to create FTS5 virtual table; gracefully degrade if unavailable
             try:
@@ -261,7 +269,7 @@ class SharedMemorySpace:
                 (space_id,),
             ).fetchone()
             members = conn.execute(
-                "SELECT user_id, role, added_at, added_by FROM shared_space_members WHERE space_id = ?",
+                "SELECT user_id, role, added_at, added_by, last_seen FROM shared_space_members WHERE space_id = ?",
                 (space_id,),
             ).fetchall()
 
@@ -274,7 +282,7 @@ class SharedMemorySpace:
             "updated_at": row[5],
             "config": self._deserialize(row[6]),
             "members": [
-                {"user_id": m[0], "role": m[1], "added_at": m[2], "added_by": m[3]}
+                {"user_id": m[0], "role": m[1], "added_at": m[2], "added_by": m[3], "last_seen": m[4]}
                 for m in members
             ],
         }
@@ -391,6 +399,43 @@ class SharedMemorySpace:
                 (new_role, space_id, target_user_id),
             )
         return {"space_id": space_id, "user_id": target_user_id, "role": new_role}
+
+    def heartbeat(self, space_id: str, user_id: str) -> Dict[str, Any]:
+        """更新成员心跳时间。需要 reader 权限。"""
+        if not self._space_exists(space_id):
+            raise SpaceNotFoundError(f"Space {space_id} not found")
+        if not self._check_permission(space_id, user_id, "reader"):
+            raise PermissionError("Not a member of this space")
+        now = self._now()
+        with self._get_conn() as conn:
+            conn.execute(
+                "UPDATE shared_space_members SET last_seen = ? WHERE space_id = ? AND user_id = ?",
+                (now, space_id, user_id),
+            )
+        return {"space_id": space_id, "user_id": user_id, "last_seen": now}
+
+    def get_member_status(self, space_id: str, user_id: str = "anonymous") -> List[Dict[str, Any]]:
+        """获取空间成员在线状态。需要 reader 权限。"""
+        if not self._space_exists(space_id):
+            raise SpaceNotFoundError(f"Space {space_id} not found")
+        if not self._check_permission(space_id, user_id, "reader"):
+            raise PermissionError("Insufficient permission to view this space")
+        now = self._now()
+        stale_threshold = 5 * 60  # 5 minutes
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                "SELECT user_id, role, last_seen FROM shared_space_members WHERE space_id = ?",
+                (space_id,),
+            ).fetchall()
+        return [
+            {
+                "user_id": r[0],
+                "role": r[1],
+                "last_seen": r[2],
+                "online": r[2] is not None and (now - r[2]) < stale_threshold,
+            }
+            for r in rows
+        ]
 
     # ------------------------------------------------------------------ #
     # Memory CRUD

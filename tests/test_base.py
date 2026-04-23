@@ -83,18 +83,27 @@ class KaelisTestBase(unittest.TestCase):
             self.assertFalse(data["success"])
         return data
     
+    def _ensure_test_headers(self, headers: dict = None) -> dict:
+        """确保测试请求携带测试 Agent ID，避免权限中间件拦截"""
+        headers = dict(headers or {})
+        if "X-Agent-ID" not in headers:
+            headers["X-Agent-ID"] = "kaelis-core"
+        return headers
+    
     def json_post(self, path: str, data: dict, headers: dict = None):
         """发送 JSON POST 请求"""
+        headers = self._ensure_test_headers(headers)
         return self.client.post(
             path,
             data=json.dumps(data),
             content_type="application/json",
-            headers=headers or {}
+            headers=headers
         )
     
     def json_get(self, path: str, headers: dict = None):
         """发送 GET 请求"""
-        return self.client.get(path, headers=headers or {})
+        headers = self._ensure_test_headers(headers)
+        return self.client.get(path, headers=headers)
 
 
 class MemoryManagerTestBase(KaelisTestBase):
@@ -199,18 +208,27 @@ class FlaskAppTestBase(unittest.TestCase):
             self.assertFalse(data["success"])
         return data
     
+    def _ensure_test_headers(self, headers: dict = None) -> dict:
+        """确保测试请求携带测试 Agent ID，避免权限中间件拦截"""
+        headers = dict(headers or {})
+        if "X-Agent-ID" not in headers:
+            headers["X-Agent-ID"] = "kaelis-core"
+        return headers
+    
     def json_post(self, path: str, data: dict, headers: dict = None):
         """发送 JSON POST 请求"""
+        headers = self._ensure_test_headers(headers)
         return self.client.post(
             path,
             data=json.dumps(data),
             content_type="application/json",
-            headers=headers or {}
+            headers=headers
         )
     
     def json_get(self, path: str, headers: dict = None):
         """发送 GET 请求"""
-        return self.client.get(path, headers=headers or {})
+        headers = self._ensure_test_headers(headers)
+        return self.client.get(path, headers=headers)
     
     def get_payload(self, response):
         """从响应中提取 payload（兼容 data 包装和直接返回）"""

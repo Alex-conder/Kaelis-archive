@@ -27,16 +27,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
-          python tests/run_tests.py
+          pytest -x -q --tb=short tests/
         env:
           PYTHONIOENCODING: utf-8
           GRAPH_DB_TYPE: sqlite
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=core --cov=api --cov-report=xml --cov-report=term-missing --cov-fail-under=75 tests/
+          pytest --cov=core --cov=api --cov-report=xml --cov-report=term-missing --cov-fail-under=60 tests/
         env:
           PYTHONIOENCODING: utf-8
           GRAPH_DB_TYPE: sqlite

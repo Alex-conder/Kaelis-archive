@@ -191,6 +191,34 @@ def update_member_role(space_id: str, user_id: str):
         return _error(str(e), 500, "internal_error")
 
 
+@shared_memory_bp.route("/spaces/<space_id>/members/heartbeat", methods=["POST"])
+def member_heartbeat(space_id: str):
+    """成员心跳（reader+）。"""
+    try:
+        sms = _get_sms()
+        result = sms.heartbeat(space_id, _get_user_id())
+        return _success(data=result)
+    except PermissionError as e:
+        return _error(str(e), 403, "permission_denied")
+    except Exception as e:
+        logger.error("member_heartbeat error: %s", e)
+        return _error(str(e), 500, "internal_error")
+
+
+@shared_memory_bp.route("/spaces/<space_id>/members/status", methods=["GET"])
+def member_status(space_id: str):
+    """获取成员在线状态（reader+）。"""
+    try:
+        sms = _get_sms()
+        status = sms.get_member_status(space_id, user_id=_get_user_id())
+        return _success(data=status)
+    except PermissionError as e:
+        return _error(str(e), 403, "permission_denied")
+    except Exception as e:
+        logger.error("member_status error: %s", e)
+        return _error(str(e), 500, "internal_error")
+
+
 # ======================================================================
 # Memories
 # ======================================================================

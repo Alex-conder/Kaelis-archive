@@ -227,3 +227,26 @@ export function useSpaceEvents(spaceId: string, enabled: boolean) {
     refetchInterval: enabled ? 3000 : false,
   })
 }
+
+export function useMemberHeartbeat() {
+  return useMutation({
+    mutationFn: (spaceId: string) => sharedMemoryApi.heartbeat(spaceId),
+  })
+}
+
+export function useMemberStatus(spaceId: string) {
+  return useQuery({
+    queryKey: ['shared-memory', 'member-status', spaceId],
+    queryFn: async () => {
+      const { data } = await sharedMemoryApi.getMemberStatus(spaceId)
+      return (data.data || []) as Array<{
+        user_id: string
+        role: string
+        last_seen: number | null
+        online: boolean
+      }>
+    },
+    enabled: !!spaceId,
+    refetchInterval: 30000, // refresh every 30s
+  })
+}

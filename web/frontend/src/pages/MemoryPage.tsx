@@ -12,10 +12,13 @@ import {
   usePubSubSubscriptions,
   usePubSubHistory,
   useSpaceEvents,
+  useMemberHeartbeat,
+  useMemberStatus,
 } from '@/features/memory/hooks'
 import { pubsubApi } from '@/features/memory/api'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import html2canvas from 'html2canvas'
+// html2canvas 动态导入以减少主 chunk 体积
+const loadHtml2canvas = () => import('html2canvas').then((m) => m.default)
 import {
   Brain,
   Search,
@@ -311,6 +314,7 @@ function PrivateMemorySection() {
                     if (!cardRef.current) return
                     setShareMode('idle')
                     try {
+                      const html2canvas = await loadHtml2canvas()
                       const canvas = await html2canvas(cardRef.current, { backgroundColor: null, scale: 2 })
                       canvas.toBlob(async (blob) => {
                         if (!blob) return
@@ -333,6 +337,7 @@ function PrivateMemorySection() {
                   onClick={async () => {
                     if (!cardRef.current) return
                     try {
+                      const html2canvas = await loadHtml2canvas()
                       const canvas = await html2canvas(cardRef.current, { backgroundColor: null, scale: 2 })
                       const link = document.createElement('a')
                       link.download = `kaelis-memory-${selectedMemory.key}.png`
@@ -382,7 +387,18 @@ function SharedMemorySection() {
   const [newSubPattern, setNewSubPattern] = useState('')
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastEventIds, setLastEventIds] = useState<Set<number>>(new Set())
-  const [memberLastActive, setMemberLastActive] = useState<Record<string, number>>({})
+
+  const { data: memberStatus = [] } = useMemberStatus(selectedSpace?.space_id || '')
+  const heartbeatMutation = useMemberHeartbeat()
+
+  // Send heartbeat every 30s when a space is selected
+  useEffect(() => {
+    if (!selectedSpace?.space_id) return
+    const send = () => heartbeatMutation.mutate(selectedSpace.space_id)
+    send() // initial heartbeat
+    const interval = setInterval(send, 30000)
+    return () => clearInterval(interval)
+  }, [selectedSpace?.space_id])
 
   const { data: spaces = [], isLoading: spacesLoading } = useSharedSpaces()
   const { data: spaceDetail } = useSharedSpace(selectedSpace?.space_id || '')
@@ -413,20 +429,16 @@ function SharedMemorySection() {
   const createSpace = useCreateSharedSpace()
   const deleteMemory = useDeleteSharedMemory(selectedSpace?.space_id || '')
 
-  // Simulate online status: refresh → mark active now; stale after 5 min
+  // Real online status from backend heartbeat API
   const isMemberOnline = (userId: string) => {
-    const last = memberLastActive[userId]
-    if (!last) return false
-    return Date.now() - last < 5 * 60 * 1000
+    const status = memberStatus.find((s) => s.user_id === userId)
+    return status?.online ?? false
   }
 
   const refreshMemberStatus = () => {
-    const now = Date.now()
-    const updated: Record<string, number> = { ...memberLastActive }
-    spaceDetail?.members.forEach((m) => {
-      updated[m.user_id] = now
-    })
-    setMemberLastActive(updated)
+    if (selectedSpace?.space_id) {
+      heartbeatMutation.mutate(selectedSpace.space_id)
+    }
   }
 
   const displayedMemories = searchQuery.trim() ? searchResults : memories

@@ -2,27 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useChatStore } from '@/features/chat/store'
 import { chatApi } from '@/features/chat/api'
 import type { Message } from '@/shared/api/types'
-import ReactMarkdown from 'react-markdown'
-import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx'
-import python from 'react-syntax-highlighter/dist/esm/languages/prism/python'
-import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash'
-import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
-import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml'
-import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown'
-
-SyntaxHighlighter.registerLanguage('tsx', tsx)
-SyntaxHighlighter.registerLanguage('jsx', tsx)
-SyntaxHighlighter.registerLanguage('typescript', tsx)
-SyntaxHighlighter.registerLanguage('javascript', tsx)
-SyntaxHighlighter.registerLanguage('python', python)
-SyntaxHighlighter.registerLanguage('bash', bash)
-SyntaxHighlighter.registerLanguage('shell', bash)
-SyntaxHighlighter.registerLanguage('json', json)
-SyntaxHighlighter.registerLanguage('yaml', yaml)
-SyntaxHighlighter.registerLanguage('yml', yaml)
-SyntaxHighlighter.registerLanguage('markdown', markdown)
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 import {
   Send,
@@ -246,47 +226,11 @@ export default function ChatPage() {
               }`}
             >
               {msg.role === 'assistant' ? (
-                <div className="prose prose-invert prose-sm max-w-none">
-                  <ReactMarkdown
-                    components={{
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      code({ node: _node, inline, className, children, ...props }: any) {
-                        const match = /language-(\w+)/.exec(className || '')
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            style={vscDarkPlus}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, '')}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        )
-                      },
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
-                  {msg.strategy && (
-                    <div className="mt-2 pt-2 border-t border-slate-700/50 flex items-center gap-1.5">
-                      <div className="group relative">
-                        <Info className="w-3.5 h-3.5 text-slate-500 cursor-help" />
-                        <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-56 p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-300 shadow-xl z-10">
-                          <p className="font-medium text-blue-400 mb-1">策略解释</p>
-                          <p>本次回复使用策略：<span className="text-white">{getStrategyLabel(msg.strategy)}</span></p>
-                          <p className="mt-1 text-slate-500">意图: {msg.strategy.intent}</p>
-                          <p className="mt-0.5 text-slate-500">置信度: {Math.round(msg.strategy.confidence * 100)}%</p>
-                          <p className="mt-0.5 text-slate-500">状态: {msg.strategy.agent_state}</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-slate-600">{getStrategyLabel(msg.strategy)}</span>
-                    </div>
-                  )}
-                </div>
+                <MarkdownRenderer
+                  content={msg.content}
+                  strategy={msg.strategy}
+                  getStrategyLabel={getStrategyLabel}
+                />
               ) : (
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               )}
