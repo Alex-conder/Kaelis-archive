@@ -35,9 +35,9 @@ jobs:
           PYTHONIOENCODING: utf-8
           GRAPH_DB_TYPE: sqlite
 
-      - name: Run integration + slow tests
+      - name: Run integration + slow + e2e tests
         run: |
-          pytest -q --tb=short -m "slow or integration" tests/
+          pytest -q --tb=short -m "slow or integration or e2e" tests/
         env:
           PYTHONIOENCODING: utf-8
           GRAPH_DB_TYPE: sqlite

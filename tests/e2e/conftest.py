@@ -57,25 +57,32 @@ def e2e_app(e2e_temp_dir):
     try:
         from core.monitoring.scheduler import get_quality_scheduler
         scheduler = get_quality_scheduler()
-        if scheduler._scheduler.running:
+        if scheduler._scheduler and scheduler._scheduler.running:
             scheduler._scheduler.shutdown(wait=False)
     except Exception:
         pass
     
     # 重置全局单例，确保隔离
+    singleton_modules = [
+        ("core.skill_manager", "_skill_manager"),
+        ("core.memory_fts", "_fts_instance"),
+        ("core.memory_manager_v2", "_memory_manager_instance"),
+        ("core.knowledge_retriever", "_knowledge_retriever_instance"),
+        ("core.memory_consolidator", "_consolidator_instance"),
+        ("core.semantic_pubsub", "_pubsub_instance"),
+        ("core.shared_memory_space", "_sms_instance"),
+    ]
+    for mod_name, attr_name in singleton_modules:
+        try:
+            mod = __import__(mod_name, fromlist=[attr_name])
+            setattr(mod, attr_name, None)
+        except Exception:
+            pass
+    
+    # 强制垃圾回收，释放 ONNX / ChromaDB 资源
     try:
-        import core.skill_manager as sm
-        sm._skill_manager = None
-    except Exception:
-        pass
-    try:
-        import core.memory_fts as mfts
-        mfts._fts_instance = None
-    except Exception:
-        pass
-    try:
-        import core.memory_manager_v2 as mm
-        mm._memory_manager_instance = None
+        import gc
+        gc.collect()
     except Exception:
         pass
     
