@@ -620,10 +620,26 @@ def session_end():
 
 # ==================== 主动记忆推送（P17-001）====================
 
+def _format_context_push_message(memories: list) -> str:
+    """将记忆列表格式化为推送文本。"""
+    if not memories:
+        return ""
+    lines = ["💡 Kaelis 记忆推送:"]
+    for i, m in enumerate(memories[:5], 1):
+        reason = m.get("reason", "相关记忆")
+        value = m.get("value", "")
+        if isinstance(value, dict):
+            summary = value.get("summary", value.get("decision", str(value)[:80]))
+        else:
+            summary = str(value)[:80]
+        lines.append(f"  {i}. [{reason}] {summary}")
+    return "\n".join(lines)
+
+
 @memory_bp.route('/proactive/push', methods=['POST'])
 def proactive_push():
     """
-    主动记忆推送
+    主动记忆推送（完整 bundle 格式）
     
     Request Body:
         {
@@ -660,6 +676,51 @@ def proactive_push():
     except Exception as e:
         logger.error(f"Proactive push failed: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@memory_bp.route('/proactive/context_push', methods=['POST'])
+def context_aware_push():
+    """
+    上下文感知主动推送（浏览器扩展 / 轮询客户端格式）
+    
+    Request Body:
+        {
+            "user_id": "default",
+            "context": "当前对话最后 500 字符",
+            "limit": 5
+        }
+    
+    Response:
+        {
+            "has_memories": true,
+            "push_message": "💡 Kaelis 记忆推送:\n  1. [...]",
+            "memories": [...],
+            "suggested_action": "copy_to_clipboard"
+        }
+    """
+    if not PROACTIVE_AVAILABLE:
+        return jsonify({"has_memories": False, "push_message": "", "memories": [], "suggested_action": "none", "error": "Proactive engine not available"}), 503
+    
+    try:
+        data = request.get_json() or {}
+        user_id = data.get("user_id", "default")
+        context = data.get("context", "")
+        limit = data.get("limit", 5)
+        
+        engine = get_proactive_engine()
+        bundle = engine.generate_push_bundle(user_id=user_id, context=context)
+        memories = [m.to_dict() for m in bundle.all_memories()[:limit]]
+        push_text = _format_context_push_message(memories) if memories else ""
+        
+        return jsonify({
+            "has_memories": len(memories) > 0,
+            "push_message": push_text,
+            "memories": memories,
+            "suggested_action": "copy_to_clipboard" if memories else "none"
+        })
+    except Exception as e:
+        logger.error(f"Context aware push failed: {e}")
+        return jsonify({"has_memories": False, "push_message": "", "memories": [], "suggested_action": "none", "error": str(e)}), 500
 
 
 def register_memory_routes(app):

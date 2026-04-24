@@ -419,7 +419,7 @@ class TestSkillManager(KaelisTestBase):
             result = self.manager._import_single_agentskill({"name": "Test"})
             self.assertIsNone(result)
 
-    def test_chromadb_not_available(self):
+    def test_skill_storage_when_chromadb_unavailable(self):
         """ChromaDB 不可用时初始化"""
         with patch("core.skill_manager.CHROMADB_AVAILABLE", False):
             from core.skill_manager import SkillStorage

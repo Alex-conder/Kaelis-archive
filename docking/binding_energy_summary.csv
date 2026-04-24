@@ -1,6 +1,0 @@
-﻿Protein,Ligand,Binding_Energy_kcal_mol,Ki_nM,DeltaG_kcal_mol,VDW_kcal_mol,HBond_kcal_mol,Electrostatic_kcal_mol,Hydrophobic_kcal_mol,Km_uM,Note
-3VVP,Unknown,-9.8,56,-10.2,-6.5,-2.1,-1.2,,,
-6UJN,Unknown,-10.5,20,-10.8,-7.0,-2.3,-1.2,,,
-8RQ4,Unknown,-8.9,280,-9.2,,-2.8,-3.5,-4.5,
-8SDY,Unknown,-8.2,,-8.5,,-1.5,-5.5,-3.2,5-200
-OCT2,Unknown,-7.5,,-7.8,,-0.5,-4.2,-2.8,15-500

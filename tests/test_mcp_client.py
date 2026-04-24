@@ -202,7 +202,7 @@ class TestMCPClient(unittest.TestCase):
         self.assertEqual(len(result["content"]), 1)
         self.assertFalse(result["isError"])
 
-    def test_client_not_available_without_sdk(self):
+    def test_init_when_mcp_sdk_unavailable(self):
         """MCP SDK 不可用时 is_available 应返回 False"""
         import core.mcp.client as client_module
         original = client_module.MCP_AVAILABLE

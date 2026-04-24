@@ -44,7 +44,7 @@ class MemoryFTS:
         path = mapping.get(name, "data/kaelis_dev.db")
         p = Path(path)
         if not p.is_absolute():
-            p = self.db_dir.parent / p
+            p = self.db_dir / p.name
         return str(p)
     
     def _ensure_fts5_available(self):

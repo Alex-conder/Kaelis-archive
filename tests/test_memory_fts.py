@@ -19,7 +19,7 @@ from core.memory_fts import MemoryFTS
 class TestMemoryFTS(unittest.TestCase):
     """测试 MemoryFTS 全文检索模块"""
 
-    def test_fts5_not_available(self):
+    def test_init_when_fts5_unavailable(self):
         """FTS5 不可用时抛出 RuntimeError"""
         with patch("core.memory_fts.sqlite3.connect") as mock_connect:
             mock_cursor = MagicMock()

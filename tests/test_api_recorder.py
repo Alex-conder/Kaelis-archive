@@ -90,7 +90,7 @@ class TestRecorderAPI(FlaskAppTestBase):
                 r = self.json_post('/api/recorder/stop', {})
                 self.assertIn(r.status_code, [400, 503])
 
-    def test_start_recorder_not_available(self):
+    def test_start_when_recorder_unavailable(self):
         """RECORDER_AVAILABLE=False 时返回 503"""
         from unittest.mock import patch
         with patch("api.routes.recorder.RECORDER_AVAILABLE", False):
@@ -99,21 +99,21 @@ class TestRecorderAPI(FlaskAppTestBase):
             data = r.get_json()
             self.assertFalse(data.get("success"))
 
-    def test_play_recorder_not_available(self):
+    def test_play_when_recorder_unavailable(self):
         """播放器不可用时返回 503"""
         from unittest.mock import patch
         with patch("api.routes.recorder.RECORDER_AVAILABLE", False):
             r = self.json_post('/api/recorder/play/test', {})
             self.assertEqual(r.status_code, 503)
 
-    def test_list_recordings_not_available(self):
+    def test_list_when_recorder_unavailable(self):
         """录制器不可用时列表返回 503"""
         from unittest.mock import patch
         with patch("api.routes.recorder.RECORDER_AVAILABLE", False):
             r = self.json_get('/api/recorder/recordings')
             self.assertEqual(r.status_code, 503)
 
-    def test_get_recording_not_available(self):
+    def test_get_when_recorder_unavailable(self):
         """录制器不可用时详情返回 503"""
         from unittest.mock import patch
         with patch("api.routes.recorder.RECORDER_AVAILABLE", False):

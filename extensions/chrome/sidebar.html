@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Kaelis Memory</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      width: 320px;
+      height: 100vh;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    .header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      z-index: 10;
+    }
+    .header img { width: 22px; height: 22px; }
+    .header h1 { font-size: 14px; font-weight: 600; color: #60a5fa; }
+    .header .status {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    .header .status.online { background: #064e3b; color: #34d399; }
+    .content { padding: 12px 16px; }
+    .empty {
+      text-align: center;
+      color: #64748b;
+      padding: 40px 20px;
+      font-size: 12px;
+    }
+    .memory-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .memory-card:hover {
+      border-color: #60a5fa;
+      background: #1e293b;
+    }
+    .memory-card .reason {
+      font-size: 11px;
+      color: #60a5fa;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .memory-card .summary {
+      color: #cbd5e1;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .memory-card .meta {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .actions button {
+      flex: 1;
+      padding: 6px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      background: #334155;
+      color: #e2e8f0;
+      transition: background 0.2s;
+    }
+    .actions button:hover { background: #475569; }
+    .actions button.primary { background: #2563eb; }
+    .actions button.primary:hover { background: #3b82f6; }
+    .push-message {
+      background: #1e3a5f;
+      border-left: 3px solid #60a5fa;
+      padding: 10px 14px;
+      margin: 0 16px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 12px;
+      color: #bfdbfe;
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+    .refresh-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+    .refresh-btn:hover { transform: scale(1.05); }
+    .refresh-btn.spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="icon.png" alt="Kaelis">
+    <h1>Kaelis 记忆</h1>
+    <span class="status" id="status">离线</span>
+  </div>
+
+  <div id="push-message"></div>
+  <div class="content" id="memories">
+    <div class="empty">正在连接 Kaelis 服务...</div>
+  </div>
+
+  <button class="refresh-btn" id="refresh" title="刷新记忆">⟳</button>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

@@ -7,7 +7,12 @@ export async function activate(context: vscode.ExtensionContext) {
   console.log('[Kaelis] Extension activating...');
 
   participant = new KaelisParticipant();
-  await participant.initialize();
+  try {
+    await participant.initialize();
+  } catch (err) {
+    console.error('[Kaelis] Initialization warning (will use HTTP fallback):', err);
+    // Participant remains usable even if MCP init fails
+  }
 
   const chatParticipant = vscode.chat.createChatParticipant('kaelis', async (request, context, response, token) => {
     if (!participant) {
@@ -17,7 +22,8 @@ export async function activate(context: vscode.ExtensionContext) {
     await participant.handleRequest(request, context, response, token);
   });
 
-  chatParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'icon.png');
+  // Use the actual icon path under resources/
+  chatParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'kaelis-icon.png');
 
   context.subscriptions.push(chatParticipant);
   context.subscriptions.push({

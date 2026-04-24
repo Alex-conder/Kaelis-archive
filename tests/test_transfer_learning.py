@@ -2,6 +2,7 @@
 TransferLearning 单元测试
 """
 
+import os
 import unittest
 import sys
 from pathlib import Path
@@ -50,7 +51,7 @@ class TestTransferLearning(KaelisTestBase):
     def setUp(self):
         super().setUp()
         from core.transfer_learning import TransferLearning
-        self.tl = TransferLearning()
+        self.tl = TransferLearning(persist_dir=os.path.join(self.temp_dir, "chroma_db"))
     
     def test_init(self):
         """初始化"""
@@ -230,12 +231,12 @@ class TestTransferLearning(KaelisTestBase):
 class TestTransferLearningInit(KaelisTestBase):
     """测试初始化相关"""
 
-    def test_init_chromadb_not_available(self):
+    def test_init_when_chromadb_unavailable(self):
         """ChromaDB 不可用时初始化"""
         from unittest.mock import patch
         from core.transfer_learning import TransferLearning
         with patch("core.transfer_learning.CHROMADB_AVAILABLE", False):
-            tl = TransferLearning()
+            tl = TransferLearning(persist_dir=os.path.join(self.temp_dir, "chroma_db"))
             self.assertIsNone(tl.collection)
             self.assertIsNone(tl.chroma_client)
 

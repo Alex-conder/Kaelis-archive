@@ -8,7 +8,7 @@
 |------|---------|
 | **项目名称** | Kaelis 智流 |
 | **交付形态** | Electron 桌面应用 + Python Flask 后端 |
-| **前端技术栈** | React 18 + Vite + TypeScript + TailwindCSS + Zustand |
+| **前端技术栈** | React 18 + Vite + TypeScript + TailwindCSS 4.2.4 + Zustand |
 | **后端技术栈** | Python 3.12/3.13/3.14 + Flask 3.1.3 + Waitress |
 | **AI 栈** | LangChain 1.2.15 + ChromaDB 1.5.8 + FAISS-CPU |
 | **数据库** | SQLite (主存储) + ChromaDB/FAISS (向量检索) |

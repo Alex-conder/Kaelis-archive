@@ -35,7 +35,8 @@ class QualityScheduler:
     知识图谱质量检查调度器
     """
     
-    def __init__(self):
+    def __init__(self, db_path: str = None):
+        self.db_path = Path(db_path) if db_path else Path("data/kaelis_graph.db")
         self.scheduler = None
         self._initialized = False
     
@@ -145,8 +146,7 @@ class QualityScheduler:
         start_time = datetime.now().isoformat()
         issues = []
         
-        db_path = Path("data/kaelis_graph.db")
-        if not db_path.exists():
+        if not self.db_path.exists():
             return {
                 "check_type": check_type,
                 "status": "skipped",
@@ -154,7 +154,7 @@ class QualityScheduler:
                 "timestamp": start_time
             }
         
-        with sqlite3.connect(str(db_path)) as conn:
+        with sqlite3.connect(str(self.db_path)) as conn:
             # 1. 实体名称冲突检查
             if check_type in ('full', 'entity'):
                 cursor = conn.execute("""

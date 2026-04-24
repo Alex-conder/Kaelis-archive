@@ -21,14 +21,14 @@
 
 | 文件 | 状态 | 说明 |
 |------|------|------|
-| `src/App.tsx` | ⚠️ 骨架 | 仅渲染基本布局，无路由 |
-| `src/main.tsx` | ✅ 标准 | React 18 入口 |
+| `src/App.tsx` | ⚠️ 骨架 | 已配置 HashRouter，支持多页面导航 |
+| `src/main.tsx` | ✅ 标准 | React 19 入口 |
 | `src/components/OnboardingWizard.tsx` | ⚠️ 唯一组件 | 用户引导向导，功能未知 |
 | `src/stores/authStore.ts` | ⚠️ 存在 | Zustand 状态管理，未验证是否对接后端 |
 | `src/utils/telemetry.ts` | ⚠️ 存在 | 遥测工具 |
-| `src/App.css` / `index.css` | ✅ 存在 | TailwindCSS 基础样式 |
+| `src/App.css` / `index.css` | ✅ 存在 | TailwindCSS 4.2.4 基础样式 |
 
-**依赖**：React 18.2, Zustand 4.5.2, TailwindCSS, Vite 5.1, TypeScript 5.3
+**依赖**：React 19.0.0, Zustand 5.0.3, TailwindCSS 4.2.4, Vite 5.1.0, TypeScript 5.3.3
 
 ### 1.3 设计稿模板 (`react-design/react/`)
 
@@ -56,9 +56,9 @@
     "dist:win": "npm run electron:build:win"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "zustand": "^4.5.2"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.3"
   }
 }
 ```

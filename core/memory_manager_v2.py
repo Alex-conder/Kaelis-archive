@@ -49,7 +49,11 @@ class FourLayerMemoryManager:
         config = LAYER_CONFIG.get(layer)
         if not config:
             raise ValueError(f"Unknown layer: {layer}")
-        db_path = str(self.db_dir.parent / config["db"]) if not Path(config["db"]).is_absolute() else config["db"]
+        db_path = config["db"]
+        p = Path(db_path)
+        if not p.is_absolute():
+            p = self.db_dir / p.name
+        db_path = str(p)
         # 确保数据库所在目录存在
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         return db_path
@@ -247,7 +251,7 @@ class FourLayerMemoryManager:
     
     def _fallback_jsonl_backup(self, key: str, value: Any, metadata: Dict, now: str):
         """L2 写入失败时的 JSONL 备份"""
-        backup_dir = Path("data/fallback")
+        backup_dir = self.db_dir / "fallback"
         backup_dir.mkdir(parents=True, exist_ok=True)
         backup_file = backup_dir / "l2_backup.jsonl"
         with open(backup_file, "a", encoding="utf-8") as f:

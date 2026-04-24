@@ -43,8 +43,9 @@ class UserProfiler:
     从四层记忆中提取用户行为模式，生成偏好标签。
     """
     
-    def __init__(self, memory_manager=None):
+    def __init__(self, memory_manager=None, db_path: str = None):
         self.memory = memory_manager
+        self.db_path = Path(db_path) if db_path else Path("data/kaelis_graph.db")
     
     def profile(self, user_id: str = "anonymous") -> Dict[str, Any]:
         """
@@ -163,11 +164,10 @@ class UserProfiler:
         try:
             import sqlite3
             from pathlib import Path
-            db_path = Path("data/kaelis_graph.db")
-            if not db_path.exists():
+            if not self.db_path.exists():
                 return []
             
-            with sqlite3.connect(str(db_path)) as conn:
+            with sqlite3.connect(str(self.db_path)) as conn:
                 cursor = conn.execute(
                     "SELECT type, COUNT(*) as cnt FROM kg_entities WHERE user_id = ? GROUP BY type ORDER BY cnt DESC LIMIT 5",
                     (user_id,)

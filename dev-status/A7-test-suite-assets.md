@@ -110,5 +110,5 @@
 | 🔴 高 | 补充 MCP Server/Client 测试至 75%+ | 4-5 天 |
 | 🔴 高 | Mock ChromaDB ONNX 下载，消除网络依赖 | 1-2 天 |
 | 🟠 中 | 补充 omics 子系统核心测试 | 5-7 天 |
-| 🟠 中 | 引入前端测试 (Vitest + Playwright) | 3-5 天 |
+| 🟠 中 | 引入前端测试 (Vitest 已配置 (Playwright 尚未配置)) | 3-5 天 |
 | 🟡 低 | 优化测试运行速度 (并行化) | 2-3 天 |

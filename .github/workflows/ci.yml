@@ -87,5 +87,29 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Run frontend tests
+        run: npm test
+
       - name: Run lint check
-        run: npm run lint -- --max-warnings=50
+        run: npm run lint -- --max-warnings=20
+
+  hygiene:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Run hygiene checks
+        run: python scripts/check_hygiene.py
+
+      - name: Document drift check
+        run: |
+          python scripts/sync_dev_status.py
+          git diff --exit-code dev-status/

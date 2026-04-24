@@ -113,7 +113,10 @@ class TestKnowledgeRetriever(KaelisTestBase):
     def setUp(self):
         super().setUp()
         from core.knowledge_retriever import KnowledgeRetriever
-        self.kr = KnowledgeRetriever()
+        self.kr = KnowledgeRetriever(
+            local_doc_dir=os.path.join(self.temp_dir, "documents"),
+            cache_dir=os.path.join(self.temp_dir, "cache")
+        )
     
     def test_init(self):
         """初始化"""

@@ -189,7 +189,10 @@ class TestConsolidationScheduler(KaelisTestBase):
     def test_start_stop(self):
         """启动和停止"""
         from core.memory_consolidator import MemoryConsolidator, ConsolidationScheduler
-        consolidator = MemoryConsolidator()
+        consolidator = MemoryConsolidator(
+            archive_dir=os.path.join(self.temp_dir, "archive"),
+            persist_dir=os.path.join(self.temp_dir, "chroma_db")
+        )
         scheduler = ConsolidationScheduler(consolidator)
         scheduler.interval_hours = 1
         scheduler.start()

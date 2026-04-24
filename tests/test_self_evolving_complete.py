@@ -482,7 +482,8 @@ class TestTransferLearningInterface:
     def test_task_similarity(self):
         """测试任务相似度计算"""
         from core.transfer_learning import TransferLearning
-        tl = TransferLearning()
+        import tempfile
+        tl = TransferLearning(persist_dir=os.path.join(tempfile.mkdtemp(), "chroma_db"))
         
         # 测试任务相似度
         sim1 = tl._task_similarity("pls_da_analysis", "pls_da_modeling")

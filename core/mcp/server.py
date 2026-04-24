@@ -221,6 +221,48 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             logger.error(f"proactive_push error: {e}")
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
+    def _format_push_message(memories: List[Dict[str, Any]]) -> str:
+        """将记忆列表格式化为推送文本。"""
+        if not memories:
+            return ""
+        lines = ["💡 Kaelis 记忆推送:"]
+        for i, m in enumerate(memories[:5], 1):
+            reason = m.get("reason", "相关记忆")
+            value = m.get("value", "")
+            if isinstance(value, dict):
+                summary = value.get("summary", value.get("decision", str(value)[:80]))
+            else:
+                summary = str(value)[:80]
+            lines.append(f"  {i}. [{reason}] {summary}")
+        return "\n".join(lines)
+
+    @mcp.tool()
+    def context_aware_push(current_context: str = "", user_id: str = "default", limit: int = 5) -> str:
+        """
+        基于当前对话上下文，推送相关记忆。
+        供浏览器扩展或 Claude 轮询调用。
+        """
+        try:
+            engine = _get_proactive()
+            bundle = engine.generate_push_bundle(context=current_context, user_id=user_id)
+            memories = [m.to_dict() for m in bundle.all_memories()[:limit]]
+            push_text = _format_push_message(memories) if memories else ""
+            return json.dumps({
+                "has_memories": len(memories) > 0,
+                "push_message": push_text,
+                "memories": memories,
+                "suggested_action": "copy_to_clipboard" if memories else "none"
+            }, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"context_aware_push error: {e}")
+            return json.dumps({
+                "has_memories": False,
+                "push_message": "",
+                "memories": [],
+                "suggested_action": "none",
+                "error": str(e)
+            }, ensure_ascii=False)
+
     # ------------------------------------------------------------------ #
     # Shared Memory Space Tools (Sprint 5-7)
     # ------------------------------------------------------------------ #

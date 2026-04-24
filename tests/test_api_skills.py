@@ -97,7 +97,7 @@ class TestSkillsAPI(FlaskAppTestBase):
         r = self.json_post('/api/skills/test/rate', {"rating": 6})
         self.assertIn(r.status_code, [400, 404])
 
-    def test_skills_not_available(self):
+    def test_get_skills_when_service_unavailable(self):
         """SKILL_MANAGER_AVAILABLE=False 时返回 503"""
         from unittest.mock import patch
         with patch("api.routes.skills.SKILL_MANAGER_AVAILABLE", False):

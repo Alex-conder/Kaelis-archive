@@ -5,9 +5,9 @@
 **Kaelis 前端是其最大短板**。后端拥有 20,000+ 行核心代码和 350+ API 端点，但前端仅实现了：
 - 一个 `OnboardingWizard` 组件
 - 一个静态设计稿页面 (`Frame21`)
-- 无 API 调用
-- 无路由
-- 无状态管理（除 Zustand store 骨架）
+- axios API 客户端已配置
+- 已配置 react-router-dom
+- Zustand 状态管理已配置
 
 ## 2. 功能差距矩阵
 
@@ -16,10 +16,10 @@
 | 功能 | 状态 | 差距描述 | 工作量 |
 |------|------|----------|--------|
 | **聊天/对话界面** | ❌ 缺失 | Agent 核心交互缺失 | 5-7 天 |
-| **API 客户端层** | ❌ 缺失 | 无 axios/fetch 封装 | 2-3 天 |
-| **路由系统** | ❌ 缺失 | React Router 未配置 | 0.5 天 |
+| **API 客户端层** | ❌ 缺失 | axios 已配置，含拦截器封装 | 2-3 天 |
+| **路由系统** | ❌ 缺失 | React Router (HashRouter) 已配置 | 0.5 天 |
 | **认证流程 UI** | ⚠️ 骨架 | authStore 存在但未验证 | 2-3 天 |
-| **错误/加载状态** | ❌ 缺失 | 无全局错误边界 | 1-2 天 |
+| **错误/加载状态** | ❌ 缺失 | 全局错误边界已配置 | 1-2 天 |
 
 ### 2.2 核心功能（产品完整度）
 
@@ -48,9 +48,9 @@
 | 数据获取 | TanStack Query (React Query) | 无 | 大 |
 | 表单处理 | React Hook Form + Zod | 无 | 大 |
 | 图表可视化 | ECharts / D3 / Visx | 无 | 大 |
-| Markdown 渲染 | ReactMarkdown | 无 | 大 |
+| Markdown 渲染 | react-markdown 已配置 | 无 | 大 |
 | 代码高亮 | Prism / Shiki | 无 | 大 |
-| 测试框架 | Vitest + Playwright | 无 | 大 |
+| 测试框架 | Vitest 已配置 (Playwright 尚未配置) | 无 | 大 |
 | 国际化 | i18next | 无 | 中 |
 
 ## 4. 现有资产复用评估
