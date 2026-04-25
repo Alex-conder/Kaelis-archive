@@ -9,10 +9,14 @@ When 调用 /api/workflow/nodes，
 Then 返回 5 个节点（含图标）
 """
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from pathlib import Path
 import yaml
 from typing import Dict, List, Any
+
+from core.workflow_nodes.web_scraper import WebScraperNode, WorkflowNodeError
+from core.workflow_exporter import WorkflowExporter, get_workflow_exporter
+from core.n8n_adapter import N8nNodeAdapter
 
 bp = Blueprint('workflow_nodes', __name__, url_prefix='/api/workflow')
 
@@ -127,6 +131,77 @@ WORKFLOW_NODES = [
             "condition": {
                 "type": "string",
                 "default": "> 0.5"
+            }
+        }
+    },
+    {
+        "id": "web_scraper",
+        "type": "action",
+        "name": "网页抓取",
+        "description": "抓取指定 URL 的网页内容，支持 CSS 选择器提取",
+        "icon": "public",
+        "category": "data",
+        "inputs": [
+            {
+                "name": "url",
+                "type": "string",
+                "required": True,
+                "description": "目标网页 URL"
+            },
+            {
+                "name": "selector",
+                "type": "string",
+                "required": False,
+                "description": "CSS 选择器，用于提取特定内容（如 h1, #content, .article）"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "content",
+                "type": "string",
+                "description": "提取的文本内容"
+            },
+            {
+                "name": "title",
+                "type": "string",
+                "description": "页面标题"
+            },
+            {
+                "name": "status_code",
+                "type": "number",
+                "description": "HTTP 状态码"
+            },
+            {
+                "name": "final_url",
+                "type": "string",
+                "description": "最终 URL（考虑重定向后）"
+            },
+            {
+                "name": "links",
+                "type": "array",
+                "description": "页面中的前 50 个链接"
+            }
+        ],
+        "config": {
+            "timeout": {
+                "type": "number",
+                "min": 1,
+                "max": 300,
+                "default": 30
+            },
+            "user_agent": {
+                "type": "string",
+                "default": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+            "follow_redirects": {
+                "type": "boolean",
+                "default": True
+            },
+            "max_length": {
+                "type": "number",
+                "min": 100,
+                "max": 100000,
+                "default": 10000
             }
         }
     }
@@ -275,7 +350,8 @@ def _get_category_name(category: str) -> str:
         'control': '控制流',
         'general': '通用',
         'file': '文件操作',
-        'api': 'API 调用'
+        'api': 'API 调用',
+        'data': '数据采集'
     }
     return names.get(category, category)
 
@@ -289,12 +365,225 @@ def _get_category_icon(category: str) -> str:
         'control': 'splitscreen',
         'general': 'build',
         'file': 'folder',
-        'api': 'api'
+        'api': 'api',
+        'data': 'public'
     }
     return icons.get(category, 'circle')
 
 
 # 注册蓝图
+@bp.route('/nodes/<node_id>/execute', methods=['POST'])
+def execute_node(node_id: str):
+    """
+    执行指定工作流节点
+    
+    Request Body:
+        {
+            "inputs": {"url": "https://example.com", "selector": "h1"},
+            "config": {"timeout": 30}
+        }
+    """
+    data = request.get_json() or {}
+    inputs = data.get("inputs", {})
+    config = data.get("config", {})
+    
+    # 内置节点执行映射
+    executors = {
+        "web_scraper": WebScraperNode(),
+    }
+    
+    executor = executors.get(node_id)
+    if not executor:
+        return jsonify({
+            "success": False,
+            "error": f"Node {node_id} does not support execution or not found"
+        }), 404
+    
+    # 输入验证
+    errors = executor.validate_inputs(inputs)
+    if errors:
+        return jsonify({
+            "success": False,
+            "error": "Validation failed",
+            "details": errors
+        }), 400
+    
+    # 执行节点
+    try:
+        result = executor.execute(inputs, config)
+        return jsonify({
+            "success": True,
+            "data": result
+        })
+    except WorkflowNodeError as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 422
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Execution failed: {e}"
+        }), 500
+
+
+@bp.route('/export', methods=['POST'])
+def export_workflow():
+    """
+    导出工作流节点配置或执行记录
+    
+    Request Body:
+        {
+            "nodes": [...],           # optional: 节点列表
+            "executions": [...],      # optional: 执行记录列表
+            "filename": "my_workflow.json",
+            "format": "json",
+            "offline_bundle": false   # if true, exports to offline/ dir
+        }
+    """
+    data = request.get_json() or {}
+    nodes = data.get("nodes")
+    executions = data.get("executions")
+    filename = data.get("filename")
+    format = data.get("format", "json")
+    offline_bundle = data.get("offline_bundle", False)
+    
+    exporter = get_workflow_exporter()
+    
+    try:
+        if offline_bundle and nodes is not None:
+            file_path = exporter.export_offline_bundle(
+                nodes=nodes,
+                executions=executions,
+                bundle_name=filename.replace(".json", "") if filename else None
+            )
+        elif nodes is not None:
+            file_path = exporter.export_nodes(
+                nodes=nodes,
+                filename=filename,
+                format=format,
+                metadata=data.get("metadata")
+            )
+        elif executions is not None and len(executions) > 0:
+            file_path = exporter.export_execution(
+                record=executions[0],
+                filename=filename,
+                format=format
+            )
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Missing 'nodes' or 'executions' in request body"
+            }), 400
+        
+        return jsonify({
+            "success": True,
+            "data": {
+                "file_path": str(file_path),
+                "filename": file_path.name
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Export failed: {e}"
+        }), 500
+
+
+@bp.route('/import', methods=['POST'])
+def import_workflow():
+    """
+    从本地文件导入工作流配置
+    
+    Request Body:
+        {
+            "file_path": "data/workflows/my_workflow.json"
+        }
+    """
+    data = request.get_json() or {}
+    file_path = data.get("file_path", "").strip()
+    
+    if not file_path:
+        return jsonify({
+            "success": False,
+            "error": "Missing 'file_path' in request body"
+        }), 400
+    
+    exporter = get_workflow_exporter()
+    
+    try:
+        result = exporter.import_from_file(file_path)
+        return jsonify({
+            "success": True,
+            "data": {
+                "type": result.get("type"),
+                "node_count": len(result.get("nodes", [])),
+                "nodes": result.get("nodes", []),
+                "metadata": result.get("metadata", {})
+            }
+        })
+    except FileNotFoundError as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 404
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 422
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Import failed: {e}"
+        }), 500
+
+
+@bp.route('/exports', methods=['GET'])
+def list_exports():
+    """获取所有已导出的工作流文件列表"""
+    offline_only = request.args.get("offline_only", "false").lower() == "true"
+    exporter = get_workflow_exporter()
+    
+    try:
+        files = exporter.list_exports(offline_only=offline_only)
+        return jsonify({
+            "success": True,
+            "data": {
+                "files": files,
+                "total": len(files),
+                "offline_only": offline_only
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"List exports failed: {e}"
+        }), 500
+
+
+@bp.route('/nodes/import/n8n', methods=['POST'])
+def import_n8n_node():
+    """导入 n8n 节点定义，转换为 Kaelis 格式"""
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "Request body required"}), 400
+    
+    adapter = N8nNodeAdapter()
+    result = adapter.convert(data)
+    
+    if result is None:
+        return jsonify({
+            "success": False,
+            "error": "Invalid or unsupported n8n node definition"
+        }), 422
+    
+    return jsonify({
+        "success": True,
+        "data": result
+    })
+
+
 def init_app(app):
     """初始化 Flask 应用"""
     app.register_blueprint(bp)

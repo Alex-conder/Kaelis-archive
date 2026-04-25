@@ -61,6 +61,14 @@ def isolate_data_dir(monkeypatch, tmp_path, request):
     monkeypatch.setenv("_KAELIS_TEST_DATA_DIR", str(test_data))
     monkeypatch.setenv("KAELIS_DATA_DIR", str(test_data))
 
+    # Reset global memory manager singleton so each test gets a fresh instance
+    # pointing to the isolated temporary directory (C1 contract)
+    try:
+        import core.memory_manager_v2 as mm_module
+        mm_module._mm_instance = None
+    except Exception:
+        pass
+
     # Capture baseline of real data/ directory
     # Use os.walk to avoid the patched Path() redirecting to temp dir
     baseline = set()

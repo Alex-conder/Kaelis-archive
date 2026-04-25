@@ -68,3 +68,17 @@ pytest-cov>=4.1.0
 
 # 构建
 setuptools>=68.0.0
+
+# 安全与加密
+cryptography>=41.0.0
+pyjwt>=2.8.0
+
+# LLM Provider SDK（可选，无 SDK 时自动降级到 requests）
+anthropic>=0.40.0
+
+# 网络与发现
+zeroconf>=0.140.0
+base58>=2.1.0
+
+# LangChain 生态
+langchain-text-splitters>=0.0.1

@@ -87,6 +87,16 @@ class IntentParseResponse(BaseModel):
         
 
 
+class ExecutionPlan(BaseModel):
+    """
+    ExecutionPlan
+
+    Auto-generated from OpenAPI schema: ExecutionPlan
+    """
+    steps: List[str] = []
+    target: Optional[str] = None
+
+
 class ExecutePlanRequest(BaseModel):
     """
     ExecutePlanRequest
@@ -275,7 +285,7 @@ def log_request(f):
 # ============================================================================
 
 
-@bp.route('/api/intent/parse', methods=['POST'])
+@bp.route('/parse', methods=['POST'])
 @validate_request(IntentParseRequest)
 @log_request
 def intentParse():
@@ -335,7 +345,7 @@ def intentParse():
         return handle_exception(e)
 
 
-@bp.route('/api/intent/execute', methods=['POST'])
+@bp.route('/execute', methods=['POST'])
 @validate_request(ExecutePlanRequest)
 @log_request
 def intentExecute():

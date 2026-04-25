@@ -31,18 +31,26 @@ SEARCH_LATENCY_MS = 200
 BATCH_SIZE = 30
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 class TestMemoryPipeline:
     """记忆管道集成测试"""
 
     @pytest.fixture(scope="class")
     def client(self):
-        """提供 Flask 测试客户端"""
+        """Provide Flask test client with isolated memory manager."""
         os.environ["Kaelis_ENV"] = "integration_test"
         os.environ["GRAPH_DB_TYPE"] = "sqlite"
+        # Reset global memory manager singleton to ensure fresh instance
+        # per test class (works with conftest.py isolate_data_dir)
+        import core.memory_manager_v2 as mm_module
+        mm_module._mm_instance = None
         app = create_app()
         app.config["TESTING"] = True
         with app.test_client() as client:
             yield client
+        # Clean up after class
+        mm_module._mm_instance = None
 
     def _post_json(self, client, path, data):
         """发送 JSON POST"""

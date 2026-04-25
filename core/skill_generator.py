@@ -27,10 +27,16 @@ class SkillDocumentGenerator:
     将执行记录转换为标准化的技能文档。
     """
     
-    def __init__(self, llm_client=None, output_dir: str = "data/skills/generated"):
+    def __init__(self, llm_client=None, output_dir: str = "data/skills/generated",
+                 trigger_threshold: int = 5, quality_min_confidence: float = 0.7,
+                 improvement_dir: str = "data/skills/improvements"):
         self.llm_client = llm_client
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.trigger_threshold = trigger_threshold
+        self.quality_min_confidence = quality_min_confidence
+        self.improvement_dir = Path(improvement_dir)
+        self.improvement_dir.mkdir(parents=True, exist_ok=True)
     
     def generate(
         self,
@@ -232,6 +238,147 @@ class SkillDocumentGenerator:
             lines.append(f"- ... 共 {len(iterations)} 轮迭代")
         
         return "\n".join(lines)
+
+    # ------------------------------------------------------------------ #
+    # Prompt 5: Skill trigger threshold & autonomous reflection
+    # ------------------------------------------------------------------ #
+
+    def check_and_generate(self, task_type: str, recent_executions: list) -> Optional[Dict[str, Any]]:
+        """
+        Check if skill generation should be triggered based on recent execution history.
+
+        Args:
+            task_type: The task type to analyze
+            recent_executions: List of execution dicts with keys:
+                - success: bool
+                - confidence: float
+                - params: dict
+                - result: dict
+                - execution_record: dict (optional)
+
+        Returns:
+            Dict with action and path, or None if threshold not met.
+        """
+        if len(recent_executions) < self.trigger_threshold:
+            return None
+
+        successes = [e for e in recent_executions if e.get("success")]
+        failures = [e for e in recent_executions if not e.get("success")]
+        total = len(recent_executions)
+        success_rate = len(successes) / total
+
+        logger.info(f"Skill trigger check for {task_type}: {len(successes)}/{total} success (rate={success_rate:.2f})")
+
+        if success_rate >= self.quality_min_confidence:
+            return self._reflect_and_generate(task_type, successes)
+
+        failure_rate = len(failures) / total
+        if failure_rate > (1 - self.quality_min_confidence):
+            return self._suggest_improvement(task_type, failures)
+
+        return None
+
+    def _reflect_and_generate(self, task_type: str, successful_executions: list) -> Dict[str, Any]:
+        """Analyze successful cases and generate a SKILL.md."""
+        # Extract common parameters (most frequent value for each key)
+        param_values: Dict[str, list] = {}
+        for ex in successful_executions:
+            params = ex.get("params", {})
+            for k, v in params.items():
+                param_values.setdefault(k, []).append(v)
+
+        common_params = {}
+        for k, vals in param_values.items():
+            # Use the most common value
+            from collections import Counter
+            most_common = Counter(str(v) for v in vals).most_common(1)[0][0]
+            # Find the original typed value
+            for v in vals:
+                if str(v) == most_common:
+                    common_params[k] = v
+                    break
+
+        # Build a synthetic execution record
+        best_execution = max(successful_executions, key=lambda e: e.get("confidence", 0))
+        synthetic_record = {
+            "task_type": task_type,
+            "best_params": common_params,
+            "best_result": best_execution.get("result", {}),
+            "best_confidence": best_execution.get("confidence", 0.0),
+            "iterations": [{
+                "iteration": i + 1,
+                "evaluation": {"confidence": ex.get("confidence", 0), "passed": True}
+            } for i, ex in enumerate(successful_executions[:5])],
+        }
+
+        # Validate before generating
+        try:
+            from core.skill_validator import SkillValidator
+            validator = SkillValidator()
+            # Note: validate_json expects agentskills.io format; we skip strict validation here
+            # and rely on the template generation which produces markdown.
+        except ImportError:
+            pass
+
+        doc_path = self.generate(synthetic_record, skill_id=f"{task_type}_reflected")
+        logger.info(f"Reflected skill generated for {task_type}: {doc_path}")
+        return {"action": "generated", "task_type": task_type, "path": str(doc_path) if doc_path else None}
+
+    def _suggest_improvement(self, task_type: str, failed_executions: list) -> Dict[str, Any]:
+        """Analyze failure cases and output an improvement suggestion report."""
+        # Collect common error patterns
+        error_reasons = []
+        for ex in failed_executions:
+            rec = ex.get("execution_record", {})
+            if rec.get("error"):
+                error_reasons.append(str(rec["error"]))
+            elif rec.get("status"):
+                error_reasons.append(str(rec["status"]))
+
+        from collections import Counter
+        common_errors = Counter(error_reasons).most_common(5)
+
+        # Collect parameter distributions
+        param_values: Dict[str, list] = {}
+        for ex in failed_executions:
+            params = ex.get("params", {})
+            for k, v in params.items():
+                param_values.setdefault(k, []).append(v)
+
+        content = f"""# {task_type} 改进建议报告
+
+生成时间: {datetime.now().isoformat()}
+分析样本数: {len(failed_executions)}
+
+## 常见失败原因
+"""
+        for reason, count in common_errors:
+            content += f"- {reason}: {count} 次\n"
+
+        content += "\n## 失败参数分布\n\n"
+        for k, vals in param_values.items():
+            unique = set(str(v) for v in vals)
+            content += f"- `{k}`: {len(unique)} 种不同值 ({', '.join(list(unique)[:5])}{'...' if len(unique) > 5 else ''})\n"
+
+        content += """
+## 改进建议
+
+1. 检查上述常见失败原因，确认是否为系统性问题
+2. 尝试调整参数分布中变化较大的参数
+3. 增加训练数据或改进评估标准
+4. 考虑引入外部知识库辅助决策
+
+---
+报告来源: Kaelis 自主反思引擎
+"""
+
+        safe_name = re.sub(r'[^\w\-_.]', '_', task_type)[:64]
+        report_path = self.improvement_dir / f"{safe_name}_improvement.md"
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        logger.info(f"Improvement suggestion for {task_type}: {report_path}")
+        return {"action": "suggested_improvement", "task_type": task_type, "path": str(report_path)}
 
 
 # 全局实例

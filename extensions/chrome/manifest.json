@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
     "http://localhost:5000/",
@@ -21,8 +22,12 @@
     {
       "matches": [
         "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
         "https://claude.ai/*",
-        "https://kimi.moonshot.cn/*"
+        "https://kimi.moonshot.cn/*",
+        "https://github.com/*",
+        "https://arxiv.org/*",
+        "https://scholar.google.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_end"

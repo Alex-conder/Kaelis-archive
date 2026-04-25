@@ -19,15 +19,28 @@ paths:
   intent_schema: "config/schemas/intent.json"
 
 # ============================================================================
-# LLM 配置 (仅用于语义解析)
+# LLM 配置 (多 Provider 架构 v2)
 # ============================================================================
 llm:
-  provider: "openai"  # openai | anthropic | local
-  model: "gpt-3.5-turbo"
-  temperature: 0.1  # 低温度，减少随机性
+  # 主 Provider：auto 表示自动选择，或指定具体名称
+  # 支持: auto | ollama | deepseek | qwen | zhipu | moonshot | xunfei | baidu | tencent | openai | anthropic
+  provider: "auto"
+  model: null           # null 表示使用 Provider 默认模型
+  temperature: 0.7
   max_tokens: 1000
   timeout: 30
-  
+
+  # 自动发现：根据 IP 地理位置探测可用 Provider
+  auto_discover: true
+
+  # Fallback Provider 列表（按优先级）
+  fallback_providers:
+    - "ollama"
+    - "deepseek"
+    - "qwen"
+    - "zhipu"
+    - "openai"
+
   # 语义解析专用配置
   intent_parsing:
     system_prompt: |
@@ -35,7 +48,7 @@ llm:
       Convert natural language to structured JSON intent.
       Valid actions: add, modify, delete, query, deploy, test, migrate, refactor, configure
       Valid target types: api_route, agent_tool, config, web_frontend, database, script, test, documentation
-      
+
       Output ONLY valid JSON matching the intent schema.
       If you cannot determine the intent clearly, output {"error": "ambiguous", "message": "..."}
 

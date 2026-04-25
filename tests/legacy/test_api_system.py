@@ -21,9 +21,10 @@ class TestSystemAPI:
     @pytest.fixture
     def app(self):
         """Create test app"""
-        # TODO: Implement app factory for testing
         app = Flask(__name__)
         app.config['TESTING'] = True
+        from api.routes.system import bp
+        app.register_blueprint(bp)
         return app
 
     @pytest.fixture
@@ -38,7 +39,7 @@ class TestSystemAPI:
         Endpoint: GET /api/health
         """
         # TODO: Prepare valid request data
-        response = client.get("/api/health")
+        response = client.get("/api/system/health")
         
         # Assert: Should return 200 OK
         assert response.status_code == 200

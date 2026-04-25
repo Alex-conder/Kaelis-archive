@@ -21,9 +21,10 @@ class TestIntentAPI:
     @pytest.fixture
     def app(self):
         """Create test app"""
-        # TODO: Implement app factory for testing
         app = Flask(__name__)
         app.config['TESTING'] = True
+        from api.routes.intent import bp
+        app.register_blueprint(bp)
         return app
 
     @pytest.fixture
@@ -94,7 +95,7 @@ class TestIntentAPI:
         Endpoint: POST /api/intent/execute
         """
         # TODO: Prepare valid request data
-        data = json.loads('''{"dry_run": true, "skip_sandbox": true}''')
+        data = json.loads('''{"plan": {"steps": ["step1"]}, "dry_run": true, "skip_sandbox": true}''')
         response = client.post("/api/intent/execute",
                                          data=json.dumps(data),
                                          content_type="application/json")

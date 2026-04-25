@@ -6,6 +6,8 @@ import ChatPage from './pages/ChatPage'
 import MemoryPage from './pages/MemoryPage'
 import SkillsPage from './pages/SkillsPage'
 import SettingsPage from './pages/SettingsPage'
+import WorkflowPage from './pages/WorkflowPage'
+import CapabilityPage from './pages/CapabilityPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useAuthUser()
@@ -44,7 +46,9 @@ function App() {
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/memory" element={<MemoryPage />} />
             <Route path="/skills" element={<SkillsPage />} />
+            <Route path="/workflow" element={<WorkflowPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/capabilities" element={<CapabilityPage />} />
           </Route>
           <Route path="/" element={<Navigate to="/chat" replace />} />
         </Routes>

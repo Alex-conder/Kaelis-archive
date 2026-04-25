@@ -71,6 +71,13 @@ def create_app():
     from api.routes.shared_memory import shared_memory_bp
     from api.routes.agent_permissions import agent_permissions_bp
     from api.routes.pubsub import pubsub_bp
+    from api.routes.intent import bp
+    from api.routes.knowledge_graph import bp as knowledge_graph_bp
+    from api.routes.reports import bp as reports_bp
+    from api.routes.symbols import bp as symbols_bp
+    from api.routes.system import bp as system_bp
+    from api.routes.team import bp as team_bp
+    from api.routes.workflow_nodes import bp as workflow_nodes_bp
     
     app = Flask(__name__, static_folder='api/static')
     app.secret_key = os.environ.get('SECRET_KEY', 'kaelis-dev-secret-key-change-in-production')
@@ -99,6 +106,13 @@ def create_app():
     app.register_blueprint(shared_memory_bp)
     app.register_blueprint(agent_permissions_bp)
     app.register_blueprint(pubsub_bp)
+    app.register_blueprint(bp)
+    app.register_blueprint(knowledge_graph_bp)
+    app.register_blueprint(reports_bp)
+    app.register_blueprint(symbols_bp)
+    app.register_blueprint(system_bp)
+    app.register_blueprint(team_bp)
+    app.register_blueprint(workflow_nodes_bp)
     
     # 注册 API 中间件（安全扫描 + 速率限制 + 签名验证 + 指标埋点）
     try:

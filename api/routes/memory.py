@@ -246,9 +246,9 @@ def delete_memory():
             from core.memory_manager_v2 import LAYER_CONFIG
             import sqlite3
             config = LAYER_CONFIG[layer]
-            db_path = config["db"] if Path(config["db"]).is_absolute() else str(Path("data") / Path(config["db"]).name)
-            conn = sqlite3.connect(db_path)
+            db_path = mm._get_db_path(layer)
             table = config["table"]
+            conn = sqlite3.connect(db_path)
             cursor = conn.execute(f"DELETE FROM {table} WHERE key = ?", (key,))
             deleted = cursor.rowcount
             conn.commit()

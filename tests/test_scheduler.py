@@ -48,7 +48,9 @@ class TestQualityScheduler(KaelisTestBase):
     def test_run_inspection_now_with_db(self):
         """有数据库时执行"""
         # 创建临时数据库
-        db_path = os.path.join(tempfile.mkdtemp(), "test_graph.db")
+        import tempfile, shutil
+        tmp_dir = tempfile.mkdtemp()
+        db_path = os.path.join(tmp_dir, "test_graph.db")
         conn = sqlite3.connect(db_path)
         conn.execute("CREATE TABLE kg_entities (name TEXT, type TEXT)")
         conn.execute("CREATE TABLE kg_triples (id INTEGER PRIMARY KEY, subject TEXT, predicate TEXT, object TEXT, confidence REAL)")
@@ -56,27 +58,19 @@ class TestQualityScheduler(KaelisTestBase):
         conn.execute("INSERT INTO kg_triples VALUES (1, 'Alice', 'works_at', 'Google', 0.9)")
         conn.commit()
         conn.close()
-        
-        # 临时替换数据目录
-        import shutil
-        data_dir = os.path.join(os.getcwd(), "data")
-        backup_db = None
-        if os.path.exists(os.path.join(data_dir, "kaelis_graph.db")):
-            backup_db = os.path.join(tempfile.mkdtemp(), "backup_graph.db")
-            shutil.copy(os.path.join(data_dir, "kaelis_graph.db"), backup_db)
-        
-        os.makedirs(data_dir, exist_ok=True)
-        shutil.copy(db_path, os.path.join(data_dir, "kaelis_graph.db"))
-        
-        try:
-            result = self.scheduler.run_inspection_now("full")
-            self.assertIn(result["status"], ["success", "completed"])
-            self.assertIn("summary", result)
-            self.assertIn("entity_count", result["summary"])
-            self.assertIn("triple_count", result["summary"])
-        finally:
-            if backup_db:
-                shutil.copy(backup_db, os.path.join(data_dir, "kaelis_graph.db"))
+
+        # 使用临时数据库路径创建调度器（遵守 C1 契约：注入路径，不操作生产 data/ 目录）
+        from core.monitoring.scheduler import QualityScheduler
+        scheduler = QualityScheduler(db_path=db_path)
+
+        result = scheduler.run_inspection_now("full")
+        self.assertIn(result["status"], ["success", "completed"])
+        self.assertIn("summary", result)
+        self.assertIn("entity_count", result["summary"])
+        self.assertIn("triple_count", result["summary"])
+
+        # 清理临时目录
+        shutil.rmtree(tmp_dir, ignore_errors=True)
     
     def test_run_inspection_quick(self):
         """quick 检查"""

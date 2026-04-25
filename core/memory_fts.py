@@ -65,6 +65,20 @@ class MemoryFTS:
         """初始化 FTS5 虚拟表和触发器"""
         # --- L1 FTS5 ---
         with sqlite3.connect(self._db_path("l1")) as conn:
+            # Ensure underlying table exists before creating triggers
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_l1 (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT NOT NULL,
+                    value TEXT,
+                    metadata TEXT,
+                    source TEXT DEFAULT 'system',
+                    user_id TEXT DEFAULT 'anonymous',
+                    importance REAL DEFAULT 0.5,
+                    created_at TEXT,
+                    expires_at TEXT
+                )
+            """)
             conn.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS fts_l1 USING fts5(
                     key,
@@ -92,6 +106,18 @@ class MemoryFTS:
             # --- L2 FTS5 ---
         with sqlite3.connect(self._db_path("l2")) as conn:
             conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_l2 (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT NOT NULL,
+                    value TEXT,
+                    metadata TEXT,
+                    source TEXT DEFAULT 'system',
+                    user_id TEXT DEFAULT 'anonymous',
+                    agent_id TEXT DEFAULT 'kaelis_self',
+                    created_at TEXT
+                )
+            """)
+            conn.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS fts_l2 USING fts5(
                     key,
                     value,
@@ -115,6 +141,17 @@ class MemoryFTS:
         
             # --- L3 FTS5 (实体名称搜索) ---
         with sqlite3.connect(self._db_path("l3")) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS kg_entities (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    type TEXT,
+                    source TEXT,
+                    user_id TEXT DEFAULT 'anonymous',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(name, user_id)
+                )
+            """)
             conn.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS fts_l3 USING fts5(
                     name,

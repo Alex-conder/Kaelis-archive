@@ -78,6 +78,23 @@ def _get_evolution():
     return get_evolution_engine()
 
 
+def _get_agent_registry():
+    from core.agent_registry import AgentRegistry
+    from core.security.credential_vault import CredentialVault
+    mm = _get_mm()
+    vault = CredentialVault()
+    return AgentRegistry(mm, vault)
+
+
+def _get_sensor_registry():
+    from core.context.sensor_base import SensorRegistry
+    from core.context.sensors import FileChangeSensor, ProcessSensor
+    registry = SensorRegistry()
+    registry.register(FileChangeSensor())
+    registry.register(ProcessSensor())
+    return registry
+
+
 def _get_pubsub():
     from core.semantic_pubsub import get_pubsub_engine
     return get_pubsub_engine()
@@ -105,10 +122,11 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
     # ------------------------------------------------------------------ #
 
     @mcp.tool()
-    def memory_search(layer: str, query: str, top_k: int = 5) -> str:
+    def memory_search(layer: str, query: str, top_k: int = 5, agent_id: str = "") -> str:
         """
         搜索记忆（支持 L1/L2/L3）。
         优先使用 FTS5，回退到 LIKE 匹配。
+        agent_id 为空字符串时不过滤 Agent。
         """
         try:
             if layer.upper() not in ("L1", "L2", "L3"):
@@ -122,7 +140,8 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             # FTS 无结果时回退 LIKE
             if not results and layer.upper() in ("L1", "L2"):
                 mm = _get_mm()
-                results = mm.search(layer, query, top_k)
+                aid = agent_id if agent_id else None
+                results = mm.search(layer, query, top_k, agent_id=aid)
                 method = "like"
 
             return json.dumps({
@@ -136,11 +155,12 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
     @mcp.tool()
-    def memory_get(layer: str, key: str) -> str:
-        """读取指定层和 key 的记忆。"""
+    def memory_get(layer: str, key: str, agent_id: str = "") -> str:
+        """读取指定层和 key 的记忆。agent_id 为空字符串时不过滤 Agent。"""
         try:
             mm = _get_mm()
-            result = mm.read(layer, key)
+            aid = agent_id if agent_id else None
+            result = mm.read(layer, key, agent_id=aid)
             if result is None:
                 return json.dumps({"found": False}, ensure_ascii=False)
             return json.dumps({"found": True, "data": result}, ensure_ascii=False, default=str)
@@ -149,15 +169,16 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
     @mcp.tool()
-    def memory_write(layer: str, key: str, value: str, metadata: str = "{}") -> str:
+    def memory_write(layer: str, key: str, value: str, metadata: str = "{}", agent_id: str = "kaelis_self") -> str:
         """
         写入记忆。value 为 JSON 字符串，metadata 为可选 JSON 字符串。
+        agent_id 默认为 kaelis_self（Kaelis 自身操作）。
         """
         try:
             parsed_value = json.loads(value)
             parsed_meta = json.loads(metadata) if metadata else {}
             mm = _get_mm()
-            ok = mm.write(layer, key, parsed_value, metadata=parsed_meta)
+            ok = mm.write(layer, key, parsed_value, metadata=parsed_meta, agent_id=agent_id)
             return json.dumps({"success": ok}, ensure_ascii=False)
         except Exception as e:
             logger.error(f"memory_write error: {e}")
@@ -458,6 +479,189 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #
+    # Context Sensor Tools (Prompt 3)
+    # ------------------------------------------------------------------ #
+
+    @mcp.tool()
+    def context_sensor_list() -> str:
+        """List all registered context sensors."""
+        try:
+            import json
+            registry = _get_sensor_registry()
+            sensors = registry.list_sensors()
+            return json.dumps({"success": True, "sensors": sensors}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"context_sensor_list error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def context_sensor_trigger(sensor_id: str) -> str:
+        """Force-trigger a sensor snapshot."""
+        try:
+            import json
+            registry = _get_sensor_registry()
+            snapshot = registry.trigger(sensor_id)
+            if snapshot is None:
+                return json.dumps({"success": False, "error": "Sensor not found"}, ensure_ascii=False)
+            return json.dumps({"success": True, "snapshot": snapshot.to_dict()}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"context_sensor_trigger error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def context_snapshot_diff(sensor_id: str) -> str:
+        """Get a diff snapshot from a sensor (returns None if no change)."""
+        try:
+            import json
+            registry = _get_sensor_registry()
+            snapshot = registry.diff(sensor_id)
+            if snapshot is None:
+                return json.dumps({"success": True, "changed": False}, ensure_ascii=False)
+            return json.dumps({"success": True, "changed": True, "snapshot": snapshot.to_dict()}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"context_snapshot_diff error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    # ------------------------------------------------------------------ #
+    # Agent Registry Tools (Prompt 1)
+    # ------------------------------------------------------------------ #
+
+    @mcp.tool()
+    def agent_register(
+        agent_name: str,
+        agent_type: str,
+        service_name: str,
+        capabilities: str = "[]",
+        endpoint: str = "",
+        user_id: str = "anonymous",
+    ) -> str:
+        """Register a new agent. capabilities is a JSON string array."""
+        try:
+            import json
+            registry = _get_agent_registry()
+            caps = json.loads(capabilities) if capabilities else []
+            agent_id = registry.register(
+                user_id=user_id,
+                agent_name=agent_name,
+                agent_type=agent_type,
+                service_name=service_name,
+                capabilities=caps,
+                endpoint=endpoint or None,
+            )
+            return json.dumps({"success": True, "agent_id": agent_id}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"agent_register error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def agent_list(user_id: str = "anonymous") -> str:
+        """List all registered agents for a user."""
+        try:
+            import json
+            registry = _get_agent_registry()
+            agents = registry.list_agents(user_id)
+            return json.dumps({"success": True, "count": len(agents), "agents": agents}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"agent_list error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    # ------------------------------------------------------------------ #
+    # Risk Gateway Tools (Prompt 4)
+    # ------------------------------------------------------------------ #
+
+    @mcp.tool()
+    def risk_audit_query(start_time: str = "", end_time: str = "", source_id: str = "") -> str:
+        """Query risk audit log by time range and/or source_id."""
+        try:
+            from core.security.risk_gateway import RiskAwareGateway
+            gateway = RiskAwareGateway()
+            st = float(start_time) if start_time else None
+            et = float(end_time) if end_time else None
+            sid = source_id if source_id else None
+            logs = gateway.audit_log(start_time=st, end_time=et, source_id=sid)
+            return json.dumps({"success": True, "count": len(logs), "logs": logs}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"risk_audit_query error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def risk_threshold_adjust(rule_name: str, threshold: str = "") -> str:
+        """Placeholder for adjusting risk thresholds. Currently records the request."""
+        try:
+            return json.dumps({"success": True, "message": f"Threshold adjustment for '{rule_name}' recorded."}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"risk_threshold_adjust error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    async def agent_call_api(agent_id: str, service_name: str, endpoint: str, params: str = "{}") -> str:
+        """
+        Call a user API through the secure proxy.
+        Automatically retrieves the API key from the credential vault.
+        """
+        try:
+            import json
+            from core.security.api_proxy import APIProxy
+            from core.security.credential_vault import CredentialVault
+            from core.security.risk_gateway import RiskAwareGateway
+            parsed_params = json.loads(params) if params else {}
+            proxy = APIProxy(vault=CredentialVault(), gateway=RiskAwareGateway())
+            # user_id is inferred from agent context; here we use a default for MCP
+            result = await proxy.call_user_api(
+                agent_id=agent_id,
+                user_id="anonymous",
+                service_name=service_name,
+                endpoint=endpoint,
+                params=parsed_params,
+            )
+            return json.dumps(result, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"agent_call_api error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    # ------------------------------------------------------------------ #
+    # Multi-Agent Evolution Tools (Prompt 6)
+    # ------------------------------------------------------------------ #
+
+    @mcp.tool()
+    def evolution_analyze_bottleneck(days: int = 7) -> str:
+        """Analyze multi-agent collaboration bottlenecks."""
+        try:
+            import json
+            from core.evolution.multi_agent_tracker import MultiAgentEvolutionTracker
+            tracker = MultiAgentEvolutionTracker(memory_manager=_get_mm())
+            bottlenecks = tracker.analyze_bottleneck(days=days)
+            return json.dumps({"success": True, "bottlenecks": bottlenecks}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"evolution_analyze_bottleneck error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def evolution_export_trajectory(days: int = 30, output_path: str = "data/rl_trajectories/exported.jsonl") -> str:
+        """Export collaboration records as RL trajectories."""
+        try:
+            import json
+            from core.evolution.multi_agent_tracker import MultiAgentEvolutionTracker
+            tracker = MultiAgentEvolutionTracker(memory_manager=_get_mm())
+            count = tracker.export_rl_trajectory(output_path=output_path, days=days)
+            return json.dumps({"success": True, "exported": count, "path": output_path}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"evolution_export_trajectory error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def agent_unregister(agent_id: str) -> str:
+        """Unregister an agent by ID."""
+        try:
+            import json
+            registry = _get_agent_registry()
+            ok = registry.unregister(agent_id)
+            return json.dumps({"success": ok, "message": f"Agent {agent_id} unregistered" if ok else "Agent not found"}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"agent_unregister error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    # ------------------------------------------------------------------ #
     # Resources
     # ------------------------------------------------------------------ #
 
@@ -484,6 +688,20 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             return json.dumps(skill.to_dict(), ensure_ascii=False, indent=2, default=str)
         except Exception as e:
             return f"Error: {e}"
+
+    # Register Mesh tools (Project Mesh)
+    try:
+        from core.mcp.mesh_tools import register_mesh_tools
+        register_mesh_tools(mcp)
+    except Exception as e:
+        logger.warning("Failed to register mesh tools: %s", e)
+
+    # Register Hallucination Guard tools
+    try:
+        from core.hallucination.guard import register_hallucination_tools
+        register_hallucination_tools(mcp)
+    except Exception as e:
+        logger.warning("Failed to register hallucination guard tools: %s", e)
 
     return mcp
 

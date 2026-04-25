@@ -21,9 +21,10 @@ class TestTeamAPI:
     @pytest.fixture
     def app(self):
         """Create test app"""
-        # TODO: Implement app factory for testing
         app = Flask(__name__)
         app.config['TESTING'] = True
+        from api.routes.team import bp
+        app.register_blueprint(bp)
         return app
 
     @pytest.fixture

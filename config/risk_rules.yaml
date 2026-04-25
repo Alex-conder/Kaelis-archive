@@ -1,0 +1,71 @@
+# Risk Gateway Rules (Prompt 4)
+# 三层审核管道配置
+
+version: "1.0"
+
+# 第一层：规则引擎
+rule_engine:
+  # 白名单：这些操作直接放行
+  whitelist:
+    - pattern: "^memory_search$"
+      action: ALLOW
+      reason: "Read-only memory query"
+    - pattern: "^skill_list$"
+      action: ALLOW
+      reason: "Read-only skill enumeration"
+    - pattern: "^agent_list$"
+      action: ALLOW
+      reason: "Read-only agent enumeration"
+    - pattern: "^context_sensor_list$"
+      action: ALLOW
+      reason: "Read-only sensor enumeration"
+    - pattern: "^memory_get$"
+      action: ALLOW
+      reason: "Read-only memory access"
+
+  # 黑名单：这些操作直接阻断
+  blacklist:
+    - pattern: "rm\s+-rf"
+      action: BLOCK
+      reason: "Dangerous file deletion"
+    - pattern: "eval\s*\("
+      action: BLOCK
+      reason: "Arbitrary code execution"
+    - pattern: "exec\s*\("
+      action: BLOCK
+      reason: "Arbitrary code execution"
+    - pattern: "os\.system"
+      action: BLOCK
+      reason: "System command execution"
+    - pattern: "subprocess\.call.*shell\s*=\s*True"
+      action: BLOCK
+      reason: "Shell injection risk"
+    - pattern: "DROP\s+TABLE"
+      action: BLOCK
+      reason: "Destructive SQL operation"
+    - pattern: "DELETE\s+FROM\s+.*WHERE\s+1\s*=\s*1"
+      action: BLOCK
+      reason: "Unconditional data deletion"
+
+# 第二层：LLM 动态评估
+llm_reviewer:
+  # 风险等级映射
+  risk_levels:
+    safe: ALLOW
+    low: ALLOW
+    medium: CONFIRM
+    high: BLOCK
+    critical: BLOCK
+
+  # 批量评估阈值
+  batch_max_size: 10
+
+# 第三层：用户确认
+approval_service:
+  # 默认超时（秒）
+  default_timeout: 300
+
+  # 信任持久化
+  trust_persistence:
+    enabled: true
+    max_trusted_rules_per_agent: 50

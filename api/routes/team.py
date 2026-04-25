@@ -202,7 +202,7 @@ def log_request(f):
 # ============================================================================
 
 
-@bp.route('/api/team/status', methods=['GET'])
+@bp.route('/status', methods=['GET'])
 
 @log_request
 def getTeamSyncStatus():

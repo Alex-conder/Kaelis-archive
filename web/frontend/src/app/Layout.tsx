@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   MessageCircle,
@@ -5,13 +6,18 @@ import {
   Zap,
   Settings,
   LogOut,
+  Workflow,
+  WifiOff,
+  LayoutGrid,
 } from 'lucide-react'
 import { useLogout } from '@/features/auth/hooks'
 
 const navItems = [
   { path: '/chat', label: 'Chat', icon: MessageCircle },
   { path: '/memory', label: 'Second Brain', icon: Brain },
+  { path: '/workflow', label: 'Workflow', icon: Workflow },
   { path: '/skills', label: 'Capabilities', icon: Zap },
+  { path: '/capabilities', label: 'Kaesight', icon: LayoutGrid },
   { path: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -19,6 +25,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const logout = useLogout()
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const on = () => setIsOnline(true)
+    const off = () => setIsOnline(false)
+    window.addEventListener('online', on)
+    window.addEventListener('offline', off)
+    return () => {
+      window.removeEventListener('online', on)
+      window.removeEventListener('offline', off)
+    }
+  }, [])
 
   const handleLogout = async () => {
     await logout.mutateAsync()
@@ -83,8 +101,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        {children}
+      <main className="flex-1 overflow-hidden flex flex-col">
+        {!isOnline && (
+          <div className="shrink-0 flex items-center gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-xs">
+            <WifiOff className="w-3.5 h-3.5" />
+            <span>网络连接已断开，部分功能可能不可用</span>
+          </div>
+        )}
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
       </main>
     </div>
   )

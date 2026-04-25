@@ -314,6 +314,17 @@ class SelfEvolvingEngine:
                     except Exception as e:
                         logger.warning(f"[{execution_id}] RL trajectory export failed: {e}")
                     
+                    # Prompt 5: Skill trigger threshold check
+                    try:
+                        from core.skill_generator import get_skill_generator
+                        generator = get_skill_generator(llm_client=self.llm_client)
+                        recent = self._get_recent_executions(task_type, limit=10)
+                        trigger_result = generator.check_and_generate(task_type, recent)
+                        if trigger_result:
+                            logger.info(f"[{execution_id}] Skill trigger result: {trigger_result}")
+                    except Exception as e:
+                        logger.warning(f"[{execution_id}] Skill trigger check failed: {e}")
+
                     logger.info(f"[{execution_id}] 任务成功完成，置信度: {best_confidence:.3f}")
                     return record
                 
@@ -376,11 +387,42 @@ class SelfEvolvingEngine:
             iterations=record.iterations
         )
         
+        # Prompt 5: Skill trigger threshold check (also for failed/stuck)
+        try:
+            from core.skill_generator import get_skill_generator
+            generator = get_skill_generator(llm_client=self.llm_client)
+            recent = self._get_recent_executions(task_type, limit=10)
+            trigger_result = generator.check_and_generate(task_type, recent)
+            if trigger_result:
+                logger.info(f"[{execution_id}] Skill trigger result: {trigger_result}")
+        except Exception as e:
+            logger.warning(f"[{execution_id}] Skill trigger check failed: {e}")
+
         logger.info(f"[{execution_id}] 自进化结束，状态: {record.status}, "
                    f"最佳置信度: {best_confidence:.3f}")
-        
+
         return record
     
+    def _get_recent_executions(self, task_type: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Retrieve recent execution records for a task type from L2 memory."""
+        executions = []
+        if self.memory:
+            try:
+                results = self.memory.search("L2", task_type, top_k=limit)
+                for r in results:
+                    val = r.get("value", {})
+                    if isinstance(val, dict) and val.get("task_type") == task_type:
+                        executions.append({
+                            "success": val.get("status") == "success",
+                            "confidence": val.get("confidence", 0.0),
+                            "params": val.get("params", {}),
+                            "result": val.get("result", {}),
+                            "execution_record": val,
+                        })
+            except Exception as e:
+                logger.warning(f"Failed to retrieve recent executions: {e}")
+        return executions
+
     def _evaluate_result(
         self, 
         result: Dict[str, Any], 

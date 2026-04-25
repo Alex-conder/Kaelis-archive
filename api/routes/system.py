@@ -171,7 +171,7 @@ def log_request(f):
 # ============================================================================
 
 
-@bp.route('/api/health', methods=['GET'])
+@bp.route('/health', methods=['GET'])
 
 @log_request
 def healthCheck():

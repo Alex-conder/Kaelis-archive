@@ -15,7 +15,7 @@ features:
     name: "Web Scraper 节点"
     user_value_score: 85
     dev_cost_days: 1
-    status: todo
+    status: completed
     contract: "config/action_templates.yaml"
     tags: ["workflow", "node"]
 
@@ -30,14 +30,14 @@ features:
     name: "离线模式工作流导出"
     user_value_score: 75
     dev_cost_days: 1
-    status: todo
+    status: completed
     tags: ["offline", "workflow", "export"]
 
   - id: FEAT-005
     name: "n8n 节点导入适配器"
     user_value_score: 60
     dev_cost_days: 3
-    status: todo
+    status: completed
     contract: "contracts/adapters.yaml"
     tags: ["adapter", "n8n", "integration"]
 
@@ -45,7 +45,7 @@ features:
     name: "React Flow 工作流画布"
     user_value_score: 88
     dev_cost_days: 4
-    status: todo
+    status: completed
     tags: ["frontend", "workflow", "canvas"]
 
   - id: FEAT-007

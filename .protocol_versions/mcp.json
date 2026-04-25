@@ -1,0 +1,11 @@
+{
+  "protocol": "mcp",
+  "version": "2025-11-25",
+  "checked_at": "2026-04-24T15:10:00.841909+00:00",
+  "details": {
+    "version": "2025-11-25",
+    "published_at": "2025-11-25T21:17:42Z",
+    "body": "This release marks the **stable release** of the `2025-11-25` revision of the Model Context Protocol.\r\n\r\nThe specification is available on the [official Model Context Protocol website](https://modelcontextprotocol.io/specification/2025-11-25).\r\n\r\nFor a detailed overview of changes, see [2025-11-25 changelog](https://modelcontextprotocol.io/specification/2025-11-25/changelog).",
+    "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2025-11-25"
+  }
+}

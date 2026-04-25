@@ -1,18 +1,21 @@
 {
   "name": "kaelis",
-  "displayName": "Kaelis",
-  "description": "Kaelis AI Agent — Your memory-enhanced coding companion",
-  "version": "0.1.0",
+  "displayName": "Kaelis Memory",
+  "description": "Kaelis AI Agent — Your memory-enhanced coding companion with four-layer memory, skill market, and hallucination guard.",
+  "version": "0.2.0",
   "publisher": "kaelis",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Machine Learning",
-    "Chat"
+    "Chat",
+    "Data Science",
+    "Snippets"
   ],
   "activationEvents": [
-    "onChatParticipant:kaelis"
+    "onChatParticipant:kaelis",
+    "onView:kaelisSidebar"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -21,7 +24,7 @@
         "id": "kaelis",
         "name": "Kaelis",
         "fullName": "Kaelis Agent",
-        "description": "AI agent with four-layer memory, self-evolution, and multi-omics knowledge.",
+        "description": "AI agent with four-layer memory, self-evolution, multi-omics knowledge, and hallucination guard.",
         "isSticky": true,
         "commands": [
           {
@@ -35,6 +38,87 @@
         ]
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kaelisContainer",
+          "title": "Kaelis",
+          "icon": "resources/kaelis-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "kaelisSidebarExplorer",
+          "name": "Kaelis Memory",
+          "when": "true",
+          "icon": "resources/kaelis-icon.svg"
+        }
+      ],
+      "kaelisContainer": [
+        {
+          "id": "kaelisSidebar",
+          "name": "记忆中枢",
+          "icon": "resources/kaelis-icon.svg",
+          "contextualTitle": "Kaelis Memory"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "kaelis.saveToMemory",
+        "title": "保存到 Kaelis",
+        "category": "Kaelis",
+        "icon": "$(save)"
+      },
+      {
+        "command": "kaelis.searchMemory",
+        "title": "搜索记忆",
+        "category": "Kaelis",
+        "icon": "$(search)"
+      },
+      {
+        "command": "kaelis.refreshSidebar",
+        "title": "刷新",
+        "category": "Kaelis",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kaelis.generateMcpConfig",
+        "title": "生成 MCP 配置",
+        "category": "Kaelis",
+        "icon": "$(gear)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "kaelis.saveToMemory",
+          "group": "9_cutcopypaste@5",
+          "when": "editorHasSelection"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "kaelis.refreshSidebar",
+          "group": "navigation",
+          "when": "view == kaelisSidebar"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "kaelis.saveToMemory",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "kaelis.searchMemory"
+        },
+        {
+          "command": "kaelis.generateMcpConfig"
+        }
+      ]
+    },
     "configuration": {
       "title": "Kaelis",
       "properties": {
@@ -50,7 +134,7 @@
         },
         "kaelis.userId": {
           "type": "string",
-          "default": "",
+          "default": "vscode_user",
           "description": "Your Kaelis user ID (used for memory isolation)"
         },
         "kaelis.apiBaseUrl": {
@@ -81,7 +165,8 @@
     "agent",
     "knowledge graph",
     "mcp",
-    "chat"
+    "chat",
+    "hallucination guard"
   ],
   "scripts": {
     "compile": "tsc -p ./",

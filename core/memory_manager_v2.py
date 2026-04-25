@@ -109,6 +109,7 @@ class FourLayerMemoryManager:
                     metadata TEXT,
                     source TEXT DEFAULT 'system',
                     user_id TEXT DEFAULT 'anonymous',
+                    agent_id TEXT DEFAULT 'kaelis_self',
                     created_at TEXT NOT NULL
                 )
             """)
@@ -116,10 +117,15 @@ class FourLayerMemoryManager:
                 conn.execute("ALTER TABLE memory_l2 ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
             except sqlite3.OperationalError:
                 pass
+            try:
+                conn.execute("ALTER TABLE memory_l2 ADD COLUMN agent_id TEXT DEFAULT 'kaelis_self'")
+            except sqlite3.OperationalError:
+                pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_key ON memory_l2(key)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_created ON memory_l2(created_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_source ON memory_l2(source)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_user ON memory_l2(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_agent ON memory_l2(agent_id)")
         
             # L3: 知识图谱降级存储（当 graph driver 不可用时使用）
         with sqlite3.connect(self._get_db_path("L3")) as conn:
@@ -152,7 +158,7 @@ class FourLayerMemoryManager:
                 self._graph_driver = False  # 标记为不可用
         return self._graph_driver if self._graph_driver is not False else None
     
-    def write(self, layer: str, key: str, value: Any, metadata: Optional[Dict] = None, user_id: str = "anonymous") -> bool:
+    def write(self, layer: str, key: str, value: Any, metadata: Optional[Dict] = None, user_id: str = "anonymous", agent_id: str = "kaelis_self") -> bool:
         """
         写入记忆
         
@@ -162,6 +168,7 @@ class FourLayerMemoryManager:
             value: 记忆值（任意 JSON 可序列化对象）
             metadata: 元数据字典
             user_id: 用户ID（P12-001 多用户分区）
+            agent_id: Agent ID（Prompt 2 多Agent命名空间隔离，仅L2有效）
             
         Returns:
             bool: 是否成功
@@ -169,6 +176,7 @@ class FourLayerMemoryManager:
         layer = layer.upper()
         metadata = metadata or {}
         metadata["_user_id"] = user_id  # 存入 metadata 便于追溯
+        metadata["_agent_id"] = agent_id
         now = datetime.now().isoformat()
         
         try:
@@ -177,7 +185,7 @@ class FourLayerMemoryManager:
             elif layer == "L1":
                 return self._write_l1(key, value, metadata, now, user_id)
             elif layer == "L2":
-                return self._write_l2(key, value, metadata, now, user_id)
+                return self._write_l2(key, value, metadata, now, user_id, agent_id)
             elif layer == "L3":
                 return self._write_l3(key, value, metadata, now, user_id)
             else:
@@ -209,13 +217,13 @@ class FourLayerMemoryManager:
             )
             return True
     
-    def _write_l2(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
+    def _write_l2(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", agent_id: str = "kaelis_self") -> bool:
         """L2: 事件序列，永久存储"""
         source = metadata.get("source", "system")
         with sqlite3.connect(self._get_db_path("L2")) as conn:
             conn.execute(
-                "INSERT INTO memory_l2 (key, value, metadata, source, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), source, user_id, now)
+                "INSERT INTO memory_l2 (key, value, metadata, source, user_id, agent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), source, user_id, agent_id, now)
             )
             return True
     
@@ -259,8 +267,8 @@ class FourLayerMemoryManager:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
         logger.info(f"L2 fallback backup written: {key}")
     
-    def read(self, layer: str, key: str, user_id: str = "anonymous") -> Optional[Any]:
-        """读取记忆（P12-001 支持 user_id 隔离）"""
+    def read(self, layer: str, key: str, user_id: str = "anonymous", agent_id: Optional[str] = None) -> Optional[Any]:
+        """读取记忆（P12-001 支持 user_id 隔离，Prompt 2 支持 agent_id 隔离）"""
         layer = layer.upper()
         try:
             if layer == "L0":
@@ -268,7 +276,7 @@ class FourLayerMemoryManager:
             elif layer == "L1":
                 return self._read_l1(key, user_id)
             elif layer == "L2":
-                return self._read_l2(key, user_id)
+                return self._read_l2(key, user_id, agent_id)
             elif layer == "L3":
                 return self._read_l3(key)
             else:
@@ -297,12 +305,18 @@ class FourLayerMemoryManager:
                 return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "importance": row[2], "created_at": row[3]}
             return None
     
-    def _read_l2(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
+    def _read_l2(self, key: str, user_id: str = "anonymous", agent_id: Optional[str] = None) -> Optional[Any]:
         with sqlite3.connect(self._get_db_path("L2")) as conn:
-            cursor = conn.execute(
-                "SELECT value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
-                (key, user_id)
-            )
+            if agent_id is not None:
+                cursor = conn.execute(
+                    "SELECT value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? AND agent_id = ? ORDER BY id DESC LIMIT 1",
+                    (key, user_id, agent_id)
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                    (key, user_id)
+                )
             row = cursor.fetchone()
             if row:
                 return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "source": row[2], "created_at": row[3]}
@@ -339,14 +353,14 @@ class FourLayerMemoryManager:
                     return {"name": row[0], "type": row[1]}
                 return None
     
-    def search(self, layer: str, query: str, top_k: int = 5, user_id: str = "anonymous") -> List[Dict]:
-        """搜索记忆（P12-001 支持 user_id 隔离）"""
+    def search(self, layer: str, query: str, top_k: int = 5, user_id: str = "anonymous", agent_id: Optional[str] = None) -> List[Dict]:
+        """搜索记忆（P12-001 支持 user_id 隔离，Prompt 2 支持 agent_id 隔离）"""
         layer = layer.upper()
         try:
             if layer == "L1":
                 return self._search_l1(query, top_k, user_id)
             elif layer == "L2":
-                return self._search_l2(query, top_k, user_id)
+                return self._search_l2(query, top_k, user_id, agent_id)
             else:
                 raise ValueError(f"Search not supported for layer {layer}")
         except Exception as e:
@@ -367,13 +381,19 @@ class FourLayerMemoryManager:
                 for r in rows
             ]
     
-    def _search_l2(self, query: str, top_k: int, user_id: str = "anonymous") -> List[Dict]:
+    def _search_l2(self, query: str, top_k: int, user_id: str = "anonymous", agent_id: Optional[str] = None) -> List[Dict]:
         """L2 关键词搜索"""
         with sqlite3.connect(self._get_db_path("L2")) as conn:
-            cursor = conn.execute(
-                "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? ORDER BY created_at DESC LIMIT ?",
-                (f"%{query}%", f"%{query}%", user_id, top_k)
-            )
+            if agent_id is not None:
+                cursor = conn.execute(
+                    "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? AND agent_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (f"%{query}%", f"%{query}%", user_id, agent_id, top_k)
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (f"%{query}%", f"%{query}%", user_id, top_k)
+                )
             rows = cursor.fetchall()
             return [
                 {"key": r[0], "value": json.loads(r[1]), "metadata": json.loads(r[2]) if r[2] else {}, "source": r[3], "created_at": r[4]}
@@ -436,6 +456,26 @@ class FourLayerMemoryManager:
         }
         
         return stats
+    
+    def get_agent_memory_stats(self, agent_id: str) -> Dict[str, Any]:
+        """获取指定Agent的记忆统计（Prompt 2）"""
+        db_path = self._get_db_path("L2")
+        try:
+            with sqlite3.connect(db_path) as conn:
+                total = conn.execute(
+                    "SELECT COUNT(*) FROM memory_l2 WHERE agent_id = ?", (agent_id,)
+                ).fetchone()[0]
+                latest = conn.execute(
+                    "SELECT MAX(created_at) FROM memory_l2 WHERE agent_id = ?", (agent_id,)
+                ).fetchone()[0]
+                return {
+                    "agent_id": agent_id,
+                    "total_memories": total,
+                    "latest_memory_at": latest,
+                }
+        except Exception as e:
+            logger.error(f"Failed to get agent memory stats: {e}")
+            return {"agent_id": agent_id, "total_memories": 0, "latest_memory_at": None}
     
     def close(self):
         """关闭管理器，释放资源"""

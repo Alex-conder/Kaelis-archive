@@ -1,0 +1,42 @@
+name: Kaelis PR Review Agent
+
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize]
+
+jobs:
+  architecture-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start backend for memory search
+        run: |
+          # 启动最小化后端以支持 MCP memory_search
+          python -c "from core.memory_manager_v2 import get_memory_manager; mm = get_memory_manager(); print('Memory manager ready')" &
+          sleep 3
+
+      - name: Run PR Review Agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/pr_review_agent.py

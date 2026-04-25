@@ -1,0 +1,142 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kaelis-memory"
+version = "0.1.0"
+description = "Kaelis AI Native Memory System — Four-layer memory, MCP server, and multi-agent hallucination guard"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [
+    {name = "Kaelis Team", email = "hello@kaelis.ai"}
+]
+keywords = [
+    "ai", "memory", "agent", "mcp", "llm", "rag",
+    "knowledge-graph", "multi-agent", "hallucination"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    # Web server
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "waitress>=2.1.0",
+    # Data & storage
+    "chromadb>=0.4.0",
+    "faiss-cpu>=1.7.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    # AI / LLM
+    "openai>=1.0.0",
+    "langchain>=0.1.0",
+    "langchain-core>=0.1.0",
+    # Data processing
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.11.0",
+    # Utilities
+    "requests>=2.31.0",
+    "mcp>=1.0.0",
+    "simpleeval>=0.9.13",
+    "structlog>=23.0.0",
+    "typing-extensions>=4.8.0",
+    "jinja2>=3.1.0",
+    "diskcache>=5.6.0",
+    "pillow>=10.0.0",
+    # Monitoring
+    "prometheus-client>=0.19.0",
+    "apscheduler>=3.10.0",
+    "psutil>=5.9.0",
+]
+
+[project.optional-dependencies]
+providers = [
+    "anthropic>=0.40.0",
+    "langchain-openai>=0.0.1",
+    "langchain-community>=0.0.1",
+]
+security = [
+    "cryptography>=41.0.0",
+    "pyjwt>=2.8.0",
+]
+search = [
+    "duckduckgo-search>=3.9.0",
+    "pypdf>=3.0.0",
+]
+omics = [
+    "matplotlib>=3.7.0",
+    "opencv-python>=4.8.0",
+    "scikit-learn>=1.3.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "build>=1.0.0",
+    "twine>=5.0.0",
+]
+all = [
+    "kaelis-memory[providers,security,search,omics,dev]"
+]
+
+[project.scripts]
+kaelis-mcp = "core.mcp.server:main"
+
+[project.urls]
+Homepage = "https://kaelis.ai"
+Documentation = "https://docs.kaelis.ai"
+Repository = "https://github.com/kaelis/kaelis.git"
+Issues = "https://github.com/kaelis/kaelis/issues"
+Changelog = "https://github.com/kaelis/kaelis/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*"]
+exclude = ["core.__pycache__*", "tests*", "docs*", "web*", "electron*", "vscode-kaelis*"]
+
+[tool.setuptools.package-data]
+core = ["**/*.yaml", "**/*.json", "**/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-m 'not slow' --tb=short"
+markers = [
+    "slow: marks tests as slow (deselected by default)",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["core"]
+omit = [
+    "*/__pycache__/*",
+    "*/tests/*",
+    "*/test_*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
