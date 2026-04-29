@@ -76,6 +76,7 @@ def create_app():
     from api.routes.journey import journey_bp
     from api.routes.privacy import privacy_bp
     from api.routes.sharing import bp as sharing_bp
+    from api.routes.files import files_bp
     
     app = Flask(__name__, static_folder='api/static')
     app.secret_key = os.environ.get('SECRET_KEY', 'kaelis-dev-secret-key-change-in-production')
@@ -109,6 +110,7 @@ def create_app():
     app.register_blueprint(journey_bp)
     app.register_blueprint(privacy_bp)
     app.register_blueprint(sharing_bp)
+    app.register_blueprint(files_bp)
     
     # 注册 Swagger UI（API 交互式文档）
     try:

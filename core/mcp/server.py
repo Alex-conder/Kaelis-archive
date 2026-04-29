@@ -724,6 +724,91 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
     except Exception as e:
         logger.warning("Failed to register hardware trust tools: %s", e)
 
+    # ------------------------------------------------------------------ #
+    # File Operations (Secure Gateway + Semantic Index)
+    # ------------------------------------------------------------------ #
+    try:
+        from core.security.file_gateway import FileGateway, FileOperationRequest, FileOperationType
+        from core.context.sensors.file_sensor import FileIndexer
+
+        _file_gateway = FileGateway()
+        _file_indexer = FileIndexer()
+
+        @mcp.tool("file.secure_operation")
+        def file_secure_operation(
+            source: str,
+            operation: str,
+            file_path: str,
+            content: str = "",
+            destination: str = "",
+        ) -> str:
+            """
+            安全文件操作网关。所有文件操作必须经过此工具。
+            operation: read | write | delete | rename | copy | list
+            返回审批结果，调用方需根据 approved 字段决定是否执行实际操作。
+            """
+            try:
+                op_map = {
+                    "read": FileOperationType.READ,
+                    "write": FileOperationType.WRITE,
+                    "delete": FileOperationType.DELETE,
+                    "rename": FileOperationType.RENAME,
+                    "copy": FileOperationType.COPY,
+                    "list": FileOperationType.LIST,
+                }
+                op_type = op_map.get(operation.lower())
+                if not op_type:
+                    return json.dumps({"error": f"Unknown operation: {operation}"}, ensure_ascii=False)
+
+                req = FileOperationRequest(
+                    source=source,
+                    operation=op_type,
+                    file_path=file_path,
+                    content=content or None,
+                    destination=destination or None,
+                )
+                result = _file_gateway.evaluate(req)
+                return json.dumps({
+                    "approved": result.approved,
+                    "decision": result.decision.value,
+                    "reason": result.reason,
+                    "approval_id": result.approval_id,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.error(f"file.secure_operation error: {e}")
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("file.semantic_search")
+        def file_semantic_search(query: str, top_k: int = 5) -> str:
+            """
+            基于自然语言搜索已索引的本地文件。
+            示例: query="关于GDPR合规的文件"
+            """
+            try:
+                results = _file_indexer.semantic_search(query, top_k=top_k)
+                return json.dumps({
+                    "success": True,
+                    "count": len(results),
+                    "results": results,
+                }, ensure_ascii=False, default=str)
+            except Exception as e:
+                logger.error(f"file.semantic_search error: {e}")
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("file.index_directory")
+        def file_index_directory(root_path: str, recursive: bool = True) -> str:
+            """扫描目录并为文件建立语义索引。"""
+            try:
+                stats = _file_indexer.index_directory(root_path, recursive=recursive)
+                return json.dumps({"success": True, "stats": stats}, ensure_ascii=False, default=str)
+            except Exception as e:
+                logger.error(f"file.index_directory error: {e}")
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] File gateway + indexer tools registered")
+    except Exception as e:
+        logger.warning("Failed to register file tools: %s", e)
+
     return mcp
 
 
