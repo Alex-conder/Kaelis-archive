@@ -1,0 +1,207 @@
+{
+  "summary": {
+    "files_changed": 33,
+    "functions_replaced": 11,
+    "todo_lines_removed": 0
+  },
+  "details": [
+    {
+      "file": "api/routes/agent_permissions.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/ai_native.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/approval.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/approvals.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/auth.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/evolve.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/intent.py",
+      "replaced_functions": 2,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/journey.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/kg_flywheel_agent.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/kg_flywheel_memory.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/kg_flywheel_monitoring.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/kg_flywheel_routes.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/kg_flywheel_tools.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/knowledge_graph.py",
+      "replaced_functions": 2,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/memory.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/metabolomics.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/migration.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/mobile.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/monitoring.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/notifications.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/omics.py",
+      "replaced_functions": 1,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/privacy.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/pubsub.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/recorder.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/reports.py",
+      "replaced_functions": 2,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/shared_memory.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/skills.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/symbols.py",
+      "replaced_functions": 2,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/sync.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/system.py",
+      "replaced_functions": 1,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/team.py",
+      "replaced_functions": 1,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/workflow_monitoring.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    },
+    {
+      "file": "api/routes/workflow_nodes.py",
+      "replaced_functions": 0,
+      "removed_todo_lines": 0,
+      "changed": true
+    }
+  ]
+}

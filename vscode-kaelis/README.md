@@ -1,28 +1,34 @@
-# Kaelis Memory for VSCode
+# Kaelis for VSCode
 
-Your memory-enhanced AI coding companion. Kaelis brings a four-layer memory system, skill market, and hallucination guard directly into your editor.
+Your memory-enhanced AI coding companion.
 
-## ✨ Features
+## Features
 
-- **@kaelis** Chat Participant — Ask questions with automatic memory retrieval from L0-L3
-- **Sidebar Panel** — Browse daily insights, recent memories, and skills without leaving the editor
-- **Save to Kaelis** — Right-click any selected code to save it directly into episodic memory (L2)
-- **Auto MCP Config** — One-click generation of `.vscode/mcp.json` for seamless MCP integration
-- **HTTP Fallback** — Works even when MCP stdio is unavailable
+- **@kaelis** chat participant in VSCode Copilot Chat
+- Automatic memory retrieval from your Kaelis four-layer memory system (L0-L3)
+- Tool integration: `memory_search`, `skill_list`
+- HTTP fallback when MCP stdio is unavailable
 
-## 📦 Installation
+## Requirements
 
-### Option 1: VSCode Marketplace (Recommended)
+- VSCode 1.90+
+- GitHub Copilot subscription (or another VSCode Language Model provider)
+- Python 3.11+ (for MCP Server)
+- Kaelis backend running (Flask API on `localhost:5000` or MCP Server via `mcp_standalone.py`)
 
-1. Open VSCode → Extensions (`Ctrl+Shift+X`)
-2. Search for **"Kaelis Memory"**
+## Installation
+
+### Option 1: From VSCode Marketplace (Recommended)
+
+1. Open VSCode → Extensions (Ctrl+Shift+X)
+2. Search for **"Kaelis"**
 3. Click **Install**
 
-### Option 2: VSIX (Local Install)
+### Option 2: From .vsix
 
-```bash
-code --install-extension kaelis-0.2.0.vsix
-```
+1. Download `kaelis-0.3.0.vsix`
+2. Open VSCode → Extensions → "..." → Install from VSIX
+3. Select the downloaded file
 
 ### Option 3: From Source
 
@@ -30,50 +36,46 @@ code --install-extension kaelis-0.2.0.vsix
 cd vscode-kaelis
 npm install
 npm run compile
-npm run package   # Generates .vsix
+# Press F5 in VSCode to launch Extension Development Host
 ```
 
-## ⚙️ Configuration
+## Configuration
+
+Open VSCode Settings and search for "Kaelis":
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `kaelis.mcpServerPath` | (auto-detect) | Path to `mcp_standalone.py` |
-| `kaelis.pythonPath` | `python` | Python interpreter for MCP Server |
+| `kaelis.pythonPath` | `python` | Python interpreter |
 | `kaelis.userId` | `vscode_user` | Your Kaelis user ID |
 | `kaelis.apiBaseUrl` | `http://localhost:5000` | Flask API fallback URL |
 
-## 🚀 Quick Start
+## Usage
 
-1. **Install the Python package** (required for MCP Server):
+1. Start Kaelis backend:
    ```bash
-   pip install kaelis-memory
-   ```
-
-2. **Start Kaelis backend**:
-   ```bash
-   kaelis-mcp          # MCP mode (recommended)
+   python mcp_standalone.py        # MCP mode
    # OR
-   python launch.py    # Flask mode
+   python launch.py                # Flask mode
    ```
 
-3. **Open VSCode Chat** (`Ctrl+Shift+I`) and type:
+2. Open VSCode Chat (Ctrl+Shift+I or Cmd+Shift+I)
+
+3. Type `@kaelis` followed by your question:
    ```
    @kaelis Based on my memory, what tools do I usually use for data analysis?
    ```
 
-4. **Save code to memory** — Select any code, right-click → **"保存到 Kaelis"**
+4. Kaelis will search your memory and provide a context-aware answer.
 
-5. **Browse sidebar** — Open the Kaelis activity bar icon to see insights, memories, and skills
-
-## 🏗️ Architecture
+## Architecture
 
 ```
 VSCode Extension
-    ├── Chat Participant (@kaelis) ──► MCP / HTTP ──► core.memory / core.skills
-    ├── Sidebar TreeView ──► HTTP ──► Flask API
-    └── Commands (save/search) ──► HTTP ──► Flask API
+    ├── stdio ──► mcp_standalone.py ──► core.memory / core.skills
+    └── HTTP fallback ──► Flask API (localhost:5000)
 ```
 
-## 📄 License
+## License
 
 MIT

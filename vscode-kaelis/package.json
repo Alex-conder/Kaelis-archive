@@ -1,21 +1,18 @@
 {
   "name": "kaelis",
-  "displayName": "Kaelis Memory",
-  "description": "Kaelis AI Agent — Your memory-enhanced coding companion with four-layer memory, skill market, and hallucination guard.",
-  "version": "0.2.0",
+  "displayName": "Kaelis",
+  "description": "Kaelis AI Agent — Your memory-enhanced coding companion",
+  "version": "0.3.0",
   "publisher": "kaelis",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Machine Learning",
-    "Chat",
-    "Data Science",
-    "Snippets"
+    "Chat"
   ],
   "activationEvents": [
-    "onChatParticipant:kaelis",
-    "onView:kaelisSidebar"
+    "onChatParticipant:kaelis"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -24,7 +21,7 @@
         "id": "kaelis",
         "name": "Kaelis",
         "fullName": "Kaelis Agent",
-        "description": "AI agent with four-layer memory, self-evolution, multi-omics knowledge, and hallucination guard.",
+        "description": "AI agent with four-layer memory, self-evolution, and multi-omics knowledge.",
         "isSticky": true,
         "commands": [
           {
@@ -38,87 +35,6 @@
         ]
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "kaelisContainer",
-          "title": "Kaelis",
-          "icon": "resources/kaelis-icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "explorer": [
-        {
-          "id": "kaelisSidebarExplorer",
-          "name": "Kaelis Memory",
-          "when": "true",
-          "icon": "resources/kaelis-icon.svg"
-        }
-      ],
-      "kaelisContainer": [
-        {
-          "id": "kaelisSidebar",
-          "name": "记忆中枢",
-          "icon": "resources/kaelis-icon.svg",
-          "contextualTitle": "Kaelis Memory"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "kaelis.saveToMemory",
-        "title": "保存到 Kaelis",
-        "category": "Kaelis",
-        "icon": "$(save)"
-      },
-      {
-        "command": "kaelis.searchMemory",
-        "title": "搜索记忆",
-        "category": "Kaelis",
-        "icon": "$(search)"
-      },
-      {
-        "command": "kaelis.refreshSidebar",
-        "title": "刷新",
-        "category": "Kaelis",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "kaelis.generateMcpConfig",
-        "title": "生成 MCP 配置",
-        "category": "Kaelis",
-        "icon": "$(gear)"
-      }
-    ],
-    "menus": {
-      "editor/context": [
-        {
-          "command": "kaelis.saveToMemory",
-          "group": "9_cutcopypaste@5",
-          "when": "editorHasSelection"
-        }
-      ],
-      "view/title": [
-        {
-          "command": "kaelis.refreshSidebar",
-          "group": "navigation",
-          "when": "view == kaelisSidebar"
-        }
-      ],
-      "commandPalette": [
-        {
-          "command": "kaelis.saveToMemory",
-          "when": "editorHasSelection"
-        },
-        {
-          "command": "kaelis.searchMemory"
-        },
-        {
-          "command": "kaelis.generateMcpConfig"
-        }
-      ]
-    },
     "configuration": {
       "title": "Kaelis",
       "properties": {
@@ -134,7 +50,7 @@
         },
         "kaelis.userId": {
           "type": "string",
-          "default": "vscode_user",
+          "default": "",
           "description": "Your Kaelis user ID (used for memory isolation)"
         },
         "kaelis.apiBaseUrl": {
@@ -147,10 +63,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kaelis/kaelis.git"
+    "url": "https://github.com/Alex-conder/Kaelis-archive.git"
   },
   "bugs": {
-    "url": "https://github.com/kaelis/kaelis/issues"
+    "url": "https://github.com/Alex-conder/Kaelis-archive/issues"
   },
   "homepage": "https://kaelis.ai",
   "license": "MIT",
@@ -165,8 +81,7 @@
     "agent",
     "knowledge graph",
     "mcp",
-    "chat",
-    "hallucination guard"
+    "chat"
   ],
   "scripts": {
     "compile": "tsc -p ./",
@@ -177,7 +92,6 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.90.0",
-    "@vscode/vsce": "^3.9.1",
     "typescript": "^5.3.0"
   }
 }

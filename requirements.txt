@@ -1,84 +1,36 @@
 # Kaelis 核心依赖
-flask>=2.3.0
-flask-cors>=4.0.0
-waitress>=2.1.0
-python-dotenv>=1.0.0
+flask==3.1.3
+flask-cors==6.0.2
+flasgger==0.9.7.1
+waitress==3.0.2
+python-dotenv==1.2.2
 
 # 数据与存储
-chromadb>=0.4.0
-faiss-cpu>=1.7.0
-neo4j>=5.14.0
-pydantic>=2.0.0
-pyyaml>=6.0.0
-sqlalchemy>=2.0.0
-supabase>=1.0.0
+chromadb==1.5.8
+faiss-cpu==1.13.2
+pydantic==2.13.2
+pyyaml==6.0.3
 
 # AI / LangChain
-langchain>=0.1.0
-langchain-community>=0.0.1
-langchain-core>=0.1.0
-langchain-openai>=0.0.1
-openai>=1.0.0
-anthropic>=0.8.0
-
-# 数据处理
-numpy>=1.24.0
-pandas>=2.0.0
-scipy>=1.11.0
-scikit-learn>=1.3.0
-
-# 文档处理与搜索
-pypdf>=3.0.0
-duckduckgo-search>=3.9.0
-requests>=2.31.0
-
-# 缓存与工具
-diskcache>=5.6.0
-simpleeval>=0.9.13
-watchdog>=3.0.0
-pillow>=10.0.0
+langchain==1.2.15
+langchain-community==0.4.1
+langchain-core==1.3.0
+langchain-openai
 
 # 监控与调度
-prometheus-client>=0.19.0
-apscheduler>=3.10.0
-psutil>=5.9.0
+prometheus-client==0.19.0
+apscheduler==3.10.4
 
-# 可视化与 CV
-matplotlib>=3.7.0
-opencv-python>=4.8.0
-pyautogui>=0.9.54
-pynput>=1.7.6
+# 认证
+supabase==1.2.0
+
+# 工具
+simpleeval==1.0.7
 
 # MCP (Model Context Protocol)
 mcp>=1.0.0
 
-# 日志与类型
-structlog>=23.0.0
-typing-extensions>=4.8.0
-jinja2>=3.1.0
-
-# LSP
-pygls>=1.2.0
-lsprotocol>=2023.0.0
-
-# 测试
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
+# 测试（开发依赖）
+pytest==9.0.3
+pytest-asyncio==1.3.0
 pytest-cov>=4.1.0
-
-# 构建
-setuptools>=68.0.0
-
-# 安全与加密
-cryptography>=41.0.0
-pyjwt>=2.8.0
-
-# LLM Provider SDK（可选，无 SDK 时自动降级到 requests）
-anthropic>=0.40.0
-
-# 网络与发现
-zeroconf>=0.140.0
-base58>=2.1.0
-
-# LangChain 生态
-langchain-text-splitters>=0.0.1

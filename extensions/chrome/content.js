@@ -1,232 +1,144 @@
 /**
- * Kaelis Chrome Extension — Context-Aware Content Script
- *
- * 功能:
- * 1. 监听页面 URL/标题变化
- * 2. 每 15 秒提取页面内容并推送给 Kaelis
- * 3. 识别网站类型（GitHub/论文/通用），差异化处理
- * 4. 将相关记忆预填充到 AI 对话输入框
+ * Kaelis Chrome Extension — Content Script
+ * Injects a floating Kaelis memory panel into AI chat interfaces.
  */
+
 (function() {
   'use strict';
 
-  const SIDEBAR_ID = 'kaelis-sidebar-frame';
-  let sidebarVisible = true;
-  let lastUrl = location.href;
-  let lastTitle = document.title;
-  let pushInterval = null;
+  const HOST = window.location.hostname;
+  let panel = null;
 
-  // ==========================================================================
-  // Sidebar
-  // ==========================================================================
+  function createPanel() {
+    if (panel) return panel;
 
-  function createSidebar() {
-    if (document.getElementById(SIDEBAR_ID)) return;
-    const iframe = document.createElement('iframe');
-    iframe.id = SIDEBAR_ID;
-    iframe.src = chrome.runtime.getURL('sidebar.html');
-    iframe.style.cssText = 'position:fixed;top:0;right:0;width:320px;height:100vh;border:none;z-index:99999;box-shadow:-2px 0 12px rgba(0,0,0,0.15);background:#0f172a;transition:transform 0.3s ease;';
-    document.body.appendChild(iframe);
-    document.body.style.marginRight = '320px';
-  }
+    panel = document.createElement('div');
+    panel.id = 'kaelis-web-panel';
+    panel.innerHTML = `
+      <div id="kaelis-header">
+        <span>🧠 Kaelis</span>
+        <button id="kaelis-close">×</button>
+      </div>
+      <div id="kaelis-body">
+        <input id="kaelis-input" type="text" placeholder="Search memory..." />
+        <div id="kaelis-results"></div>
+      </div>
+    `;
 
-  function toggleSidebar() {
-    const iframe = document.getElementById(SIDEBAR_ID);
-    if (!iframe) { createSidebar(); sidebarVisible = true; return; }
-    sidebarVisible = !sidebarVisible;
-    iframe.style.transform = sidebarVisible ? 'translateX(0)' : 'translateX(100%)';
-    document.body.style.marginRight = sidebarVisible ? '320px' : '0';
-  }
-
-  // ==========================================================================
-  // Site Type Detection
-  // ==========================================================================
-
-  function detectSiteType() {
-    const host = window.location.hostname;
-    const path = window.location.pathname;
-    if (host.includes('github.com')) {
-      if (path.includes('/issues/')) return { type: 'github_issue', label: 'GitHub Issue' };
-      if (path.includes('/pull/')) return { type: 'github_pr', label: 'GitHub PR' };
-      return { type: 'github_repo', label: 'GitHub Repository' };
-    }
-    if (host.includes('arxiv.org') || host.includes('pubmed.ncbi.nlm.nih.gov') || host.includes('scholar.google')) {
-      return { type: 'academic_paper', label: '学术论文' };
-    }
-    if (host.includes('stackoverflow.com') || host.includes('stackexchange.com')) {
-      return { type: 'qna', label: '技术问答' };
-    }
-    return { type: 'general', label: '通用网页' };
-  }
-
-  // ==========================================================================
-  // Content Extraction
-  // ==========================================================================
-
-  function extractPageContent() {
-    const site = detectSiteType();
-    const title = document.title;
-    let bodyText = '';
-
-    // 提取主要文本内容（排除脚本/样式）
-    const mainContent = document.querySelector('main, article, [role="main"], .markdown-body, .entry-content');
-    if (mainContent) {
-      bodyText = mainContent.innerText.slice(0, 3000);
-    } else {
-      // fallback: 提取段落文本
-      const paragraphs = document.querySelectorAll('p, h1, h2, h3, li');
-      bodyText = Array.from(paragraphs).slice(0, 50).map(el => el.innerText).join('\n').slice(0, 3000);
-    }
-
-    return {
-      url: location.href,
-      title,
-      site_type: site.type,
-      site_label: site.label,
-      body: bodyText,
-      timestamp: Date.now(),
-    };
-  }
-
-  function extractDialogue() {
-    const host = window.location.hostname;
-    let texts = [];
-    if (host.includes('chat.openai.com') || host.includes('chatgpt.com')) {
-      document.querySelectorAll('[data-testid="conversation-turn-2"] .whitespace-pre-wrap, [data-message-author-role]').forEach(el => texts.push(el.innerText));
-    } else if (host.includes('claude.ai')) {
-      document.querySelectorAll('.font-claude-message, .font-user-message, [data-testid="user-message"], [data-testid="assistant-message"]').forEach(el => texts.push(el.innerText));
-    } else if (host.includes('kimi.moonshot.cn')) {
-      document.querySelectorAll('.chat-item-content, [data-testid="chat-item"]').forEach(el => texts.push(el.innerText));
-    }
-    return texts.slice(-4).join('\n').slice(-500);
-  }
-
-  // ==========================================================================
-  // Context Push
-  // ==========================================================================
-
-  function pushContext() {
-    const content = extractPageContent();
-    const dialogue = extractDialogue();
-
-    // 发送给 background
-    chrome.runtime.sendMessage({
-      type: 'CONTEXT_AWARE_PUSH',
-      payload: {
-        ...content,
-        dialogue,
+    // Styles
+    const style = document.createElement('style');
+    style.textContent = `
+      #kaelis-web-panel {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 280px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        color: #e2e8f0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        z-index: 999999;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        overflow: hidden;
       }
-    }).catch(() => {});
-  }
-
-  // ==========================================================================
-  // URL Change Detection
-  // ==========================================================================
-
-  function onUrlChange() {
-    const newUrl = location.href;
-    const newTitle = document.title;
-    if (newUrl !== lastUrl || newTitle !== lastTitle) {
-      lastUrl = newUrl;
-      lastTitle = newTitle;
-      console.log('[Kaelis] URL changed:', newUrl);
-      // 立即推送一次
-      pushContext();
-    }
-  }
-
-  // 监听 history 变化
-  const originalPushState = history.pushState;
-  const originalReplaceState = history.replaceState;
-  history.pushState = function(...args) {
-    originalPushState.apply(this, args);
-    setTimeout(onUrlChange, 100);
-  };
-  history.replaceState = function(...args) {
-    originalReplaceState.apply(this, args);
-    setTimeout(onUrlChange, 100);
-  };
-  window.addEventListener('popstate', onUrlChange);
-
-  // 也使用 MutationObserver 作为兜底
-  const titleObserver = new MutationObserver(() => {
-    onUrlChange();
-  });
-  const titleEl = document.querySelector('title');
-  if (titleEl) {
-    titleObserver.observe(titleEl, { childList: true });
-  }
-
-  // ==========================================================================
-  // Pre-fill AI Input
-  // ==========================================================================
-
-  function findAIInput() {
-    const host = window.location.hostname;
-    if (host.includes('chat.openai.com') || host.includes('chatgpt.com')) {
-      return document.querySelector('textarea[placeholder], #prompt-textarea');
-    }
-    if (host.includes('claude.ai')) {
-      return document.querySelector('[contenteditable="true"], textarea');
-    }
-    if (host.includes('kimi.moonshot.cn')) {
-      return document.querySelector('textarea, [contenteditable]');
-    }
-    return null;
-  }
-
-  function prefillInput(text) {
-    const input = findAIInput();
-    if (!input) return false;
-
-    if (input.tagName === 'TEXTAREA') {
-      const original = input.value;
-      if (!original.includes(text)) {
-        input.value = text + '\n\n' + original;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        return true;
+      #kaelis-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: #1e293b;
+        font-weight: 600;
+        font-size: 14px;
       }
-    } else if (input.isContentEditable) {
-      const original = input.innerText;
-      if (!original.includes(text)) {
-        input.innerText = text + '\n\n' + original;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        return true;
+      #kaelis-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 18px;
+        cursor: pointer;
       }
-    }
-    return false;
+      #kaelis-body {
+        padding: 12px;
+      }
+      #kaelis-input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #e2e8f0;
+        font-size: 13px;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+      }
+      #kaelis-results {
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 12px;
+      }
+      .kaelis-result-item {
+        padding: 8px;
+        background: #1e293b;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+      .kaelis-result-item:hover {
+        background: #334155;
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(panel);
+
+    panel.querySelector('#kaelis-close').addEventListener('click', () => {
+      panel.style.display = 'none';
+    });
+
+    const input = panel.querySelector('#kaelis-input');
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        searchMemory(input.value);
+      }
+    });
+
+    return panel;
   }
 
-  // ==========================================================================
-  // Message Handler
-  // ==========================================================================
+  function searchMemory(query) {
+    const resultsDiv = panel.querySelector('#kaelis-results');
+    resultsDiv.innerHTML = '<div style="color:#94a3b8">Searching...</div>';
 
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'TOGGLE_SIDEBAR') {
-      toggleSidebar();
-      sendResponse({ visible: sidebarVisible });
-    }
-    if (request.type === 'GET_DIALOGUE') {
-      sendResponse({ context: extractDialogue() });
-    }
-    if (request.type === 'GET_PAGE_CONTENT') {
-      sendResponse(extractPageContent());
-    }
-    if (request.type === 'PREFILL_INPUT') {
-      const ok = prefillInput(request.text);
-      sendResponse({ success: ok });
+    chrome.runtime.sendMessage(
+      { type: 'KAELIS_MEMORY_SEARCH', query },
+      (response) => {
+        if (!response || !response.success) {
+          resultsDiv.innerHTML = '<div style="color:#ef4444">Kaelis offline</div>';
+          return;
+        }
+        const items = response.data?.data || [];
+        if (!items.length) {
+          resultsDiv.innerHTML = '<div style="color:#94a3b8">No memory found</div>';
+          return;
+        }
+        resultsDiv.innerHTML = items.map(item => `
+          <div class="kaelis-result-item" title="${(item.value || '').substring(0, 100)}">
+            <strong>${item.key || 'Memory'}</strong>
+            <div style="color:#94a3b8;margin-top:2px">${(item.value || '').substring(0, 60)}...</div>
+          </div>
+        `).join('');
+      }
+    );
+  }
+
+  // 监听 Ctrl/Cmd + Shift + K 唤起面板
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'K') {
+      e.preventDefault();
+      const p = createPanel();
+      p.style.display = p.style.display === 'none' ? 'none' : 'block';
     }
   });
 
-  // ==========================================================================
-  // Init
-  // ==========================================================================
-
-  createSidebar();
-  pushContext(); // 初始推送
-
-  // 每 15 秒定期推送
-  pushInterval = setInterval(pushContext, 15000);
-
-  console.log('[Kaelis] Context-aware content script loaded. Site:', detectSiteType().label);
+  console.log('Kaelis content script loaded on', HOST);
 })();

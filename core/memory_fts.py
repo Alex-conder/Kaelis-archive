@@ -11,9 +11,23 @@ FTS5 全文检索模块 (P10-002)
 import json
 import logging
 import sqlite3
+import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from pathlib import Path
+
+# FIX-1: 线程本地连接池优先
+try:
+    from core.database.connection_pool import get_thread_pool
+    THREAD_POOL_AVAILABLE = True
+except ImportError:
+    THREAD_POOL_AVAILABLE = False
+
+try:
+    from core.db_pool import get_pool
+    POOL_AVAILABLE = True
+except ImportError:
+    POOL_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +46,11 @@ class MemoryFTS:
         self.db_dir.mkdir(parents=True, exist_ok=True)
         self._ensure_fts5_available()
         self._init_fts_tables()
-        logger.info("MemoryFTS initialized")
+        # FIX-1: 应用层 LRU 缓存 (maxsize=128, TTL=30s)
+        self._search_cache: Dict[Tuple[str, str, int], Tuple[float, List[Dict]]] = {}
+        self._cache_maxsize = 128
+        self._cache_ttl = 30.0
+        logger.info("MemoryFTS initialized (cache maxsize=128, ttl=30s)")
     
     def _db_path(self, name: str) -> str:
         """获取数据库文件路径"""
@@ -175,9 +193,27 @@ class MemoryFTS:
         
             logger.info("FTS5 tables and triggers initialized for L1/L2/L3")
     
+    def _cache_get(self, key: Tuple[str, str, int]) -> Optional[List[Dict]]:
+        """获取缓存结果（带 TTL）"""
+        if key not in self._search_cache:
+            return None
+        timestamp, result = self._search_cache[key]
+        if time.time() - timestamp > self._cache_ttl:
+            del self._search_cache[key]
+            return None
+        return result
+
+    def _cache_set(self, key: Tuple[str, str, int], value: List[Dict]):
+        """设置缓存结果（LRU 淘汰）"""
+        if len(self._search_cache) >= self._cache_maxsize:
+            # 淘汰最旧的
+            oldest = min(self._search_cache, key=lambda k: self._search_cache[k][0])
+            del self._search_cache[oldest]
+        self._search_cache[key] = (time.time(), value)
+
     def search(self, layer: str, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
         """
-        FTS5 全文搜索
+        FTS5 全文搜索（FIX-1: 带应用层缓存）
         
         Args:
             layer: "L1", "L2", "L3"
@@ -191,81 +227,109 @@ class MemoryFTS:
         if layer_lower not in ("l1", "l2", "l3"):
             raise ValueError(f"FTS search not supported for layer: {layer}")
         
-        db = self._db_path(layer_lower)
-        with sqlite3.connect(db) as conn:
+        cache_key = (layer_lower, query.lower(), top_k)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
         
+        db = self._db_path(layer_lower)
+        
+        def _do_search(conn):
+            # FIX-1: 启用 SQLite 多线程查询支持
             try:
-                if layer_lower == "l1":
-                    # L1: 关联主表获取完整数据（过滤过期）
-                    cursor = conn.execute("""
-                        SELECT m.id, m.key, m.value, m.metadata, m.importance, m.created_at
-                        FROM fts_l1 f
-                        JOIN memory_l1 m ON m.id = f.rowid
-                        WHERE fts_l1 MATCH ? AND m.expires_at > ?
-                        ORDER BY rank
-                        LIMIT ?
-                    """, (query, datetime.now().isoformat(), top_k))
-                    rows = cursor.fetchall()
-                    return [
-                        {
-                            "id": r[0],
-                            "key": r[1],
-                            "value": json.loads(r[2]),
-                            "metadata": json.loads(r[3]) if r[3] else {},
-                            "importance": r[4],
-                            "created_at": r[5],
-                            "layer": "L1",
-                        }
-                        for r in rows
-                    ]
+                conn.execute("PRAGMA threads = 4")
+            except Exception:
+                pass  # 旧版本 SQLite 可能不支持
             
-                elif layer_lower == "l2":
-                    cursor = conn.execute("""
-                        SELECT m.id, m.key, m.value, m.metadata, m.source, m.created_at
-                        FROM fts_l2 f
-                        JOIN memory_l2 m ON m.id = f.rowid
-                        WHERE fts_l2 MATCH ?
-                        ORDER BY rank
-                        LIMIT ?
-                    """, (query, top_k))
-                    rows = cursor.fetchall()
-                    return [
-                        {
-                            "id": r[0],
-                            "key": r[1],
-                            "value": json.loads(r[2]),
-                            "metadata": json.loads(r[3]) if r[3] else {},
-                            "source": r[4],
-                            "created_at": r[5],
-                            "layer": "L2",
-                        }
-                        for r in rows
-                    ]
+            if layer_lower == "l1":
+                cursor = conn.execute("""
+                    SELECT m.id, m.key, m.value, m.metadata, m.importance, m.created_at
+                    FROM fts_l1 f
+                    JOIN memory_l1 m ON m.id = f.rowid
+                    WHERE fts_l1 MATCH ? AND m.expires_at > ?
+                    ORDER BY rank
+                    LIMIT ?
+                """, (query, datetime.now().isoformat(), top_k))
+                rows = cursor.fetchall()
+                return [
+                    {
+                        "id": r[0],
+                        "key": r[1],
+                        "value": json.loads(r[2]),
+                        "metadata": json.loads(r[3]) if r[3] else {},
+                        "importance": r[4],
+                        "created_at": r[5],
+                        "layer": "L1",
+                    }
+                    for r in rows
+                ]
             
-                elif layer_lower == "l3":
-                    cursor = conn.execute("""
-                        SELECT e.id, e.name, e.type, e.source, e.created_at
-                        FROM fts_l3 f
-                        JOIN kg_entities e ON e.id = f.rowid
-                        WHERE fts_l3 MATCH ?
-                        ORDER BY rank
-                        LIMIT ?
-                    """, (query, top_k))
-                    rows = cursor.fetchall()
-                    return [
-                        {
-                            "id": r[0],
-                            "name": r[1],
-                            "type": r[2],
-                            "source": r[3],
-                            "created_at": r[4],
-                            "layer": "L3",
-                        }
-                        for r in rows
-                    ]
-            except Exception as e:
-                logger.error(f"FTS5 search failed for {layer}: {e}")
-                return []
+            elif layer_lower == "l2":
+                cursor = conn.execute("""
+                    SELECT m.id, m.key, m.value, m.metadata, m.source, m.created_at
+                    FROM fts_l2 f
+                    JOIN memory_l2 m ON m.id = f.rowid
+                    WHERE fts_l2 MATCH ?
+                    ORDER BY rank
+                    LIMIT ?
+                """, (query, top_k))
+                rows = cursor.fetchall()
+                return [
+                    {
+                        "id": r[0],
+                        "key": r[1],
+                        "value": json.loads(r[2]),
+                        "metadata": json.loads(r[3]) if r[3] else {},
+                        "source": r[4],
+                        "created_at": r[5],
+                        "layer": "L2",
+                    }
+                    for r in rows
+                ]
+            
+            elif layer_lower == "l3":
+                cursor = conn.execute("""
+                    SELECT e.id, e.name, e.type, e.source, e.created_at
+                    FROM fts_l3 f
+                    JOIN kg_entities e ON e.id = f.rowid
+                    WHERE fts_l3 MATCH ?
+                    ORDER BY rank
+                    LIMIT ?
+                """, (query, top_k))
+                rows = cursor.fetchall()
+                return [
+                    {
+                        "id": r[0],
+                        "name": r[1],
+                        "type": r[2],
+                        "source": r[3],
+                        "created_at": r[4],
+                        "layer": "L3",
+                    }
+                    for r in rows
+                ]
+            return []
+        
+        try:
+            result = None
+            if THREAD_POOL_AVAILABLE:
+                pool = get_thread_pool(db, max_connections=20)
+                with pool.acquire() as conn:
+                    result = _do_search(conn)
+            elif POOL_AVAILABLE:
+                pool = get_pool(db, max_connections=8)
+                with pool.acquire() as conn:
+                    result = _do_search(conn)
+            else:
+                with sqlite3.connect(db) as conn:
+                    result = _do_search(conn)
+            
+            if result is not None:
+                self._cache_set(cache_key, result)
+            return result or []
+        except Exception as e:
+            logger.error(f"FTS5 search failed for {layer}: {e}")
+            return []
     
     def rebuild_index(self, layer: str) -> bool:
         """

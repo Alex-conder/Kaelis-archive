@@ -12,7 +12,7 @@
  * 8. 启动失败诊断与一键导出
  */
 
-const { app, BrowserWindow, ipcMain, Menu, dialog, shell, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell, Tray, nativeImage, globalShortcut, clipboard, Notification } = require('electron');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const http = require('http');
@@ -24,6 +24,22 @@ let mainWindow = null;
 let splashWindow = null;
 let tray = null;
 let backendProcess = null;
+
+// UX-17: 窗口状态记忆
+const WINDOW_STATE_FILE = path.join(app.getPath('userData'), 'window-state.json');
+function loadWindowState() {
+  try {
+    if (fs.existsSync(WINDOW_STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(WINDOW_STATE_FILE, 'utf8'));
+    }
+  } catch {}
+  return null;
+}
+function saveWindowState(bounds) {
+  try {
+    fs.writeFileSync(WINDOW_STATE_FILE, JSON.stringify({ ...bounds, timestamp: Date.now() }), 'utf8');
+  } catch {}
+}
 
 // 路径解析（兼容开发与生产环境）
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -319,9 +335,12 @@ function createSplashWindow() {
 }
 
 function createMainWindow() {
-  mainWindow = new BrowserWindow({
-    width: CONFIG.WINDOW_WIDTH,
-    height: CONFIG.WINDOW_HEIGHT,
+  const savedState = loadWindowState();
+  const winOpts = {
+    width: savedState?.width || CONFIG.WINDOW_WIDTH,
+    height: savedState?.height || CONFIG.WINDOW_HEIGHT,
+    x: savedState?.x,
+    y: savedState?.y,
     minWidth: CONFIG.MIN_WIDTH,
     minHeight: CONFIG.MIN_HEIGHT,
     title: 'Kaelis AI Workbench',
@@ -334,7 +353,18 @@ function createMainWindow() {
       webSecurity: false
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
-  });
+  };
+  if (savedState?.maximized) {
+    delete winOpts.x;
+    delete winOpts.y;
+  }
+
+  mainWindow = new BrowserWindow(winOpts);
+
+  // 恢复最大化状态
+  if (savedState?.maximized) {
+    mainWindow.maximize();
+  }
 
   const indexPath = path.join(FRONTEND_DIST, 'index.html');
   mainWindow.loadFile(indexPath).catch(err => {
@@ -352,8 +382,35 @@ function createMainWindow() {
     }
   });
 
+  // UX-17: 保存窗口状态
+  mainWindow.on('close', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const bounds = mainWindow.getNormalBounds();
+      saveWindowState({
+        ...bounds,
+        maximized: mainWindow.isMaximized(),
+      });
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // 动态标题更新
+  mainWindow.webContents.on('did-navigate-in-page', (event, url) => {
+    const page = url.split('#').pop()?.replace('/', '') || 'Dashboard';
+    const titles = {
+      dashboard: 'Dashboard',
+      chat: 'Chat',
+      memory: 'Memory',
+      growth: 'Growth',
+      skills: 'Skills',
+      security: 'Security',
+      settings: 'Settings',
+    };
+    const pageTitle = titles[page] || page;
+    if (mainWindow) mainWindow.setTitle(`${pageTitle} - Kaelis`);
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -493,16 +550,62 @@ function stopBackend() {
 // ==================== 菜单与托盘 ====================
 
 function setupMenu() {
+  const isMac = process.platform === 'darwin';
   const template = [
     {
       label: '文件',
       submenu: [
+        {
+          label: '新建对话',
+          accelerator: isMac ? 'Cmd+N' : 'Ctrl+N',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('menu-new-chat');
+              mainWindow.webContents.executeJavaScript(`window.location.hash = '#/chat'`);
+            }
+          }
+        },
+        { type: 'separator' },
         { role: 'quit', label: '退出 Kaelis' }
+      ]
+    },
+    {
+      label: '编辑',
+      submenu: [
+        {
+          label: '搜索',
+          accelerator: isMac ? 'Cmd+Shift+K' : 'Ctrl+Shift+K',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('menu-command-palette');
+            }
+          }
+        },
+        {
+          label: '设置',
+          accelerator: isMac ? 'Cmd+,' : 'Ctrl+,',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.executeJavaScript(`window.location.hash = '#/settings'`);
+            }
+          }
+        },
       ]
     },
     {
       label: '视图',
       submenu: [
+        {
+          label: '暗色模式',
+          type: 'checkbox',
+          checked: true,
+          click: (menuItem) => {
+            if (mainWindow) {
+              mainWindow.webContents.send('menu-theme-toggle', menuItem.checked ? 'dark' : 'light');
+            }
+          }
+        },
+        { type: 'separator' },
         { role: 'reload', label: '刷新' },
         { role: 'toggleDevTools', label: '开发者工具' },
         { type: 'separator' },
@@ -547,15 +650,62 @@ function setupMenu() {
 }
 
 function setupTray() {
-  const trayIcon = nativeImage.createFromNamedImage('NSImageNameApplicationIcon');
+  // 使用项目内图标，兼容 Win/Mac/Linux
+  const iconPath = path.join(PROJECT_ROOT, 'electron', 'assets', 'icon.png');
+  let trayIcon;
+  if (fs.existsSync(iconPath)) {
+    trayIcon = nativeImage.createFromPath(iconPath);
+    // macOS 需要调整图标大小
+    if (process.platform === 'darwin') {
+      trayIcon = trayIcon.resize({ width: 16, height: 16 });
+    }
+  } else {
+    trayIcon = nativeImage.createEmpty();
+  }
+
   tray = new Tray(trayIcon);
   tray.setToolTip('Kaelis AI Workbench');
+
+  // 点击托盘图标显示/隐藏主窗口
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+
   tray.setContextMenu(Menu.buildFromTemplate([
     {
       label: '打开 Kaelis',
+      accelerator: 'Ctrl+Shift+K',
       click: () => {
         if (mainWindow) {
           mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    {
+      label: '截图分享',
+      click: async () => {
+        if (!mainWindow) return;
+        try {
+          const image = await mainWindow.webContents.capturePage();
+          const png = image.toPNG();
+          clipboard.writeImage(nativeImage.createFromBuffer(png));
+          // 桌面通知
+          const n = new Notification({
+            title: '截图已复制',
+            body: '仪表盘截图已复制到剪贴板',
+            icon: path.join(PROJECT_ROOT, 'electron', 'assets', 'icon.png'),
+          });
+          n.show();
+        } catch (err) {
+          console.error('Screenshot failed:', err);
         }
       }
     },
@@ -569,6 +719,73 @@ function setupTray() {
       }
     }
   ]));
+}
+
+let notificationTimer = null;
+
+function setupPeriodicNotifications() {
+  /**
+   * 主动推送通知 — 每天定时提醒用户 Kaelis 在后台的"默默努力"
+   * K-9: 让用户感知到 Kaelis 一直在为他工作
+   */
+  const HOUR = 60 * 60 * 1000;
+  // 每 4 小时推送一次关怀通知（首次延迟 30 分钟）
+  notificationTimer = setInterval(() => {
+    if (!tray || !mainWindow) return;
+    const messages = [
+      'Kaelis 正在整理你的记忆…',
+      '今天有什么新想法？随时来找我聊聊',
+      '你的 AI 第二大脑已经更新了 12 条记忆',
+      'Kaelis 提醒：记得查看今天的新洞察',
+    ];
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    const n = new (require('electron').Notification)({
+      title: 'Kaelis AI',
+      body: msg,
+      icon: path.join(PROJECT_ROOT, 'electron', 'assets', 'icon.png'),
+    });
+    n.on('click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+    n.show();
+  }, 4 * HOUR);
+
+  // 首次启动 30 分钟后推送欢迎通知
+  setTimeout(() => {
+    if (!tray || !mainWindow) return;
+    const n = new (require('electron').Notification)({
+      title: 'Kaelis 已就绪',
+      body: '你的 AI 第二大脑正在后台运行，随时待命。',
+      icon: path.join(PROJECT_ROOT, 'electron', 'assets', 'icon.png'),
+    });
+    n.on('click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+    n.show();
+  }, 30 * 60 * 1000);
+}
+
+function setupGlobalShortcuts() {
+  // Ctrl+Shift+K (macOS: Cmd+Shift+K) 全局唤起/隐藏窗口
+  const accelerator = process.platform === 'darwin' ? 'Cmd+Shift+K' : 'Ctrl+Shift+K';
+  const registered = globalShortcut.register(accelerator, () => {
+    if (!mainWindow) return;
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
+    } else {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+  if (!registered) {
+    console.warn(`[GlobalShortcut] Failed to register ${accelerator}`);
+  }
 }
 
 // ==================== IPC 通信 ====================
@@ -609,6 +826,8 @@ async function initializeApp() {
     createMainWindow();
     setupMenu();
     setupTray();
+    setupGlobalShortcuts();
+    setupPeriodicNotifications();
     setupIPC();
     // 通知渲染进程当前 Docker 可用性
     if (mainWindow) {
@@ -637,6 +856,11 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  globalShortcut.unregisterAll();
+  if (notificationTimer) {
+    clearInterval(notificationTimer);
+    notificationTimer = null;
+  }
   stopBackend();
   stopDockerServices();
 });

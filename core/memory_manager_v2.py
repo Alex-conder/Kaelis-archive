@@ -22,6 +22,20 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# FIX-1: 线程本地连接池（优先）
+try:
+    from core.database.connection_pool import get_thread_pool
+    THREAD_POOL_AVAILABLE = True
+except ImportError:
+    THREAD_POOL_AVAILABLE = False
+
+# B-3: 兼容旧连接池
+try:
+    from core.db_pool import get_pool
+    POOL_AVAILABLE = True
+except ImportError:
+    POOL_AVAILABLE = False
+
 LAYER_CONFIG = {
     "L0": {"db": "data/kaelis_dev.db", "table": "memory_l0", "ttl_days": None, "immutable_keys": ["system_identity"]},
     "L1": {"db": "data/kaelis_dev.db", "table": "memory_l1", "ttl_days": 7},
@@ -49,14 +63,26 @@ class FourLayerMemoryManager:
         config = LAYER_CONFIG.get(layer)
         if not config:
             raise ValueError(f"Unknown layer: {layer}")
-        db_path = config["db"]
-        p = Path(db_path)
-        if not p.is_absolute():
-            p = self.db_dir / p.name
-        db_path = str(p)
+        db_path = str(self.db_dir.parent / config["db"]) if not Path(config["db"]).is_absolute() else config["db"]
         # 确保数据库所在目录存在
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         return db_path
+
+    def _get_db_conn(self, layer: str):
+        """FIX-1: 获取数据库连接（优先线程本地连接池）"""
+        db_path = self._get_db_path(layer)
+        if THREAD_POOL_AVAILABLE:
+            pool = get_thread_pool(db_path, max_connections=20)
+            return pool.acquire()
+        if POOL_AVAILABLE:
+            pool = get_pool(db_path, max_connections=8)
+            return pool.acquire()
+        # Fallback: 直接连接（也应用 WAL 优化）
+        conn = sqlite3.connect(db_path, timeout=5.0)
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = NORMAL")
+        conn.execute("PRAGMA busy_timeout = 5000")
+        return conn
     
     def _init_tables(self):
         """初始化四层记忆的 SQLite 表"""
@@ -109,8 +135,8 @@ class FourLayerMemoryManager:
                     metadata TEXT,
                     source TEXT DEFAULT 'system',
                     user_id TEXT DEFAULT 'anonymous',
-                    agent_id TEXT DEFAULT 'kaelis_self',
-                    created_at TEXT NOT NULL
+                    created_at TEXT NOT NULL,
+                    last_recalled_at TEXT
                 )
             """)
             try:
@@ -118,14 +144,14 @@ class FourLayerMemoryManager:
             except sqlite3.OperationalError:
                 pass
             try:
-                conn.execute("ALTER TABLE memory_l2 ADD COLUMN agent_id TEXT DEFAULT 'kaelis_self'")
+                conn.execute("ALTER TABLE memory_l2 ADD COLUMN last_recalled_at TEXT")
             except sqlite3.OperationalError:
                 pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_key ON memory_l2(key)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_created ON memory_l2(created_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_source ON memory_l2(source)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_user ON memory_l2(user_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_agent ON memory_l2(agent_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_recalled ON memory_l2(last_recalled_at)")
         
             # L3: 知识图谱降级存储（当 graph driver 不可用时使用）
         with sqlite3.connect(self._get_db_path("L3")) as conn:
@@ -158,7 +184,7 @@ class FourLayerMemoryManager:
                 self._graph_driver = False  # 标记为不可用
         return self._graph_driver if self._graph_driver is not False else None
     
-    def write(self, layer: str, key: str, value: Any, metadata: Optional[Dict] = None, user_id: str = "anonymous", agent_id: str = "kaelis_self") -> bool:
+    def write(self, layer: str, key: str, value: Any, metadata: Optional[Dict] = None, user_id: str = "anonymous") -> bool:
         """
         写入记忆
         
@@ -168,7 +194,6 @@ class FourLayerMemoryManager:
             value: 记忆值（任意 JSON 可序列化对象）
             metadata: 元数据字典
             user_id: 用户ID（P12-001 多用户分区）
-            agent_id: Agent ID（Prompt 2 多Agent命名空间隔离，仅L2有效）
             
         Returns:
             bool: 是否成功
@@ -176,7 +201,6 @@ class FourLayerMemoryManager:
         layer = layer.upper()
         metadata = metadata or {}
         metadata["_user_id"] = user_id  # 存入 metadata 便于追溯
-        metadata["_agent_id"] = agent_id
         now = datetime.now().isoformat()
         
         try:
@@ -185,7 +209,7 @@ class FourLayerMemoryManager:
             elif layer == "L1":
                 return self._write_l1(key, value, metadata, now, user_id)
             elif layer == "L2":
-                return self._write_l2(key, value, metadata, now, user_id, agent_id)
+                return self._write_l2(key, value, metadata, now, user_id)
             elif layer == "L3":
                 return self._write_l3(key, value, metadata, now, user_id)
             else:
@@ -199,46 +223,50 @@ class FourLayerMemoryManager:
     
     def _write_l0(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
         """L0: 系统元数据，覆盖写"""
-        with sqlite3.connect(self._get_db_path("L0")) as conn:
+        with self._get_db_conn("L0") as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO memory_l0 (key, value, metadata, user_id, updated_at) VALUES (?, ?, ?, ?, ?)",
                 (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), user_id, now)
             )
+            conn.commit()
             return True
-    
+
     def _write_l1(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
         """L1: 高频活跃记忆，TTL 7天"""
         expires = (datetime.now() + timedelta(days=LAYER_CONFIG["L1"]["ttl_days"])).isoformat()
         importance = metadata.get("importance", 0.5)
-        with sqlite3.connect(self._get_db_path("L1")) as conn:
+        with self._get_db_conn("L1") as conn:
             conn.execute(
                 "INSERT INTO memory_l1 (key, value, metadata, importance, user_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), importance, user_id, now, expires)
             )
+            conn.commit()
             return True
-    
-    def _write_l2(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", agent_id: str = "kaelis_self") -> bool:
+
+    def _write_l2(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
         """L2: 事件序列，永久存储"""
         source = metadata.get("source", "system")
-        with sqlite3.connect(self._get_db_path("L2")) as conn:
+        with self._get_db_conn("L2") as conn:
             conn.execute(
-                "INSERT INTO memory_l2 (key, value, metadata, source, user_id, agent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), source, user_id, agent_id, now)
+                "INSERT INTO memory_l2 (key, value, metadata, source, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), source, user_id, now)
             )
+            conn.commit()
             return True
-    
+
     def _write_l3(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
         """L3: 知识图谱，复用 SQLiteGraphDriver"""
         driver = self._get_graph_driver()
         if driver is None:
             # 降级：直接写入 SQLite
-            with sqlite3.connect(self._get_db_path("L3")) as conn:
+            with self._get_db_conn("L3") as conn:
                 conn.execute(
                     "INSERT OR IGNORE INTO kg_entities (name, type, source, created_at) VALUES (?, ?, ?, ?)",
                     (key, metadata.get("type", "Concept"), metadata.get("source", "L3_write"), now)
                 )
+                conn.commit()
                 return True
-        
+
         # 使用图数据库驱动
         try:
             with driver.session() as session:
@@ -250,16 +278,17 @@ class FourLayerMemoryManager:
         except Exception as e:
             logger.warning(f"L3 graph write failed, falling back to SQLite: {e}")
             # 降级到 SQLite，避免无限递归
-            with sqlite3.connect(self._get_db_path("L3")) as conn:
+            with self._get_db_conn("L3") as conn:
                 conn.execute(
                     "INSERT OR IGNORE INTO kg_entities (name, type, source, created_at) VALUES (?, ?, ?, ?)",
                     (key, metadata.get("type", "Concept"), metadata.get("source", "L3_write"), now)
                 )
+                conn.commit()
                 return True
     
     def _fallback_jsonl_backup(self, key: str, value: Any, metadata: Dict, now: str):
         """L2 写入失败时的 JSONL 备份"""
-        backup_dir = self.db_dir / "fallback"
+        backup_dir = Path("data/fallback")
         backup_dir.mkdir(parents=True, exist_ok=True)
         backup_file = backup_dir / "l2_backup.jsonl"
         with open(backup_file, "a", encoding="utf-8") as f:
@@ -267,8 +296,8 @@ class FourLayerMemoryManager:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
         logger.info(f"L2 fallback backup written: {key}")
     
-    def read(self, layer: str, key: str, user_id: str = "anonymous", agent_id: Optional[str] = None) -> Optional[Any]:
-        """读取记忆（P12-001 支持 user_id 隔离，Prompt 2 支持 agent_id 隔离）"""
+    def read(self, layer: str, key: str, user_id: str = "anonymous") -> Optional[Any]:
+        """读取记忆（P12-001 支持 user_id 隔离）"""
         layer = layer.upper()
         try:
             if layer == "L0":
@@ -276,7 +305,7 @@ class FourLayerMemoryManager:
             elif layer == "L1":
                 return self._read_l1(key, user_id)
             elif layer == "L2":
-                return self._read_l2(key, user_id, agent_id)
+                return self._read_l2(key, user_id)
             elif layer == "L3":
                 return self._read_l3(key)
             else:
@@ -286,16 +315,16 @@ class FourLayerMemoryManager:
             return None
     
     def _read_l0(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
-        with sqlite3.connect(self._get_db_path("L0")) as conn:
+        with self._get_db_conn("L0") as conn:
             cursor = conn.execute("SELECT value, metadata FROM memory_l0 WHERE key = ? AND user_id = ?", (key, user_id))
             row = cursor.fetchone()
             if row:
                 return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}}
             return None
-    
+
     def _read_l1(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
         now = datetime.now().isoformat()
-        with sqlite3.connect(self._get_db_path("L1")) as conn:
+        with self._get_db_conn("L1") as conn:
             cursor = conn.execute(
                 "SELECT value, metadata, importance, created_at FROM memory_l1 WHERE key = ? AND user_id = ? AND expires_at > ? ORDER BY id DESC LIMIT 1",
                 (key, user_id, now)
@@ -304,35 +333,38 @@ class FourLayerMemoryManager:
             if row:
                 return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "importance": row[2], "created_at": row[3]}
             return None
-    
-    def _read_l2(self, key: str, user_id: str = "anonymous", agent_id: Optional[str] = None) -> Optional[Any]:
-        with sqlite3.connect(self._get_db_path("L2")) as conn:
-            if agent_id is not None:
-                cursor = conn.execute(
-                    "SELECT value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? AND agent_id = ? ORDER BY id DESC LIMIT 1",
-                    (key, user_id, agent_id)
-                )
-            else:
-                cursor = conn.execute(
-                    "SELECT value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
-                    (key, user_id)
-                )
+
+    def _read_l2(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
+        with self._get_db_conn("L2") as conn:
+            cursor = conn.execute(
+                "SELECT id, value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                (key, user_id)
+            )
             row = cursor.fetchone()
             if row:
-                return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "source": row[2], "created_at": row[3]}
+                # D-2: 更新最后回忆时间
+                try:
+                    conn.execute(
+                        "UPDATE memory_l2 SET last_recalled_at = ? WHERE id = ?",
+                        (datetime.now().isoformat(), row[0])
+                    )
+                    conn.commit()
+                except Exception as e:
+                    logger.warning(f"Failed to update last_recalled_at: {e}")
+                return {"value": json.loads(row[1]), "metadata": json.loads(row[2]) if row[2] else {}, "source": row[3], "created_at": row[4]}
             return None
-    
+
     def _read_l3(self, key: str) -> Optional[Any]:
         driver = self._get_graph_driver()
         if driver is None:
             # 降级：直接查询 SQLite
-            with sqlite3.connect(self._get_db_path("L3")) as conn:
+            with self._get_db_conn("L3") as conn:
                 cursor = conn.execute("SELECT name, type FROM kg_entities WHERE name = ?", (key,))
                 row = cursor.fetchone()
                 if row:
                     return {"name": row[0], "type": row[1]}
                 return None
-        
+
         try:
             with driver.session() as session:
                 result = session.run("MATCH (e:Entity {name: $name}) RETURN e", name=key)
@@ -346,21 +378,21 @@ class FourLayerMemoryManager:
         except Exception as e:
             logger.warning(f"L3 graph read failed, falling back: {e}")
             # 降级到 SQLite，避免无限递归
-            with sqlite3.connect(self._get_db_path("L3")) as conn:
+            with self._get_db_conn("L3") as conn:
                 cursor = conn.execute("SELECT name, type FROM kg_entities WHERE name = ?", (key,))
                 row = cursor.fetchone()
                 if row:
                     return {"name": row[0], "type": row[1]}
                 return None
     
-    def search(self, layer: str, query: str, top_k: int = 5, user_id: str = "anonymous", agent_id: Optional[str] = None) -> List[Dict]:
-        """搜索记忆（P12-001 支持 user_id 隔离，Prompt 2 支持 agent_id 隔离）"""
+    def search(self, layer: str, query: str, top_k: int = 5, user_id: str = "anonymous") -> List[Dict]:
+        """搜索记忆（P12-001 支持 user_id 隔离）"""
         layer = layer.upper()
         try:
             if layer == "L1":
                 return self._search_l1(query, top_k, user_id)
             elif layer == "L2":
-                return self._search_l2(query, top_k, user_id, agent_id)
+                return self._search_l2(query, top_k, user_id)
             else:
                 raise ValueError(f"Search not supported for layer {layer}")
         except Exception as e:
@@ -370,7 +402,7 @@ class FourLayerMemoryManager:
     def _search_l1(self, query: str, top_k: int, user_id: str = "anonymous") -> List[Dict]:
         """L1 关键词搜索（LIKE 匹配）"""
         now = datetime.now().isoformat()
-        with sqlite3.connect(self._get_db_path("L1")) as conn:
+        with self._get_db_conn("L1") as conn:
             cursor = conn.execute(
                 "SELECT key, value, metadata, importance, created_at FROM memory_l1 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? AND expires_at > ? ORDER BY importance DESC LIMIT ?",
                 (f"%{query}%", f"%{query}%", user_id, now, top_k)
@@ -380,34 +412,71 @@ class FourLayerMemoryManager:
                 {"key": r[0], "value": json.loads(r[1]), "metadata": json.loads(r[2]) if r[2] else {}, "importance": r[3], "created_at": r[4]}
                 for r in rows
             ]
-    
-    def _search_l2(self, query: str, top_k: int, user_id: str = "anonymous", agent_id: Optional[str] = None) -> List[Dict]:
+
+    def _search_l2(self, query: str, top_k: int, user_id: str = "anonymous") -> List[Dict]:
         """L2 关键词搜索"""
-        with sqlite3.connect(self._get_db_path("L2")) as conn:
-            if agent_id is not None:
-                cursor = conn.execute(
-                    "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? AND agent_id = ? ORDER BY created_at DESC LIMIT ?",
-                    (f"%{query}%", f"%{query}%", user_id, agent_id, top_k)
-                )
-            else:
-                cursor = conn.execute(
-                    "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? ORDER BY created_at DESC LIMIT ?",
-                    (f"%{query}%", f"%{query}%", user_id, top_k)
-                )
+        with self._get_db_conn("L2") as conn:
+            cursor = conn.execute(
+                "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE (key LIKE ? OR value LIKE ?) AND user_id = ? ORDER BY created_at DESC LIMIT ?",
+                (f"%{query}%", f"%{query}%", user_id, top_k)
+            )
             rows = cursor.fetchall()
             return [
                 {"key": r[0], "value": json.loads(r[1]), "metadata": json.loads(r[2]) if r[2] else {}, "source": r[3], "created_at": r[4]}
                 for r in rows
             ]
     
-    def consolidate(self) -> Dict[str, Any]:
-        """整合记忆：清理 L1 过期数据"""
+    def consolidate(self, user_id: str = "anonymous") -> Dict[str, Any]:
+        """
+        整合记忆：
+        1. 清理 L1 过期数据
+        2. 检测 L2 记忆冲突（基于向量时钟）
+        3. 应用遗忘衰减（降权低存活概率记忆）
+        """
         now = datetime.now().isoformat()
-        with sqlite3.connect(self._get_db_path("L1")) as conn:
+        report = {"timestamp": now, "actions": []}
+
+        # 1. 清理 L1 过期数据
+        with self._get_db_conn("L1") as conn:
             cursor = conn.execute("DELETE FROM memory_l1 WHERE expires_at < ?", (now,))
             deleted = cursor.rowcount
+            conn.commit()
             logger.info(f"Consolidated L1: removed {deleted} expired memories")
-            return {"layer": "L1", "deleted": deleted, "timestamp": now}
+            report["actions"].append({"type": "expire_cleanup", "layer": "L1", "deleted": deleted})
+
+        # 2. L2 冲突检测
+        try:
+            from core.memory_conflict import get_conflict_resolver
+            resolver = get_conflict_resolver()
+            conflict_total = 0
+            with self._get_db_conn("L2") as conn:
+                rows = conn.execute(
+                    "SELECT DISTINCT key FROM memory_l2 WHERE user_id = ? LIMIT 1000",
+                    (user_id,),
+                ).fetchall()
+            for (key,) in rows:
+                conflicts = resolver.detect_conflicts(key, "L2")
+                conflict_total += len(conflicts)
+                for c in conflicts:
+                    logger.warning(f"Memory conflict detected: {c['key']} between {c['version_a']['version_id']} and {c['version_b']['version_id']}")
+                    # 尝试自动合并
+                    merge_result = resolver.auto_merge(key, "L2", strategy="field_merge")
+                    if merge_result:
+                        logger.info(f"Auto-merged conflict for {key}: {merge_result['strategy']}")
+            report["actions"].append({"type": "conflict_detection", "layer": "L2", "conflicts_found": conflict_total})
+        except Exception as e:
+            logger.warning(f"Conflict detection during consolidation failed: {e}")
+
+        # 3. 遗忘衰减
+        try:
+            from core.memory_consolidator import get_consolidator
+            consolidator = get_consolidator()
+            forget_report = consolidator.apply_forgetting(dry_run=True)
+            report["actions"].append({"type": "forgetting", **forget_report})
+        except Exception as e:
+            logger.warning(f"Forgetting application during consolidation failed: {e}")
+
+        return report
     
     def clear_layer(self, layer: str, filter_source: Optional[str] = None) -> int:
         """清空指定层"""
@@ -415,19 +484,20 @@ class FourLayerMemoryManager:
         config = LAYER_CONFIG.get(layer)
         if not config:
             return 0
-        
+
         if layer == "L3":
             # L3 不清空，仅记录警告
             logger.warning("L3 (Semantic) layer clear not supported - use graph management tools")
             return 0
-        
-        with sqlite3.connect(self._get_db_path(layer)) as conn:
+
+        with self._get_db_conn(layer) as conn:
             table = config["table"]
             if filter_source:
                 cursor = conn.execute(f"DELETE FROM {table} WHERE source = ?", (filter_source,))
             else:
                 cursor = conn.execute(f"DELETE FROM {table}")
             deleted = cursor.rowcount
+            conn.commit()
             logger.info(f"Cleared {layer}: removed {deleted} records")
             return deleted
     
@@ -456,26 +526,6 @@ class FourLayerMemoryManager:
         }
         
         return stats
-    
-    def get_agent_memory_stats(self, agent_id: str) -> Dict[str, Any]:
-        """获取指定Agent的记忆统计（Prompt 2）"""
-        db_path = self._get_db_path("L2")
-        try:
-            with sqlite3.connect(db_path) as conn:
-                total = conn.execute(
-                    "SELECT COUNT(*) FROM memory_l2 WHERE agent_id = ?", (agent_id,)
-                ).fetchone()[0]
-                latest = conn.execute(
-                    "SELECT MAX(created_at) FROM memory_l2 WHERE agent_id = ?", (agent_id,)
-                ).fetchone()[0]
-                return {
-                    "agent_id": agent_id,
-                    "total_memories": total,
-                    "latest_memory_at": latest,
-                }
-        except Exception as e:
-            logger.error(f"Failed to get agent memory stats: {e}")
-            return {"agent_id": agent_id, "total_memories": 0, "latest_memory_at": None}
     
     def close(self):
         """关闭管理器，释放资源"""

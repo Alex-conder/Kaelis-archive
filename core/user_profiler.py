@@ -191,6 +191,252 @@ class UserProfiler:
             logger.debug(f"Entity preference analysis failed: {e}")
             return []
     
+    def infer_decision_style(self, user_id: str = "anonymous") -> Dict[str, Any]:
+        """
+        推断用户决策风格（激进/保守/均衡）
+
+        基于 L2 Episodic 中的任务结果分析：
+        - 高成功率 + 短耗时 → 激进
+        - 高成功率 + 长耗时 → 保守
+        - 低成功率 + 多次重试 → 探索型
+        """
+        try:
+            import sqlite3
+            from pathlib import Path
+            db_path = Path("data/kaelis_dev.db")
+            if not db_path.exists():
+                return {"style": "unknown", "confidence": 0.0}
+
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT value, metadata FROM memory_l2 WHERE user_id = ? AND (source = 'skill' OR source = 'agent') LIMIT 100",
+                    (user_id,),
+                ).fetchall()
+
+            success_count = 0
+            failure_count = 0
+            retry_total = 0
+            durations = []
+
+            for r in rows:
+                try:
+                    value = json.loads(r["value"]) if r["value"] else {}
+                    meta = json.loads(r["metadata"]) if r["metadata"] else {}
+                    status = value.get("status") or meta.get("status")
+                    if status == "success":
+                        success_count += 1
+                    elif status == "failure":
+                        failure_count += 1
+                    retry_total += meta.get("retry_count", 0)
+                    dur = meta.get("duration_ms")
+                    if dur:
+                        durations.append(dur)
+                except Exception:
+                    continue
+
+            total = success_count + failure_count
+            if total == 0:
+                return {"style": "unknown", "confidence": 0.0}
+
+            success_rate = success_count / total
+            avg_duration = sum(durations) / len(durations) if durations else 0
+            avg_retry = retry_total / total
+
+            # 决策风格判定
+            if success_rate > 0.8 and avg_duration < 5000 and avg_retry < 1:
+                style = "aggressive"
+                desc = "快速决策、高成功率，倾向于尝试新方案"
+            elif success_rate > 0.8 and avg_duration > 10000:
+                style = "conservative"
+                desc = "谨慎验证、长耗时但高成功率，倾向于稳妥方案"
+            elif avg_retry > 2:
+                style = "exploratory"
+                desc = "多次尝试、从失败中学习，倾向于探索不同路径"
+            else:
+                style = "balanced"
+                desc = "决策风格均衡，能根据情境调整策略"
+
+            return {
+                "style": style,
+                "description": desc,
+                "success_rate": round(success_rate, 2),
+                "avg_duration_ms": round(avg_duration, 0),
+                "avg_retry": round(avg_retry, 2),
+                "confidence": min(1.0, total / 20),  # 20次以上为高置信度
+            }
+        except Exception as e:
+            logger.warning(f"Decision style inference failed: {e}")
+            return {"style": "unknown", "confidence": 0.0}
+
+    def infer_temporal_pattern(self, user_id: str = "anonymous") -> Dict[str, Any]:
+        """
+        推断用户时间偏好模式
+
+        分析用户活跃时间段、会话时长分布
+        """
+        try:
+            import sqlite3
+            from pathlib import Path
+            from collections import Counter
+            db_path = Path("data/kaelis_dev.db")
+            if not db_path.exists():
+                return {"peak_hour": "unknown", "confidence": 0.0}
+
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT created_at FROM memory_l2 WHERE user_id = ? AND source = 'chat'",
+                    (user_id,),
+                ).fetchall()
+
+            hours = []
+            for r in rows:
+                try:
+                    dt = datetime.fromisoformat(r["created_at"].replace("Z", "+00:00").replace(" ", "T"))
+                    hours.append(dt.hour)
+                except Exception:
+                    continue
+
+            if not hours:
+                return {"peak_hour": "unknown", "confidence": 0.0}
+
+            hour_counter = Counter(hours)
+            peak_hour, peak_count = hour_counter.most_common(1)[0]
+
+            # 时段分类
+            if 6 <= peak_hour < 12:
+                period = "morning"
+            elif 12 <= peak_hour < 18:
+                period = "afternoon"
+            elif 18 <= peak_hour < 23:
+                period = "evening"
+            else:
+                period = "night"
+
+            return {
+                "peak_hour": peak_hour,
+                "peak_period": period,
+                "active_hours": sorted(hour_counter.keys()),
+                "session_count": len(hours),
+                "confidence": min(1.0, len(hours) / 10),
+            }
+        except Exception as e:
+            logger.warning(f"Temporal pattern inference failed: {e}")
+            return {"peak_hour": "unknown", "confidence": 0.0}
+
+    def infer_communication_style(self, user_id: str = "anonymous") -> Dict[str, Any]:
+        """
+        推断用户沟通习惯
+
+        基于对话内容长度、指令清晰度、反馈频率
+        """
+        try:
+            import sqlite3
+            from pathlib import Path
+            db_path = Path("data/kaelis_dev.db")
+            if not db_path.exists():
+                return {"style": "unknown", "confidence": 0.0}
+
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT value FROM memory_l2 WHERE user_id = ? AND source = 'chat' LIMIT 200",
+                    (user_id,),
+                ).fetchall()
+
+            lengths = []
+            for r in rows:
+                try:
+                    value = json.loads(r["value"]) if r["value"] else {}
+                    content = str(value.get("content", value.get("message", "")))
+                    lengths.append(len(content))
+                except Exception:
+                    continue
+
+            if not lengths:
+                return {"style": "unknown", "confidence": 0.0}
+
+            avg_len = sum(lengths) / len(lengths)
+            if avg_len < 20:
+                style = "concise"
+                desc = "简洁直接，偏好短指令"
+            elif avg_len < 100:
+                style = "moderate"
+                desc = "表达适中，信息量合理"
+            else:
+                style = "verbose"
+                desc = "详细描述，偏好完整上下文"
+
+            return {
+                "style": style,
+                "description": desc,
+                "avg_message_length": round(avg_len, 0),
+                "message_count": len(lengths),
+                "confidence": min(1.0, len(lengths) / 20),
+            }
+        except Exception as e:
+            logger.warning(f"Communication style inference failed: {e}")
+            return {"style": "unknown", "confidence": 0.0}
+
+    def profile_advanced(self, user_id: str = "anonymous") -> Dict[str, Any]:
+        """
+        生成完整的多维用户画像
+
+        包含：基础偏好 + 决策风格 + 时间模式 + 沟通习惯 + 知识结构
+        """
+        base = self.profile(user_id)
+
+        advanced = {
+            **base,
+            "decision_style": self.infer_decision_style(user_id),
+            "temporal_pattern": self.infer_temporal_pattern(user_id),
+            "communication_style": self.infer_communication_style(user_id),
+            "knowledge_gaps": self._infer_knowledge_gaps(user_id),
+        }
+
+        return advanced
+
+    def _infer_knowledge_gaps(self, user_id: str = "anonymous") -> List[Dict[str, Any]]:
+        """
+        推断用户知识盲区
+
+        基于用户频繁查询但未获得满意结果的主题
+        """
+        try:
+            import sqlite3
+            from pathlib import Path
+            from collections import Counter
+            db_path = Path("data/kaelis_dev.db")
+            if not db_path.exists():
+                return []
+
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT key, value, metadata FROM memory_l2 WHERE user_id = ? AND source = 'chat' LIMIT 200",
+                    (user_id,),
+                ).fetchall()
+
+            # 提取查询关键词（简化：取 key 中的主题词）
+            topics = []
+            for r in rows:
+                key = r["key"]
+                if "search" in key or "query" in key:
+                    topics.append(key.replace("search_", "").replace("query_", ""))
+
+            counter = Counter(topics)
+            # 高频查询但未找到结果（metadata 中标记 failed）
+            gaps = []
+            for topic, count in counter.most_common(5):
+                if count >= 3:
+                    gaps.append({"topic": topic, "query_count": count, "suggestion": f"建议补充 {topic} 相关知识"})
+
+            return gaps
+        except Exception as e:
+            logger.debug(f"Knowledge gap inference failed: {e}")
+            return []
+
     def _merge_preferences(self, preferences: List[Dict]) -> List[Dict]:
         """合并同类偏好，按分数排序"""
         # 按 tag 聚合

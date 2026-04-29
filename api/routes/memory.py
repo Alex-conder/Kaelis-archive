@@ -60,6 +60,14 @@ except ImportError as e:
     PROACTIVE_AVAILABLE = False
     logging.warning(f"ProactiveMemoryEngine not available: {e}")
 
+# D-1/D-2: 记忆洞察引擎
+try:
+    from core.memory_insight_clusterer import get_insight_clusterer, MemoryInsightClusterer
+    INSIGHT_AVAILABLE = True
+except ImportError as e:
+    INSIGHT_AVAILABLE = False
+    logging.warning(f"MemoryInsightClusterer not available: {e}")
+
 logger = logging.getLogger(__name__)
 
 # 创建 Blueprint
@@ -246,9 +254,9 @@ def delete_memory():
             from core.memory_manager_v2 import LAYER_CONFIG
             import sqlite3
             config = LAYER_CONFIG[layer]
-            db_path = mm._get_db_path(layer)
-            table = config["table"]
+            db_path = config["db"] if Path(config["db"]).is_absolute() else str(Path("data") / Path(config["db"]).name)
             conn = sqlite3.connect(db_path)
+            table = config["table"]
             cursor = conn.execute(f"DELETE FROM {table} WHERE key = ?", (key,))
             deleted = cursor.rowcount
             conn.commit()
@@ -620,26 +628,10 @@ def session_end():
 
 # ==================== 主动记忆推送（P17-001）====================
 
-def _format_context_push_message(memories: list) -> str:
-    """将记忆列表格式化为推送文本。"""
-    if not memories:
-        return ""
-    lines = ["💡 Kaelis 记忆推送:"]
-    for i, m in enumerate(memories[:5], 1):
-        reason = m.get("reason", "相关记忆")
-        value = m.get("value", "")
-        if isinstance(value, dict):
-            summary = value.get("summary", value.get("decision", str(value)[:80]))
-        else:
-            summary = str(value)[:80]
-        lines.append(f"  {i}. [{reason}] {summary}")
-    return "\n".join(lines)
-
-
 @memory_bp.route('/proactive/push', methods=['POST'])
 def proactive_push():
     """
-    主动记忆推送（完整 bundle 格式）
+    主动记忆推送
     
     Request Body:
         {
@@ -678,49 +670,102 @@ def proactive_push():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@memory_bp.route('/proactive/context_push', methods=['POST'])
-def context_aware_push():
+# ==================== D-1: 记忆语义聚类 ====================
+
+@memory_bp.route('/insights/clusters', methods=['POST'])
+def memory_insight_clusters():
     """
-    上下文感知主动推送（浏览器扩展 / 轮询客户端格式）
-    
+    D-1: 记忆语义聚类与主题自动发现
+
     Request Body:
         {
-            "user_id": "default",
-            "context": "当前对话最后 500 字符",
-            "limit": 5
+            "days": 7,
+            "k": 0,
+            "dry_run": true,
+            "user_id": "anonymous"
         }
-    
+
     Response:
         {
-            "has_memories": true,
-            "push_message": "💡 Kaelis 记忆推送:\n  1. [...]",
-            "memories": [...],
-            "suggested_action": "copy_to_clipboard"
+            "success": True,
+            "data": {
+                "clusters": [
+                    {"cluster_id": "cluster_0", "topic_labels": ["frontend", "react"], "memory_count": 5, "memory_keys": [...]}
+                ],
+                "total_memories": 10,
+                "method": "sklearn"
+            }
         }
     """
-    if not PROACTIVE_AVAILABLE:
-        return jsonify({"has_memories": False, "push_message": "", "memories": [], "suggested_action": "none", "error": "Proactive engine not available"}), 503
-    
+    if not INSIGHT_AVAILABLE:
+        return jsonify({"success": False, "error": "Insight clusterer not available"}), 503
+
     try:
         data = request.get_json() or {}
-        user_id = data.get("user_id", "default")
-        context = data.get("context", "")
-        limit = data.get("limit", 5)
-        
-        engine = get_proactive_engine()
-        bundle = engine.generate_push_bundle(user_id=user_id, context=context)
-        memories = [m.to_dict() for m in bundle.all_memories()[:limit]]
-        push_text = _format_context_push_message(memories) if memories else ""
-        
-        return jsonify({
-            "has_memories": len(memories) > 0,
-            "push_message": push_text,
-            "memories": memories,
-            "suggested_action": "copy_to_clipboard" if memories else "none"
-        })
+        days = data.get("days", 7)
+        k = data.get("k", 0)
+        dry_run = data.get("dry_run", True)
+        user_id = data.get("user_id", "anonymous")
+
+        clusterer = get_insight_clusterer()
+        result = clusterer.cluster_analysis(
+            days=days,
+            k=k if k > 0 else None,
+            user_id=user_id,
+            dry_run=dry_run,
+        )
+
+        return jsonify({"success": True, "data": result})
     except Exception as e:
-        logger.error(f"Context aware push failed: {e}")
-        return jsonify({"has_memories": False, "push_message": "", "memories": [], "suggested_action": "none", "error": str(e)}), 500
+        logger.error(f"Memory insight clusters failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== D-2: 遗忘曲线复习建议 ====================
+
+@memory_bp.route('/insights/forgetting', methods=['POST'])
+def memory_forgetting_insights():
+    """
+    D-2: 遗忘曲线复习建议
+
+    Request Body:
+        {
+            "limit": 5,
+            "threshold": 0.7,
+            "user_id": "anonymous"
+        }
+
+    Response:
+        {
+            "success": True,
+            "data": {
+                "reminders": [
+                    {"key": "...", "forgetting_index": 0.85, "days_since_recall": 7.5, "importance": 0.5, "suggested_action": "Review..."}
+                ],
+                "total_checked": 100
+            }
+        }
+    """
+    if not CONSOLIDATOR_AVAILABLE:
+        return jsonify({"success": False, "error": "Consolidator not available"}), 503
+
+    try:
+        data = request.get_json() or {}
+        limit = data.get("limit", 5)
+        threshold = data.get("threshold", 0.7)
+        user_id = data.get("user_id", "anonymous")
+
+        consolidator = get_consolidator()
+        result = consolidator.get_forgetting_reminders(
+            limit=limit,
+            threshold=threshold,
+            user_id=user_id,
+        )
+
+        return jsonify({"success": True, "data": result})
+    except Exception as e:
+        logger.error(f"Memory forgetting insights failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 def register_memory_routes(app):

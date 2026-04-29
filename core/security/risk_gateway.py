@@ -1,348 +1,326 @@
 """
-Risk-Aware Gateway (Prompt 4)
+风险感知网关 — RiskAwareGateway
 
-Three-layer audit pipeline:
-1. RuleEngine: whitelist/blacklist pattern matching
-2. LLMRiskReviewer: LLM-based dynamic risk assessment
-3. ApprovalService: user confirmation with timeout
+规则引擎 + 动态评估 + 用户确认的三层审核体系。
 """
 
-import json
 import logging
 import re
 import threading
-import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum
-from pathlib import Path
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Risk Decision Enum
-# ---------------------------------------------------------------------------
-
-class RiskDecision(str, Enum):
-    ALLOW = "ALLOW"
-    CONFIRM = "CONFIRM"
-    BLOCK = "BLOCK"
-
-
-# ---------------------------------------------------------------------------
-# Rule Engine
-# ---------------------------------------------------------------------------
 
 @dataclass
-class Rule:
-    pattern: str
-    action: RiskDecision
+class RiskAssessment:
+    level: str  # "none", "low", "medium", "high", "critical"
+    score: float  # 0.0 - 1.0
     reason: str
-    compiled: Any = field(repr=False, default=None)
-
-    def __post_init__(self):
-        self.compiled = re.compile(self.pattern, re.IGNORECASE)
-
-
-class RuleEngine:
-    """First-layer rule engine: whitelist/blacklist matching."""
-
-    def __init__(self, rules_path: Optional[str] = None):
-        self.rules_path = rules_path or "config/risk_rules.yaml"
-        self.whitelist: List[Rule] = []
-        self.blacklist: List[Rule] = []
-        self._load_rules()
-
-    def _load_rules(self):
-        try:
-            import yaml
-            path = Path(self.rules_path)
-            if path.exists():
-                with open(path, "r", encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
-            else:
-                data = self._default_rules()
-        except Exception:
-            data = self._default_rules()
-
-        for item in data.get("rule_engine", {}).get("whitelist", []):
-            self.whitelist.append(Rule(item["pattern"], RiskDecision.ALLOW, item.get("reason", "")))
-        for item in data.get("rule_engine", {}).get("blacklist", []):
-            self.blacklist.append(Rule(item["pattern"], RiskDecision.BLOCK, item.get("reason", "")))
-
-    def _default_rules(self) -> Dict[str, Any]:
-        return {
-            "rule_engine": {
-                "whitelist": [
-                    {"pattern": "^memory_search$", "action": "ALLOW", "reason": "Read-only"},
-                    {"pattern": "^skill_list$", "action": "ALLOW", "reason": "Read-only"},
-                ],
-                "blacklist": [
-                    {"pattern": "rm\\s+-rf", "action": "BLOCK", "reason": "Dangerous deletion"},
-                    {"pattern": "eval\\s*\\(", "action": "BLOCK", "reason": "Code execution"},
-                ],
-            }
-        }
-
-    def evaluate(self, operation: str, data: Optional[Dict] = None) -> Optional[tuple]:
-        """
-        Evaluate against rules. Returns (decision, reason) or None if no rule matches.
-        """
-        text = operation
-        if data:
-            try:
-                text += " " + json.dumps(data, ensure_ascii=False, default=str)
-            except Exception:
-                pass
-
-        # Blacklist first (higher priority)
-        for rule in self.blacklist:
-            if rule.compiled.search(text):
-                return RiskDecision.BLOCK, rule.reason
-
-        # Then whitelist
-        for rule in self.whitelist:
-            if rule.compiled.search(text):
-                return RiskDecision.ALLOW, rule.reason
-
-        return None
+    attack_scenario: str
+    fix_suggestion: str
+    auto_fixable: bool
+    fix_command: Optional[str] = None
+    requires_approval: bool = False
+    approval_id: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
-# LLM Risk Reviewer
-# ---------------------------------------------------------------------------
+# 审批队列（内存中；多实例应使用 Redis）
+_approval_lock = threading.Lock()
+_approval_queue: List[Dict[str, Any]] = []
 
-class LLMRiskReviewer:
-    """Second-layer: LLM-based dynamic risk assessment."""
 
-    RISK_LEVEL_MAP = {
-        "safe": RiskDecision.ALLOW,
-        "low": RiskDecision.ALLOW,
-        "medium": RiskDecision.CONFIRM,
-        "high": RiskDecision.BLOCK,
-        "critical": RiskDecision.BLOCK,
+def submit_for_approval(
+    title: str,
+    description: str,
+    risk: str,
+    source: str = "unknown",
+    payload: Dict = None,
+) -> str:
+    """提交一个高风险操作到审批队列，返回 approval_id"""
+    item = {
+        "id": str(uuid.uuid4()),
+        "title": title,
+        "description": description,
+        "risk": risk,
+        "source": source,
+        "timestamp": datetime.now().isoformat(),
+        "status": "pending",
+        "resolved_at": None,
+        "payload": payload or {},
     }
-
-    def __init__(self, llm_client=None):
-        self.llm_client = llm_client
-
-    def evaluate(self, source_id: str, operation: str, data: Optional[Dict] = None) -> tuple:
-        """Evaluate risk using LLM or heuristic fallback."""
-        if self.llm_client is None:
-            # Fallback: heuristic based on operation name and data
-            return self._heuristic_evaluate(operation, data)
-
-        prompt = self._build_prompt(source_id, operation, data)
-        try:
-            response = self.llm_client.complete(prompt, max_tokens=50)
-            risk_level = self._parse_risk_level(response)
-        except Exception as e:
-            logger.warning(f"LLM risk review failed: {e}, using heuristic fallback")
-            risk_level = self._heuristic_evaluate(operation, data)[0]
-
-        decision = self.RISK_LEVEL_MAP.get(risk_level, RiskDecision.CONFIRM)
-        return decision, f"LLM assessed risk: {risk_level}"
-
-    def evaluate_batch(self, items: List[Dict[str, Any]]) -> List[tuple]:
-        """Batch evaluation."""
-        return [self.evaluate(item.get("source_id", ""), item["operation"], item.get("data")) for item in items]
-
-    def _heuristic_evaluate(self, operation: str, data: Optional[Dict] = None) -> tuple:
-        """Heuristic fallback when LLM is unavailable."""
-        text = (operation + " " + json.dumps(data or {}, default=str)).lower()
-
-        critical_patterns = ["delete", "drop", "truncate", "rm -rf", "format", "wipe"]
-        for pat in critical_patterns:
-            if pat in text:
-                return RiskDecision.BLOCK, f"Heuristic: critical keyword '{pat}' detected"
-
-        confirm_patterns = ["write", "update", "modify", "create", "import", "export"]
-        for pat in confirm_patterns:
-            if pat in text:
-                return RiskDecision.CONFIRM, f"Heuristic: modifying keyword '{pat}' detected"
-
-        return RiskDecision.ALLOW, "Heuristic: no risk indicators"
-
-    def _build_prompt(self, source_id: str, operation: str, data: Optional[Dict]) -> str:
-        return f"""You are a security risk assessor. Evaluate the following operation and respond with exactly one word: safe, low, medium, high, or critical.
-
-Source: {source_id}
-Operation: {operation}
-Data: {json.dumps(data or {}, default=str)[:500]}
-
-Risk level:"""
-
-    def _parse_risk_level(self, response: str) -> str:
-        text = response.strip().lower()
-        for level in ["safe", "low", "medium", "high", "critical"]:
-            if level in text:
-                return level
-        return "medium"
+    with _approval_lock:
+        _approval_queue.append(item)
+    logger.warning(f"[Approval] 高风险操作已提交审批: {item['id']} | {title}")
+    return item["id"]
 
 
-# ---------------------------------------------------------------------------
-# Approval Service
-# ---------------------------------------------------------------------------
+def get_approval_status(approval_id: str) -> Optional[Dict[str, Any]]:
+    with _approval_lock:
+        for item in _approval_queue:
+            if item["id"] == approval_id:
+                return dict(item)
+    return None
 
-@dataclass
-class PendingApproval:
-    approval_id: str
-    source_id: str
-    operation: str
-    data: Dict[str, Any]
-    requested_at: float
-    timeout_seconds: int
-    status: str = "pending"  # pending / approved / rejected / timeout
-    resolution: Optional[str] = None
-
-
-class ApprovalService:
-    """Third-layer: user confirmation with timeout."""
-
-    def __init__(self, default_timeout: int = 300):
-        self.default_timeout = default_timeout
-        self._pending: Dict[str, PendingApproval] = {}
-        self._trust_cache: Dict[str, RiskDecision] = {}  # "agent_id:operation" -> decision
-        self._lock = threading.Lock()
-
-    def request_approval(self, source_id: str, operation: str, data: Optional[Dict] = None) -> PendingApproval:
-        """Create a pending approval request."""
-        approval_id = f"approval_{uuid.uuid4().hex[:12]}"
-        pa = PendingApproval(
-            approval_id=approval_id,
-            source_id=source_id,
-            operation=operation,
-            data=data or {},
-            requested_at=time.time(),
-            timeout_seconds=self.default_timeout,
-        )
-        with self._lock:
-            self._pending[approval_id] = pa
-        logger.info(f"Approval requested: {approval_id} for {source_id}/{operation}")
-        return pa
-
-    def resolve_approval(self, approval_id: str, decision: str, permanent_trust: bool = False) -> bool:
-        """Resolve a pending approval (approved/rejected)."""
-        with self._lock:
-            pa = self._pending.get(approval_id)
-            if pa is None:
-                return False
-            if pa.status != "pending":
-                return False
-
-            pa.status = "approved" if decision == "approved" else "rejected"
-            pa.resolution = decision
-
-            if permanent_trust and pa.status == "approved":
-                key = f"{pa.source_id}:{pa.operation}"
-                self._trust_cache[key] = RiskDecision.ALLOW
-
-            logger.info(f"Approval {approval_id} resolved: {decision}")
-            return True
-
-    def check_trust_cache(self, source_id: str, operation: str) -> Optional[RiskDecision]:
-        """Check if this agent+operation is permanently trusted."""
-        key = f"{source_id}:{operation}"
-        return self._trust_cache.get(key)
-
-    def get_pending(self, approval_id: Optional[str] = None, source_id: Optional[str] = None) -> List[PendingApproval]:
-        """Get pending approvals, optionally filtered."""
-        with self._lock:
-            now = time.time()
-            results = []
-            for pa in list(self._pending.values()):
-                if pa.status == "pending" and (now - pa.requested_at) > pa.timeout_seconds:
-                    pa.status = "timeout"
-                    pa.resolution = "timeout"
-                if pa.status != "pending":
-                    continue
-                if approval_id and pa.approval_id != approval_id:
-                    continue
-                if source_id and pa.source_id != source_id:
-                    continue
-                results.append(pa)
-            return results
-
-    def audit_log(self, start_time: Optional[float] = None, end_time: Optional[float] = None, source_id: Optional[str] = None) -> List[Dict]:
-        """Return audit log of all resolved approvals."""
-        with self._lock:
-            logs = []
-            for pa in self._pending.values():
-                if pa.status == "pending":
-                    continue
-                if start_time and pa.requested_at < start_time:
-                    continue
-                if end_time and pa.requested_at > end_time:
-                    continue
-                if source_id and pa.source_id != source_id:
-                    continue
-                logs.append({
-                    "approval_id": pa.approval_id,
-                    "source_id": pa.source_id,
-                    "operation": pa.operation,
-                    "status": pa.status,
-                    "resolution": pa.resolution,
-                    "requested_at": pa.requested_at,
-                })
-            return sorted(logs, key=lambda x: x["requested_at"])
-
-
-# ---------------------------------------------------------------------------
-# Risk-Aware Gateway
-# ---------------------------------------------------------------------------
 
 class RiskAwareGateway:
     """
-    Three-layer risk audit gateway.
-
-    Usage:
-        gateway = RiskAwareGateway()
-        decision = await gateway.evaluate("agent_1", "api_call", {"endpoint": "/delete"})
+    三层审核网关：
+    1. 规则引擎（静态规则匹配）
+    2. 动态评估（启发式评分）
+    3. 用户确认（高风险需人工确认）
     """
 
-    def __init__(self, rules_path: Optional[str] = None, llm_client=None, default_timeout: int = 300):
-        self.rule_engine = RuleEngine(rules_path)
-        self.llm_reviewer = LLMRiskReviewer(llm_client)
-        self.approval_service = ApprovalService(default_timeout)
+    # 规则模式: (pattern, risk_level, reason, attack_scenario, fix_suggestion, can_auto, fix_cmd)
+    RULES = [
+        # 高危命令
+        (
+            r"rm\s+-rf\s+/",
+            "critical",
+            "检测到删除根目录命令",
+            "恶意技能可销毁整个文件系统",
+            "立即删除该技能文件并审查来源",
+            False,
+            "",
+        ),
+        (
+            r"os\.system\(.*rm",
+            "high",
+            "检测到通过 os.system 执行删除操作",
+            "可执行任意系统命令，导致数据丢失",
+            "审查代码逻辑，使用安全的文件删除 API",
+            False,
+            "",
+        ),
+        # 敏感文件访问
+        (
+            r"~\/\.ssh\/id_rsa|~\/\.ssh\/id_ed25519",
+            "high",
+            "尝试访问 SSH 私钥",
+            "私钥泄露可导致服务器被完全控制",
+            "禁止技能访问 SSH 目录，使用专用凭证管理",
+            False,
+            "",
+        ),
+        (
+            r"\.env.*=.*['\"]sk-",
+            "high",
+            "API Key 以明文形式存储",
+            "凭证泄露可导致云服务被恶意使用",
+            "迁移到 CredentialVault 加密存储",
+            False,
+            "",
+        ),
+        # 网络暴露
+        (
+            r"0\.0\.0\.0:\d+",
+            "medium",
+            "服务监听在 0.0.0.0（所有接口）",
+            "外部网络可直接访问本地服务",
+            "将绑定地址改为 127.0.0.1",
+            True,
+            "sed -i 's/0.0.0.0/127.0.0.1/g' config",
+        ),
+        # 弱口令
+        (
+            r"password\s*=\s*['\"]?(admin|123456|password|default)['\"]?",
+            "high",
+            "检测到弱口令配置",
+            "易被暴力破解，导致未授权访问",
+            "生成强密码并更新配置",
+            True,
+            "python -c \"import secrets; print(secrets.token_urlsafe(32))\"",
+        ),
+        # 空凭证
+        (
+            r"API_KEY\s*=\s*['\"]?\s*['\"]?|api_key\s*=\s*['\"]?\s*['\"]?",
+            "medium",
+            "API Key 未配置（空值或占位符）",
+            "相关功能不可用，可能暴露默认行为",
+            "配置有效的 API Key 或禁用相关功能",
+            False,
+            "",
+        ),
+    ]
 
-    async def evaluate(self, source_id: str, operation: str, data: Optional[Dict] = None, context: Optional[Dict] = None) -> tuple:
+    def __init__(self):
+        self.history: List[Dict[str, Any]] = []
+
+    def assess(self, context: str, source: str = "unknown") -> RiskAssessment:
         """
-        Three-layer evaluation pipeline.
-
-        Returns:
-            (RiskDecision, reason, approval_id_or_none)
+        评估给定内容的风险等级。
+        context: 待审查的文本内容
+        source: 内容来源标识
         """
-        # Layer 1: Rule Engine
-        rule_result = self.rule_engine.evaluate(operation, data)
-        if rule_result:
-            decision, reason = rule_result
-            logger.info(f"RuleEngine: {decision} for {operation} ({reason})")
-            return decision, reason, None
+        max_score = 0.0
+        matched_reasons = []
+        attack_scenarios = []
+        fix_suggestions = []
+        auto_fixable = False
+        fix_cmd = None
 
-        # Layer 2: LLM Reviewer
-        llm_decision, llm_reason = self.llm_reviewer.evaluate(source_id, operation, data)
-        logger.info(f"LLMReviewer: {llm_decision} for {operation} ({llm_reason})")
+        for rule in self.RULES:
+            if len(rule) == 6:
+                pattern, level, reason, attack, fix, can_auto = rule
+                fix_cmd = ""
+            else:
+                pattern, level, reason, attack, fix, can_auto, fix_cmd = rule
+            if re.search(pattern, context, re.IGNORECASE):
+                score = self._level_to_score(level)
+                if score > max_score:
+                    max_score = score
+                matched_reasons.append(reason)
+                attack_scenarios.append(attack)
+                fix_suggestions.append(fix)
+                if can_auto:
+                    auto_fixable = True
+                    fix_cmd = fix_cmd or self._generate_fix_command(pattern, context)
 
-        if llm_decision == RiskDecision.ALLOW:
-            return RiskDecision.ALLOW, llm_reason, None
+        if not matched_reasons:
+            return RiskAssessment(
+                level="none",
+                score=0.0,
+                reason="未发现风险",
+                attack_scenario="无",
+                fix_suggestion="无需修复",
+                auto_fixable=False,
+            )
 
-        if llm_decision == RiskDecision.BLOCK:
-            return RiskDecision.BLOCK, llm_reason, None
+        final_level = self._score_to_level(max_score)
 
-        # Layer 3: Approval Service (medium risk)
-        # Check trust cache first
-        cached = self.approval_service.check_trust_cache(source_id, operation)
-        if cached == RiskDecision.ALLOW:
-            return RiskDecision.ALLOW, "Permanently trusted", None
+        # K-10: 高风险/关键风险进入审批队列
+        requires_approval = final_level in ("high", "critical")
+        approval_id = None
+        if requires_approval:
+            approval_id = submit_for_approval(
+                title=f"{source} 存在 {final_level.upper()} 风险",
+                description="; ".join(matched_reasons),
+                risk=final_level,
+                source=source,
+                payload={"context": context[:500]},
+            )
 
-        pa = self.approval_service.request_approval(source_id, operation, data)
-        return RiskDecision.CONFIRM, f"Pending approval: {pa.approval_id}", pa.approval_id
+        result = RiskAssessment(
+            level=final_level,
+            score=max_score,
+            reason="; ".join(matched_reasons),
+            attack_scenario="; ".join(attack_scenarios),
+            fix_suggestion="; ".join(fix_suggestions),
+            auto_fixable=auto_fixable,
+            fix_command=fix_cmd,
+            requires_approval=requires_approval,
+            approval_id=approval_id,
+        )
 
-    def resolve_approval(self, approval_id: str, decision: str, permanent_trust: bool = False) -> bool:
-        """Resolve a pending user approval."""
-        return self.approval_service.resolve_approval(approval_id, decision, permanent_trust)
+        self.history.append({
+            "source": source,
+            "level": final_level,
+            "score": max_score,
+            "reason": result.reason,
+            "approval_id": approval_id,
+        })
+        return result
 
-    def audit_log(self, start_time: Optional[float] = None, end_time: Optional[float] = None, source_id: Optional[str] = None) -> List[Dict]:
-        """Query the audit log."""
-        return self.approval_service.audit_log(start_time, end_time, source_id)
+    def assess_file(self, file_path: str) -> RiskAssessment:
+        """评估文件内容风险"""
+        p = __import__("pathlib").Path(file_path)
+        if not p.exists():
+            return RiskAssessment(
+                level="none", score=0.0, reason="文件不存在",
+                attack_scenario="无", fix_suggestion="无需修复", auto_fixable=False
+            )
+        if p.is_dir():
+            # 对目录进行浅层扫描
+            risky_content = []
+            for child in p.iterdir():
+                if child.is_file() and child.stat().st_size < 1024 * 1024:  # 只扫描 < 1MB 文件
+                    try:
+                        text = child.read_text(encoding="utf-8", errors="ignore")
+                        risky_content.append(text)
+                    except Exception:
+                        pass
+            content = "\n".join(risky_content)
+        else:
+            content = p.read_text(encoding="utf-8", errors="ignore")
+        return self.assess(content, source=str(p))
+
+    def assess_directory(self, dir_path: str, pattern: str = "*") -> List[RiskAssessment]:
+        """批量评估目录下的文件"""
+        results = []
+        p = __import__("pathlib").Path(dir_path)
+        if p.exists():
+            for f in p.rglob(pattern):
+                if f.is_file():
+                    results.append(self.assess_file(str(f)))
+        return results
+
+    @staticmethod
+    def _level_to_score(level: str) -> float:
+        mapping = {"none": 0.0, "low": 0.25, "medium": 0.5, "high": 0.75, "critical": 1.0}
+        return mapping.get(level, 0.0)
+
+    @staticmethod
+    def _score_to_level(score: float) -> str:
+        if score >= 0.9:
+            return "critical"
+        if score >= 0.7:
+            return "high"
+        if score >= 0.4:
+            return "medium"
+        if score >= 0.1:
+            return "low"
+        return "none"
+
+    def _generate_fix_command(self, pattern: str, context: str) -> Optional[str]:
+        """根据匹配模式生成修复命令"""
+        if "0.0.0.0" in pattern:
+            return "sed -i 's/0.0.0.0/127.0.0.1/g' config"
+        if "password" in pattern:
+            return 'python -c "import secrets; print(secrets.token_urlsafe(32))"'
+        return None
+
+    def assess_with_provenance(self, context: str, source: str = "unknown", memory_key: Optional[str] = None) -> RiskAssessment:
+        """
+        带溯源信息的风险评估
+
+        在基础 assess 之上，查询该内容的污点追溯记录，
+        如果来自高风险来源，自动提升风险等级。
+        """
+        base = self.assess(context, source)
+
+        if memory_key:
+            try:
+                from core.security.taint_tracker import get_taint_tracker
+                tracker = get_taint_tracker()
+                provenance = tracker.get_provenance(memory_key)
+                if provenance:
+                    risky_sources = {"api:untrusted", "web:unknown", "file:unverified"}
+                    for p in provenance:
+                        if p["source"] in risky_sources:
+                            # 提升风险等级
+                            new_score = min(base.score + 0.2, 1.0)
+                            base.score = new_score
+                            base.level = self._score_to_level(new_score)
+                            base.reason += f" [溯源警告: 数据来自高风险来源 {p['source']}]"
+                            break
+            except Exception:
+                pass
+
+        return base
+
+    def summary(self) -> Dict[str, Any]:
+        """返回历史评估摘要"""
+        if not self.history:
+            return {"total": 0, "max_level": "none", "critical_count": 0}
+        levels = [h["level"] for h in self.history]
+        scores = [h["score"] for h in self.history]
+        return {
+            "total": len(self.history),
+            "max_level": max(levels, key=lambda x: self._level_to_score(x)),
+            "max_score": max(scores),
+            "critical_count": sum(1 for l in levels if l == "critical"),
+            "high_count": sum(1 for l in levels if l == "high"),
+        }

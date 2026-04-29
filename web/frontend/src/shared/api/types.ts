@@ -54,6 +54,15 @@ export interface ChatResponse {
   timestamp: string
 }
 
+export interface ReasoningStep {
+  step: number
+  title: string
+  detail: string
+  tool?: string
+  memory_refs?: string[]
+  confidence: number
+}
+
 export interface Message {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -67,6 +76,7 @@ export interface Message {
     confidence: number
     agent_state: string
   }
+  reasoning?: ReasoningStep[]
 }
 
 export interface ChatSession {

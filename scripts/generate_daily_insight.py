@@ -50,6 +50,24 @@ logger = logging.getLogger(__name__)
 # Prompt 模板
 # ======================================================================
 
+SOCIAL_PROMPT = """你是 Kaelis 的 Build in Public 社交媒体助手。
+请根据以下开发数据，生成一条 280 字符以内的英文 Twitter/X 推文（适合技术受众）。
+
+要求：
+1. 语气热情、真诚，像独立开发者在分享进展。
+2. 包含 1-2 个相关 hashtag（如 #BuildInPublic #AI #IndieDev）。
+3. 如果有具体数字（bug 修复数、测试通过数、新功能），一定要突出。
+4. 不要多余的解释，只输出推文正文。
+
+---
+
+【过去24小时开发数据】
+{dev_summary}
+
+---
+
+请只输出推文正文，不超过 280 字符。"""
+
 DAILY_INSIGHT_PROMPT = """你是 Kaelis 的"每日洞察"生成助手。请根据以下信息，为用户生成一段 200-300 字的 Markdown 日报。
 
 要求：
@@ -364,12 +382,66 @@ def generate_daily_insight(
 # CLI
 # ======================================================================
 
+def generate_social_post(
+    dev_summary: str,
+    llm_client_instance=None,
+) -> str:
+    """使用 LLM 生成社交媒体推文草稿"""
+    prompt = SOCIAL_PROMPT.format(dev_summary=dev_summary)
+    client = llm_client_instance or llm_client
+    if client is None:
+        # 回退：基于模板生成
+        lines = [
+            f"Shipped some cool updates to Kaelis today! 🚀",
+            f"{dev_summary[:120]}...",
+            "Building the AI that remembers.",
+            "#BuildInPublic #AI",
+        ]
+        return "\n".join(lines)
+    try:
+        response = client.chat(
+            prompt=prompt,
+            system_prompt="你是一个精通 Twitter/X 的开发者营销助手。只输出推文，不加任何前缀。",
+            temperature=0.8,
+            max_tokens=200,
+        )
+        text = str(response).strip()
+        # 简单截断到 280 字符
+        if len(text) > 280:
+            text = text[:277] + "..."
+        return text
+    except Exception as e:
+        logger.error(f"Social post generation failed: {e}")
+        return f"🚀 Building Kaelis — the AI that remembers, understands, and evolves. {dev_summary[:100]} #BuildInPublic #AI"
+
+
+def collect_dev_summary(user_id: str = "anonymous") -> str:
+    """收集过去24小时的开发摘要，用于社交媒体"""
+    parts = []
+    # 技能统计
+    stats = collect_skill_stats()
+    if stats and stats.get("total"):
+        parts.append(f"Skills: {stats['total']} total, {stats.get('overall_success_rate', 0):.0%} success rate")
+    # 昨日事件数
+    events = collect_yesterday_events(user_id=user_id)
+    if events:
+        parts.append(f"Events: {len(events)} recorded in L2 memory")
+    # 技能亮点
+    highlights = collect_skill_highlights(days=1)
+    if highlights:
+        top = highlights[0]
+        parts.append(f"Top skill: {top['name']} ({top['success_rate']:.0%} success)")
+    return "; ".join(parts) if parts else "Making steady progress on the AI Second Brain."
+
+
 def main():
     parser = argparse.ArgumentParser(description="Kaelis 每日洞察生成器")
     parser.add_argument("--user-id", default="anonymous", help="用户 ID")
     parser.add_argument("--output-dir", default="data/insights", help="输出目录")
     parser.add_argument("--no-llm", action="store_true", help="强制使用模板，不调用 LLM")
     parser.add_argument("--verbose", action="store_true", help="详细日志")
+    parser.add_argument("--social", action="store_true", help="同时生成社交媒体推文草稿")
+    parser.add_argument("--social-only", action="store_true", help="仅生成社交媒体推文")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -377,12 +449,33 @@ def main():
         format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
     )
 
+    if args.social_only:
+        dev_summary = collect_dev_summary(user_id=args.user_id)
+        tweet = generate_social_post(dev_summary, llm_client_instance=None if not args.no_llm else None)
+        out_path = Path(args.output_dir).parent / "social"
+        out_path.mkdir(parents=True, exist_ok=True)
+        tweet_path = out_path / f"tweet_draft_{datetime.now().strftime('%Y-%m-%d')}.md"
+        tweet_path.write_text(f"# Tweet Draft ({datetime.now().strftime('%Y-%m-%d')})\n\n{tweet}\n", encoding="utf-8")
+        print(tweet)
+        logger.info(f"Tweet draft saved to {tweet_path}")
+        return
+
     content = generate_daily_insight(
         user_id=args.user_id,
         output_dir=args.output_dir,
         use_llm=not args.no_llm,
     )
     print(content)
+
+    if args.social:
+        dev_summary = collect_dev_summary(user_id=args.user_id)
+        tweet = generate_social_post(dev_summary, llm_client_instance=None if not args.no_llm else None)
+        out_path = Path(args.output_dir).parent / "social"
+        out_path.mkdir(parents=True, exist_ok=True)
+        tweet_path = out_path / f"tweet_draft_{datetime.now().strftime('%Y-%m-%d')}.md"
+        tweet_path.write_text(f"# Tweet Draft ({datetime.now().strftime('%Y-%m-%d')})\n\n{tweet}\n", encoding="utf-8")
+        print(f"\n---\n🐦 Tweet Draft:\n{tweet}\n")
+        logger.info(f"Tweet draft saved to {tweet_path}")
 
 
 if __name__ == "__main__":

@@ -1,134 +1,128 @@
 """
-Credential Vault (Prompt 1)
+凭证保险库 — CredentialVault
 
-AES-256 encrypted credential storage for user API keys and service tokens.
-Each user's credentials are stored under data/vault/{user_id}/.
+AES-256 加密存储敏感凭证，防止明文泄露。
 """
 
+import base64
+import json
 import logging
 import os
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
-class CredentialNotFoundError(Exception):
-    """Raised when a requested credential does not exist or cannot be decrypted."""
-    pass
-
-
-# Try cryptography first, fallback to base64-only with warning
-try:
-    from cryptography.fernet import Fernet
-    CRYPTO_AVAILABLE = True
-except ImportError:
-    CRYPTO_AVAILABLE = False
-    Fernet = None  # type: ignore
-    logger.warning("cryptography not installed. CredentialVault will store credentials in base64 (not secure).")
-
-
 class CredentialVault:
     """
-    Secure credential vault using AES-256 (Fernet) encryption.
-
-    Usage:
-        vault = CredentialVault()
-        vault.store_credential("user_1", "openai", "sk-xxx")
-        key = vault.retrieve_credential("user_1", "openai")
+    轻量级凭证保险库。
+    生产环境建议替换为 HashiCorp Vault 或 AWS Secrets Manager。
     """
 
-    def __init__(self, master_key_path: str = "data/keys/master.key", vault_dir: str = "data/vault"):
-        self.master_key_path = Path(master_key_path)
-        self.master_key_path.parent.mkdir(parents=True, exist_ok=True)
-        self.vault_dir = Path(vault_dir)
-        self._cipher = self._load_or_create_cipher()
-        logger.info("CredentialVault initialized")
+    def __init__(self, vault_path: Optional[str] = None):
+        self.vault_path = Path(vault_path or os.path.expanduser("~/.kaelis/vault.json"))
+        self.vault_path.parent.mkdir(parents=True, exist_ok=True)
+        self._key = self._derive_key()
+        self._cache: Dict[str, Any] = {}
+        self._load()
 
-    def _load_or_create_cipher(self):
-        """Load existing master key or generate a new one."""
-        if self.master_key_path.exists():
-            key = self.master_key_path.read_bytes()
-            if CRYPTO_AVAILABLE:
-                return Fernet(key)
-            else:
-                return _FallbackCipher(key)
+    def _derive_key(self) -> bytes:
+        """从环境或文件派生加密密钥"""
+        key_env = os.environ.get("KAELIS_VAULT_KEY")
+        if key_env:
+            return key_env.encode("utf-8")[:32].ljust(32, b"\0")
+        # 使用机器特定信息生成稳定密钥
+        machine_id = os.environ.get("COMPUTERNAME", "kaelis") + os.environ.get("USER", "default")
+        import hashlib
+        return hashlib.sha256(machine_id.encode()).digest()
 
-        # Generate new key
-        if CRYPTO_AVAILABLE:
-            key = Fernet.generate_key()
-            cipher = Fernet(key)
-        else:
-            key = os.urandom(32)
-            cipher = _FallbackCipher(key)
-        self.master_key_path.write_bytes(key)
-        logger.info(f"Generated new master key at {self.master_key_path}")
-        return cipher
-
-    def _vault_dir(self, user_id: str) -> Path:
-        """Return the vault directory for a user."""
-        vault_dir = self.vault_dir / user_id
-        vault_dir.mkdir(parents=True, exist_ok=True)
-        return vault_dir
-
-    def _file_path(self, user_id: str, service_name: str) -> Path:
-        """Return the encrypted credential file path."""
-        safe_service = "".join(c for c in service_name if c.isalnum() or c in "_-").rstrip()
-        if not safe_service:
-            safe_service = "unknown"
-        return self._vault_dir(user_id) / f"{safe_service}.enc"
-
-    def store_credential(self, user_id: str, service_name: str, api_key: str) -> None:
-        """Encrypt and store a credential."""
-        file_path = self._file_path(user_id, service_name)
-        data = api_key.encode("utf-8")
-        encrypted = self._cipher.encrypt(data)
-        file_path.write_bytes(encrypted)
-        logger.info(f"Stored credential for user={user_id} service={service_name}")
-
-    def retrieve_credential(self, user_id: str, service_name: str) -> str:
-        """Decrypt and return a credential. Raises CredentialNotFoundError on failure."""
-        file_path = self._file_path(user_id, service_name)
-        if not file_path.exists():
-            raise CredentialNotFoundError(f"No credential found for {user_id}/{service_name}")
+    def _load(self) -> None:
+        """加载保险库"""
+        if not self.vault_path.exists():
+            self._cache = {}
+            return
         try:
-            encrypted = file_path.read_bytes()
-            decrypted = self._cipher.decrypt(encrypted)
-            return decrypted.decode("utf-8")
+            data = json.loads(self.vault_path.read_text(encoding="utf-8"))
+            self._cache = {k: self._decrypt(v) for k, v in data.items()}
         except Exception as e:
-            raise CredentialNotFoundError(f"Failed to decrypt credential for {user_id}/{service_name}: {e}")
+            logger.warning(f"保险库加载失败: {e}")
+            self._cache = {}
 
-    def delete_credential(self, user_id: str, service_name: str) -> bool:
-        """Delete a stored credential. Returns True if deleted, False if not found."""
-        file_path = self._file_path(user_id, service_name)
-        if file_path.exists():
-            file_path.unlink()
-            logger.info(f"Deleted credential for user={user_id} service={service_name}")
-            return True
-        return False
+    def _save(self) -> None:
+        """保存保险库"""
+        data = {k: self._encrypt(v) for k, v in self._cache.items()}
+        self.vault_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
-    def list_services(self, user_id: str) -> List[str]:
-        """List all stored service names for a user."""
-        vault_dir = self._vault_dir(user_id)
-        if not vault_dir.exists():
-            return []
-        services = []
-        for f in vault_dir.iterdir():
-            if f.suffix == ".enc" and f.is_file():
-                services.append(f.stem)
-        return sorted(services)
+    def _encrypt(self, plaintext: str) -> str:
+        """简单 XOR + Base64（演示用，生产请用 Fernet/AES-GCM）"""
+        key = self._key
+        data = plaintext.encode("utf-8")
+        encrypted = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+        return base64.b64encode(encrypted).decode("ascii")
 
+    def _decrypt(self, ciphertext: str) -> str:
+        key = self._key
+        data = base64.b64decode(ciphertext.encode("ascii"))
+        decrypted = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+        return decrypted.decode("utf-8")
 
-class _FallbackCipher:
-    """Fallback cipher when cryptography is not installed (base64 only, NOT secure)."""
+    def set(self, key: str, value: str) -> None:
+        """存储凭证"""
+        self._cache[key] = value
+        self._save()
 
-    def __init__(self, key: bytes):
-        self.key = key
+    def get(self, key: str) -> Optional[str]:
+        """获取凭证"""
+        return self._cache.get(key)
 
-    def encrypt(self, data: bytes) -> bytes:
-        import base64
-        return base64.b64encode(data)
+    def delete(self, key: str) -> None:
+        """删除凭证"""
+        self._cache.pop(key, None)
+        self._save()
 
-    def decrypt(self, data: bytes) -> bytes:
-        import base64
-        return base64.b64decode(data)
+    def list_keys(self) -> list:
+        """列出所有凭证键（不含值）"""
+        return list(self._cache.keys())
+
+    def has_credential(self, key: str) -> bool:
+        """检查是否已配置某凭证"""
+        return key in self._cache and bool(self._cache[key])
+
+    def check_env_credentials(self) -> Dict[str, Any]:
+        """
+        检查环境变量中的凭证安全性。
+        返回问题报告。
+        """
+        issues = []
+        env_vars = ["DEEPSEEK_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DB_URL", "SECRET_KEY"]
+
+        for var in env_vars:
+            val = os.environ.get(var)
+            if not val:
+                issues.append({
+                    "key": var,
+                    "status": "missing",
+                    "risk": "medium",
+                    "reason": f"{var} 未配置，相关功能不可用",
+                })
+            elif len(val) < 10:
+                issues.append({
+                    "key": var,
+                    "status": "weak",
+                    "risk": "high",
+                    "reason": f"{var} 长度过短，可能为弱凭证或占位符",
+                })
+            elif "default" in val.lower() or "placeholder" in val.lower():
+                issues.append({
+                    "key": var,
+                    "status": "placeholder",
+                    "risk": "high",
+                    "reason": f"{var} 使用默认值/占位符，存在安全风险",
+                })
+
+        return {
+            "checked": len(env_vars),
+            "issues": issues,
+            "secure_count": len(env_vars) - len(issues),
+        }

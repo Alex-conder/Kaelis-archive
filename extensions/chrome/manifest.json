@@ -1,19 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "Kaelis — AI Second Brain",
+  "name": "Kaelis — AI Second Brain for the Web",
   "version": "0.1.0",
-  "description": "Your AI companion with persistent memory. Works with ChatGPT, Claude, Kimi and more.",
+  "description": "Inject Kaelis memory and skills into ChatGPT, Claude, and any web AI.",
   "permissions": [
-    "activeTab",
     "storage",
-    "scripting",
-    "tabs"
+    "activeTab"
   ],
   "host_permissions": [
-    "http://localhost:5000/",
     "https://chat.openai.com/*",
     "https://claude.ai/*",
-    "https://kimi.moonshot.cn/*"
+    "https://gemini.google.com/*",
+    "http://localhost:5000/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,34 +20,25 @@
     {
       "matches": [
         "https://chat.openai.com/*",
-        "https://chatgpt.com/*",
         "https://claude.ai/*",
-        "https://kimi.moonshot.cn/*",
-        "https://github.com/*",
-        "https://arxiv.org/*",
-        "https://scholar.google.com/*"
+        "https://gemini.google.com/*"
       ],
       "js": ["content.js"],
+      "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["sidebar.html", "icon.png"],
-      "matches": ["<all_urls>"]
-    }
-  ],
   "action": {
-    "default_title": "Kaelis Memory",
+    "default_popup": "popup.html",
     "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
     }
   },
   "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   }
 }

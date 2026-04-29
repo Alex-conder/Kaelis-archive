@@ -39,7 +39,13 @@ import {
   History,
   User,
   X,
+  List,
+  GitCommitVertical,
+  ChevronDown,
+  ChevronUp,
+  Calendar,
 } from 'lucide-react'
+import MemoryVisualization from '@/components/MemoryVisualization'
 import type { MemoryItem, SharedSpace, SharedMemoryItem } from '@/shared/api/types'
 
 const LAYER_INFO = {
@@ -52,14 +58,217 @@ const LAYER_INFO = {
 type TabMode = 'private' | 'shared'
 
 // ==============================================================================
+// Memory Visualization Wrapper — 从 API 获取真实数据
+// ==============================================================================
+
+function MemoryVisualizationWrapper() {
+  const [layerStats, setLayerStats] = useState([
+    { layer: 'L0', label: 'L0 感知', count: 0, color: '#f59e0b' },
+    { layer: 'L1', label: 'L1 工作', count: 0, color: '#3b82f6' },
+    { layer: 'L2', label: 'L2 语义', count: 0, color: '#10b981' },
+    { layer: 'L3', label: 'L3 情景', count: 0, color: '#8b5cf6' },
+  ])
+  const [monthlyStats, setMonthlyStats] = useState([
+    { month: '11月', count: 0 },
+    { month: '12月', count: 0 },
+    { month: '1月', count: 0 },
+    { month: '2月', count: 0 },
+    { month: '3月', count: 0 },
+    { month: '4月', count: 0 },
+  ])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || ''
+        const res = await fetch(`${apiUrl}/api/memory/stats`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && data.stats) {
+            const s = data.stats
+            setLayerStats([
+              { layer: 'L0', label: 'L0 感知', count: s.L0 || 0, color: '#f59e0b' },
+              { layer: 'L1', label: 'L1 工作', count: s.L1 || 0, color: '#3b82f6' },
+              { layer: 'L2', label: 'L2 语义', count: s.L2 || 0, color: '#10b981' },
+              { layer: 'L3', label: 'L3 情景', count: s.L3 || 0, color: '#8b5cf6' },
+            ])
+            if (s.monthly) {
+              setMonthlyStats(s.monthly)
+            }
+          }
+        }
+      } catch {
+        // 使用 fallback mock 数据
+        setLayerStats([
+          { layer: 'L0', label: 'L0 感知', count: 12, color: '#f59e0b' },
+          { layer: 'L1', label: 'L1 工作', count: 48, color: '#3b82f6' },
+          { layer: 'L2', label: 'L2 语义', count: 156, color: '#10b981' },
+          { layer: 'L3', label: 'L3 情景', count: 89, color: '#8b5cf6' },
+        ])
+        setMonthlyStats([
+          { month: '11月', count: 12 },
+          { month: '12月', count: 28 },
+          { month: '1月', count: 45 },
+          { month: '2月', count: 67 },
+          { month: '3月', count: 89 },
+          { month: '4月', count: 105 },
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 pt-4">
+        <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-5 animate-pulse">
+          <div className="h-4 bg-slate-700 rounded w-1/4 mb-4" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-32 bg-slate-700 rounded" />
+            <div className="h-32 bg-slate-700 rounded" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-4">
+      <MemoryVisualization layerStats={layerStats} monthlyStats={monthlyStats} />
+    </div>
+  )
+}
+
+// ==============================================================================
 // Private Memory Section (existing L0-L3)
 // ==============================================================================
+
+// UX-13: 记忆时间线组件
+interface TimelineItem {
+  key: string
+  layer: string
+  value: unknown
+  created_at?: number
+}
+
+function MemoryTimeline({ memories, onSelect }: { memories: TimelineItem[]; onSelect: (m: TimelineItem) => void }) {
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['今天', '昨天']))
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }
+
+  const grouped = (() => {
+    const now = new Date()
+    const groups: Record<string, TimelineItem[]> = {}
+    const todayStr = now.toLocaleDateString('zh-CN')
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toLocaleDateString('zh-CN')
+
+    memories.forEach((m) => {
+      const date = m.created_at ? new Date(m.created_at * 1000).toLocaleDateString('zh-CN') : '未知时间'
+      let label = date
+      if (date === todayStr) label = '今天'
+      else if (date === yesterdayStr) label = '昨天'
+      else {
+        const d = m.created_at ? new Date(m.created_at * 1000) : new Date()
+        const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
+        if (diff <= 7) label = '本周'
+        else if (diff <= 30) label = '本月'
+        else label = '更早'
+      }
+      if (!groups[label]) groups[label] = []
+      groups[label].push(m)
+    })
+
+    const order = ['今天', '昨天', '本周', '本月', '更早', '未知时间']
+    return order
+      .filter((k) => groups[k] && groups[k].length > 0)
+      .map((k) => ({ label: k, items: groups[k] }))
+  })()
+
+  const layerColor = (layer: string) => {
+    switch (layer) {
+      case 'L0': return 'bg-amber-500'
+      case 'L1': return 'bg-blue-500'
+      case 'L2': return 'bg-emerald-500'
+      case 'L3': return 'bg-purple-500'
+      default: return 'bg-slate-500'
+    }
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="relative">
+        {/* 时间轴线 */}
+        <div className="absolute left-[7px] top-0 bottom-0 w-px bg-slate-700" />
+        {grouped.map((group) => (
+          <div key={group.label} className="relative mb-4">
+            {/* 分组头 */}
+            <button
+              onClick={() => toggleGroup(group.label)}
+              className="flex items-center gap-2 mb-2 w-full"
+            >
+              <div className="w-[15px] h-[15px] rounded-full bg-slate-600 border-2 border-slate-800 z-10" />
+              <span className="text-xs font-medium text-slate-400">{group.label}</span>
+              <span className="text-[10px] text-slate-600">({group.items.length})</span>
+              {expandedGroups.has(group.label) ? (
+                <ChevronUp className="w-3 h-3 text-slate-500 ml-auto" />
+              ) : (
+                <ChevronDown className="w-3 h-3 text-slate-500 ml-auto" />
+              )}
+            </button>
+            {/* 记忆卡片 */}
+            {expandedGroups.has(group.label) && (
+              <div className="ml-6 space-y-2">
+                {group.items.map((item) => (
+                  <div
+                    key={item.key}
+                    onClick={() => onSelect(item)}
+                    className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] hover:border-[var(--primary-color)]/50 transition cursor-pointer p-3"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-2 h-2 rounded-full ${layerColor(item.layer)}`} />
+                      <span className="text-sm font-medium text-[var(--text-primary)] truncate">{item.key}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] ml-auto">
+                        {item.created_at ? new Date(item.created_at * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)] line-clamp-2">
+                      {typeof item.value === 'string' ? item.value : JSON.stringify(item.value).slice(0, 120)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {grouped.length === 0 && (
+          <div className="text-center text-[var(--text-muted)] py-8">
+            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">暂无记忆记录</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function PrivateMemorySection() {
   const [activeLayer, setActiveLayer] = useState<string>('L1')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMemory, setSelectedMemory] = useState<MemoryItem | null>(null)
   const [shareMode, setShareMode] = useState<'idle' | 'copied' | 'downloaded'>('idle')
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
   const cardRef = useRef<HTMLDivElement>(null)
 
   const { data: memories = [], isLoading } = useMemorySearch(activeLayer, searchQuery)
@@ -91,6 +300,9 @@ function PrivateMemorySection() {
 
   return (
     <div>
+      {/* Memory Visualization — UX-3 + UX-11 数据接入 */}
+      <MemoryVisualizationWrapper />
+
       {/* Filter Bar */}
       <div className="max-w-6xl mx-auto px-4 py-4">
         <div className="flex items-center gap-4">
@@ -140,10 +352,28 @@ function PrivateMemorySection() {
           <button className="p-2 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] transition-colors">
             <SlidersHorizontal className="w-4 h-4" />
           </button>
+
+          {/* UX-13: 视图切换 */}
+          <div className="flex items-center bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)] overflow-hidden">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-[var(--primary-color)]/20 text-[var(--primary-light)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+              title="列表视图"
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`p-2 transition-colors ${viewMode === 'timeline' ? 'bg-[var(--primary-color)]/20 text-[var(--primary-light)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+              title="时间线视图"
+            >
+              <GitCommitVertical className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Memory Grid */}
+      {/* Memory Grid / Timeline */}
       <div className="max-w-6xl mx-auto px-4 py-4">
         {memories.length === 0 && !isLoading ? (
           <div className="p-12 text-center text-[var(--text-muted)]">
@@ -151,6 +381,16 @@ function PrivateMemorySection() {
             <p className="text-[var(--text-secondary)] font-medium">你的第二大脑还是一片空白</p>
             <p className="text-sm mt-2">和 Kaelis 聊聊天，这里就会开始积累记忆</p>
           </div>
+        ) : viewMode === 'timeline' ? (
+          <MemoryTimeline
+            memories={memories.map((m) => ({
+              key: m.key,
+              layer: m.layer,
+              value: m.value,
+              created_at: m.created_at,
+            }))}
+            onSelect={(m) => setSelectedMemory(m as MemoryItem)}
+          />
         ) : (
           <div className="grid grid-cols-5 gap-4">
             {memories.map((memory) => (

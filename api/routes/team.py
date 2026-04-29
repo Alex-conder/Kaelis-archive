@@ -206,53 +206,11 @@ def log_request(f):
 
 @log_request
 def getTeamSyncStatus():
-    """
-    获取团队同步状态
-    
-    OpenAPI Operation: getTeamSyncStatus
-    Path: /api/team/status
-    Method: GET
-    
-    
-    
-    
-    Response:
-        Schema: TeamSyncStatusResponse
-    
-    
-    Returns:
-        JSON response conforming to TeamSyncStatusResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # TODO: Implement getTeamSyncStatus logic (no request body)
-        
-        
-        
-        # Build response using typed model
-        response = TeamSyncStatusResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

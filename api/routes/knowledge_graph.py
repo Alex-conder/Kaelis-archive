@@ -279,130 +279,17 @@ def log_request(f):
 @validate_request(KGExtractRequest)
 @log_request
 def kgExtract():
-    """
-    从文本提取知识三元组
-    
-    OpenAPI Operation: kgExtract
-    Path: /api/kg/extract
-    Method: POST
-    
-    
-    Description:
-        从自然语言文本中提取知识图谱三元组。
-
-        **注意**：这是统一的入口，后端实现为 `extract_triples`，
-        但前端应调用此路径。
-
-    
-    
-    
-    Request Body:
-        Schema: KGExtractRequest
-    
-    
-    
-    Response:
-        Schema: KGExtractResponse
-    
-    
-    Returns:
-        JSON response conforming to KGExtractResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # Access validated request data
-        data = g.validated_data
-        
-        # TODO: Implement kgExtract logic
-        # Example:
-        # result = process_knowledge_graph_request(data)
-        
-        
-        
-        # Build response using typed model
-        response = KGExtractResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
-@bp.route('/api/kg/query', methods=['POST'])
-@validate_request(KGQueryRequest)
-@log_request
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 def kgQuery():
-    """
-    查询知识图谱
-    
-    OpenAPI Operation: kgQuery
-    Path: /api/kg/query
-    Method: POST
-    
-    
-    
-    Request Body:
-        Schema: KGQueryRequest
-    
-    
-    
-    Response:
-        Schema: KGQueryResponse
-    
-    
-    Returns:
-        JSON response conforming to KGQueryResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # Access validated request data
-        data = g.validated_data
-        
-        # TODO: Implement kgQuery logic
-        # Example:
-        # result = process_knowledge_graph_request(data)
-        
-        
-        
-        # Build response using typed model
-        response = KGQueryResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

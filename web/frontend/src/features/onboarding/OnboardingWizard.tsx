@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { track } from '@/utils/telemetry'
+import { API_BASE_URL } from '@/shared/api/client'
 
 interface OnboardingWizardProps {
   onComplete?: () => void
@@ -7,7 +8,7 @@ interface OnboardingWizardProps {
 
 async function markOnboardingComplete() {
   try {
-    await fetch('http://localhost:5000/api/auth/onboarding/complete', { method: 'POST' })
+    await fetch(`${API_BASE_URL}/api/auth/onboarding/complete`, { method: 'POST' })
   } catch {
     // ignore
   }
@@ -15,7 +16,7 @@ async function markOnboardingComplete() {
 }
 
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
-  const [step, setStep] = useState<'welcome' | 'llm' | 'workflow' | 'done'>('welcome')
+  const [step, setStep] = useState<'welcome' | 'llm' | 'workflow' | 'tutorial' | 'done'>('welcome')
   const [apiKey, setApiKey] = useState('')
   const [provider, setProvider] = useState('openai')
   const [testing, setTesting] = useState(false)
@@ -40,7 +41,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     setTesting(true)
     setTestResult(null)
     try {
-      const res = await fetch('http://localhost:5000/api/llm/test', {
+      const res = await fetch(`${API_BASE_URL}/api/llm/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, api_key: apiKey })
@@ -68,13 +69,28 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   }
 
   const handleImportTemplate = async () => {
-    track('onboarding_step_complete', { step: 'workflow', next: 'done', action: 'import_template' })
+    track('onboarding_step_complete', { step: 'workflow', next: 'tutorial', action: 'import_template' })
     // 模拟导入示例工作流
     localStorage.setItem('kaelis_workflows', JSON.stringify([{
       id: 'template_1',
       name: '文献综述模板',
       template: 'literature_review'
     }]))
+    setStep('tutorial')
+  }
+
+  const handleTutorialComplete = async () => {
+    track('onboarding_step_complete', { step: 'tutorial', next: 'done' })
+    // 解锁"新手毕业"里程碑
+    try {
+      await fetch(`${API_BASE_URL}/api/journey/milestones/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: 'anonymous', milestone_id: 'onboarding_complete' }),
+      })
+    } catch {
+      // ignore
+    }
     await markOnboardingComplete()
     setStep('done')
     setTimeout(() => {
@@ -108,10 +124,12 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           {[
             { id: 'welcome', label: '欢迎' },
             { id: 'llm', label: '配置 LLM' },
-            { id: 'workflow', label: '工作流' }
+            { id: 'workflow', label: '工作流' },
+            { id: 'tutorial', label: '教学' }
           ].map((s, idx) => {
+            const steps = ['welcome', 'llm', 'workflow', 'tutorial']
             const isActive = step === s.id
-            const isPast = ['welcome', 'llm', 'workflow'].indexOf(step) > idx
+            const isPast = steps.indexOf(step) > idx
             return (
               <div key={s.id} className="flex items-center">
                 <div className={`
@@ -123,7 +141,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 <span className={`ml-2 text-sm ${isActive ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
                   {s.label}
                 </span>
-                {idx < 2 && <div className="w-12 h-px bg-gray-200 mx-3" />}
+                {idx < 3 && <div className="w-8 h-px bg-gray-200 mx-2" />}
               </div>
             )
           })}
@@ -239,10 +257,52 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 上一步
               </button>
               <button
-                onClick={handleSkip}
+                onClick={() => setStep('tutorial')}
                 className="text-gray-500 hover:text-gray-700 px-4 py-2"
               >
-                暂不导入
+                跳过导入
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* 教学引导步骤 — UX-4 */}
+        {step === 'tutorial' && (
+          <>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">快速上手</h2>
+            <p className="text-gray-600 mb-6">掌握这 3 个核心功能，让 Kaelis 更好地为你服务</p>
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start p-3 bg-purple-50 rounded-lg">
+                <span className="text-purple-600 font-bold mr-3 text-lg">💬</span>
+                <div>
+                  <p className="font-medium text-gray-800">对话中搜索记忆</p>
+                  <p className="text-sm text-gray-600">输入 <code className="bg-purple-100 px-1 rounded text-purple-700">#memory 关键词</code> 即可搜索历史记忆</p>
+                </div>
+              </div>
+              <div className="flex items-start p-3 bg-blue-50 rounded-lg">
+                <span className="text-blue-600 font-bold mr-3 text-lg">🛠️</span>
+                <div>
+                  <p className="font-medium text-gray-800">发现技能</p>
+                  <p className="text-sm text-gray-600">进入「Capabilities」页面，浏览和安装扩展技能</p>
+                </div>
+              </div>
+              <div className="flex items-start p-3 bg-emerald-50 rounded-lg">
+                <span className="text-emerald-600 font-bold mr-3 text-lg">🛡️</span>
+                <div>
+                  <p className="font-medium text-gray-800">安全体检</p>
+                  <p className="text-sm text-gray-600">进入「Security」页面，运行一次安全审计确保环境安全</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <button onClick={() => setStep('workflow')} className="text-gray-500 hover:text-gray-700 px-4 py-2">
+                上一步
+              </button>
+              <button
+                onClick={handleTutorialComplete}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"
+              >
+                完成引导 🎓
               </button>
             </div>
           </>

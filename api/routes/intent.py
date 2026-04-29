@@ -87,16 +87,6 @@ class IntentParseResponse(BaseModel):
         
 
 
-class ExecutionPlan(BaseModel):
-    """
-    ExecutionPlan
-
-    Auto-generated from OpenAPI schema: ExecutionPlan
-    """
-    steps: List[str] = []
-    target: Optional[str] = None
-
-
 class ExecutePlanRequest(BaseModel):
     """
     ExecutePlanRequest
@@ -285,126 +275,21 @@ def log_request(f):
 # ============================================================================
 
 
-@bp.route('/parse', methods=['POST'])
+@bp.route('/api/intent/parse', methods=['POST'])
 @validate_request(IntentParseRequest)
 @log_request
 def intentParse():
-    """
-    解析自然语言意图
-    
-    OpenAPI Operation: intentParse
-    Path: /api/intent/parse
-    Method: POST
-    
-    
-    
-    Request Body:
-        Schema: IntentParseRequest
-    
-    
-    
-    Response:
-        Schema: IntentParseResponse
-    
-    
-    Returns:
-        JSON response conforming to IntentParseResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # Access validated request data
-        data = g.validated_data
-        
-        # TODO: Implement intentParse logic
-        # Example:
-        # result = process_intent_request(data)
-        
-        
-        
-        # Build response using typed model
-        response = IntentParseResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
-@bp.route('/execute', methods=['POST'])
-@validate_request(ExecutePlanRequest)
-@log_request
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 def intentExecute():
-    """
-    执行意图
-    
-    OpenAPI Operation: intentExecute
-    Path: /api/intent/execute
-    Method: POST
-    
-    
-    
-    Request Body:
-        Schema: ExecutePlanRequest
-    
-    
-    
-    Response:
-        Schema: ExecutePlanResponse
-    
-    
-    Returns:
-        JSON response conforming to ExecutePlanResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # Access validated request data
-        data = g.validated_data
-        
-        # TODO: Implement intentExecute logic
-        # Example:
-        # result = process_intent_request(data)
-        
-        
-        
-        # Build response using typed model
-        response = ExecutePlanResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

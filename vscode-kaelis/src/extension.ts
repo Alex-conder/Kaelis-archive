@@ -1,21 +1,18 @@
 import * as vscode from 'vscode';
 import { KaelisParticipant } from './participant';
-import { KaelisTreeDataProvider, KaelisTreeItem } from './treeProvider';
-import { registerCommands } from './commands';
+import { createStatusBarItem, updateStatusBar, checkHealth } from './statusBar';
 
 let participant: KaelisParticipant | null = null;
+let statusBar: vscode.StatusBarItem | null = null;
+let healthInterval: NodeJS.Timeout | null = null;
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('[Kaelis] Extension activating...');
 
-  // Initialize Chat Participant
   participant = new KaelisParticipant();
-  try {
-    await participant.initialize();
-  } catch (err) {
-    console.error('[Kaelis] Initialization warning (will use HTTP fallback):', err);
-  }
+  await participant.initialize();
 
+  // Chat Participant
   const chatParticipant = vscode.chat.createChatParticipant('kaelis', async (request, context, response, token) => {
     if (!participant) {
       response.markdown('Kaelis is not initialized. Please reload the window.');
@@ -23,33 +20,32 @@ export async function activate(context: vscode.ExtensionContext) {
     }
     await participant.handleRequest(request, context, response, token);
   });
-
-  chatParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'kaelis-icon.png');
+  chatParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'icon.png');
   context.subscriptions.push(chatParticipant);
 
-  // Register Sidebar TreeView
-  const treeProvider = new KaelisTreeDataProvider();
-  const treeView = vscode.window.createTreeView('kaelisSidebar', {
-    treeDataProvider: treeProvider,
-    showCollapseAll: true,
-  });
-  context.subscriptions.push(treeView);
+  // Status Bar
+  statusBar = createStatusBarItem();
+  context.subscriptions.push(statusBar);
 
-  // Also register in explorer view
-  const treeViewExplorer = vscode.window.createTreeView('kaelisSidebarExplorer', {
-    treeDataProvider: treeProvider,
-    showCollapseAll: true,
-  });
-  context.subscriptions.push(treeViewExplorer);
+  // Health polling
+  const config = vscode.workspace.getConfiguration('kaelis');
+  const baseUrl = config.get<string>('apiBaseUrl', 'http://localhost:5000');
 
-  // Register Commands
-  registerCommands(context);
+  const pollHealth = async () => {
+    const status = await checkHealth(baseUrl);
+    updateStatusBar(status);
+  };
 
-  // Auto-refresh sidebar every 60 seconds
-  const refreshInterval = setInterval(() => {
-    treeProvider.refresh();
-  }, 60000);
-  context.subscriptions.push({ dispose: () => clearInterval(refreshInterval) });
+  await pollHealth();
+  healthInterval = setInterval(pollHealth, 10000);
+  context.subscriptions.push({ dispose: () => { if (healthInterval) clearInterval(healthInterval); } });
+
+  // Open Chat command
+  context.subscriptions.push(
+    vscode.commands.registerCommand('kaelis.openChat', () => {
+      vscode.commands.executeCommand('workbench.action.chat.open');
+    })
+  );
 
   context.subscriptions.push({
     dispose: () => {
@@ -62,6 +58,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+  if (healthInterval) clearInterval(healthInterval);
   participant?.dispose();
   participant = null;
 }
