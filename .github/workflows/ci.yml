@@ -152,3 +152,74 @@ jobs:
         shell: powershell
         run: |
           if ($env:BACKEND_PID) { Stop-Process -Id $env:BACKEND_PID -Force -ErrorAction SilentlyContinue }
+
+  committee-review:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    needs: [backend-tests, frontend-build, hygiene-check]
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate ten-dimension report
+        run: |
+          python -m kaelis diagnose --full > committee_report.md || echo "DIAGNOSE_FAILED=true" >> $env:GITHUB_ENV
+        env:
+          PYTHONIOENCODING: utf-8
+          GRAPH_DB_TYPE: sqlite
+
+      - name: Generate tech-debt snapshot
+        run: |
+          python scripts/auto_fix_todos.py --report-only >> committee_report.md
+        env:
+          PYTHONIOENCODING: utf-8
+
+      - name: Generate performance baseline
+        run: |
+          python scripts/check_performance.py >> committee_report.md
+        env:
+          PYTHONIOENCODING: utf-8
+          GRAPH_DB_TYPE: sqlite
+
+      - name: Append ecosystem integration assessment
+        run: |
+          echo "" >> committee_report.md
+          echo "## 生态整合维度专项评估" >> committee_report.md
+          echo "" >> committee_report.md
+          echo "- MCP Tool 数量: $(grep -c '@mcp.tool' core/mcp/server.py || echo 'N/A')" >> committee_report.md
+          echo "- 外部协议适配: A2A(骨架), LSP(无), MCP(完整)" >> committee_report.md
+          echo "- 第三方集成: NVIDIA NIM, n8n, Hermes/OpenClaw" >> committee_report.md
+          echo "- 社区插件机制: tool.register_external 已就绪, 待文档化" >> committee_report.md
+
+      - name: Post committee report as PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('committee_report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🏛️ Committee Review Report (Auto-generated)\n\n${report}`
+            });
+
+      - name: Upload committee report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: committee-review-report
+          path: committee_report.md
