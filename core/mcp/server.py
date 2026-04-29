@@ -875,6 +875,16 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             except Exception as e:
                 return json.dumps({"error": str(e)}, ensure_ascii=False)
 
+        @mcp.tool("file.list_allowed_dirs")
+        def file_list_allowed_dirs() -> str:
+            """列出文件网关所有已授权目录"""
+            try:
+                from core.security.file_gateway import FileGateway
+                fg = FileGateway()
+                return json.dumps({"success": True, "allowed": fg.allowed_directories}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
         @mcp.tool("llm.register_model")
         def llm_register_model(
             name: str,

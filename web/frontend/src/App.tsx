@@ -24,7 +24,6 @@ const GrowthPage = lazy(() => import('./pages/GrowthPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const FilePage = lazy(() => import('./pages/FilePage'))
 const ToolsPage = lazy(() => import('./pages/ToolsPage'))
-const FilePage = lazy(() => import('./pages/FilePage'))
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useAuthUser()
@@ -140,7 +139,6 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/files" element={<FilePage />} />
                     <Route path="/tools" element={<ToolsPage />} />
-                    <Route path="/files" element={<FilePage />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>

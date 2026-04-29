@@ -78,3 +78,43 @@ def remove_allowed_dir():
     path = data.get("path", "")
     ok = _file_gateway.remove_allowed_directory(path)
     return jsonify({"success": ok, "directories": _file_gateway.allowed_directories})
+
+
+# ------------------------------------------------------------------ #
+# Approval / Timeout endpoints (Prompt 1c)
+# ------------------------------------------------------------------ #
+
+@tools_bp.route("/approvals", methods=["GET"])
+def list_pending_approvals():
+    """获取所有待审批请求（文件操作 + 工具调用）"""
+    try:
+        file_pending = _file_gateway.get_pending()
+        return jsonify({"success": True, "pending": file_pending})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/approvals/<approval_id>", methods=["POST"])
+def resolve_approval(approval_id: str):
+    """审批决策：{approved: true/false}"""
+    data = request.get_json() or {}
+    approved = data.get("approved", False)
+    resolution = "approved" if approved else "rejected"
+    ok = _file_gateway.resolve(approval_id, resolution)
+    if ok:
+        return jsonify({"success": True, "approval_id": approval_id, "status": resolution})
+    return jsonify({"success": False, "error": "Approval not found or already resolved"}), 404
+
+
+@tools_bp.route("/approvals/<approval_id>/status", methods=["GET"])
+def get_approval_status(approval_id: str):
+    """查询审批状态，若超期返回 timeout"""
+    try:
+        from core.security.risk_gateway import ApprovalService
+        svc = ApprovalService()
+        status = svc.get_status(approval_id)
+        if status is None:
+            return jsonify({"success": False, "error": "Approval not found"}), 404
+        return jsonify({"success": True, "approval_id": approval_id, "status": status})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

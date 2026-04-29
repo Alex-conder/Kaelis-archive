@@ -4,7 +4,7 @@
 ToolGateway + ToolRegistry
 """
 
-import asyncio
+import inspect
 import json
 import logging
 from datetime import datetime
@@ -106,7 +106,7 @@ class ToolGateway:
 
         handler = tool_info["handler"]
         try:
-            if asyncio.iscoroutinefunction(handler):
+            if inspect.iscoroutinefunction(handler):
                 result = await handler(**params)
             else:
                 result = handler(**params)

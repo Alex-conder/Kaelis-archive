@@ -7,6 +7,7 @@ import {
   Plus,
   Loader2,
 } from 'lucide-react'
+import ApprovalModal from '../components/ApprovalModal'
 
 interface ToolInfo {
   name: string
@@ -17,14 +18,28 @@ interface ToolInfo {
   registered_at: string
 }
 
+interface ApprovalItem {
+  approval_id: string
+  source: string
+  operation: string
+  file_path?: string
+  reason: string
+  status: string
+}
+
 export default function ToolsPage() {
   const [tools, setTools] = useState<ToolInfo[]>([])
   const [loading, setLoading] = useState(false)
   const [regForm, setRegForm] = useState({ name: '', endpoint: '', desc: '' })
   const [regLoading, setRegLoading] = useState(false)
 
+  // Approval state
+  const [approvals, setApprovals] = useState<ApprovalItem[]>([])
+  const [approvalLoading, setApprovalLoading] = useState(false)
+
   useEffect(() => {
     loadTools()
+    loadApprovals()
   }, [])
 
   const loadTools = async () => {
@@ -37,6 +52,32 @@ export default function ToolsPage() {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadApprovals = async () => {
+    setApprovalLoading(true)
+    try {
+      const res = await fetch('/api/mcp/tools/approvals')
+      const data = await res.json()
+      if (data.success) setApprovals(data.pending)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  const handleResolve = async (id: string, approved: boolean) => {
+    try {
+      const res = await fetch(`/api/mcp/tools/approvals/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved }),
+      })
+      if (res.ok) loadApprovals()
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -74,6 +115,14 @@ export default function ToolsPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+        {/* 审批中心 */}
+        <ApprovalModal
+          approvals={approvals}
+          onResolve={handleResolve}
+          onRefresh={loadApprovals}
+          loading={approvalLoading}
+        />
+
         {/* 工具列表 */}
         <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
           <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
