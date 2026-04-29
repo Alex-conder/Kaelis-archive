@@ -1,14 +1,14 @@
 {
-  "timestamp": 1777439159.74057,
+  "timestamp": 1777450979.6347907,
   "summary": {
-    "total": 9,
+    "total": 13,
     "markers": {
-      "TODO": 4,
+      "TODO": 8,
       "FIXME": 3,
       "HACK": 0,
       "XXX": 2
     },
     "auto_generated": 0,
-    "files_scanned": 119
+    "files_scanned": 155
   }
 }

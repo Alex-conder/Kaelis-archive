@@ -1,29 +1,19 @@
 {
-  "timestamp": "2026-04-29 12:57:24",
+  "timestamp": "2026-04-29 16:22:14",
   "baseline": {
-    "timestamp": 1777438571.7009125,
-    "summary": {
-      "total": 41,
-      "markers": {
-        "TODO": 36,
-        "FIXME": 3,
-        "HACK": 0,
-        "XXX": 2
-      },
-      "auto_generated": 43,
-      "files_scanned": 118
-    }
+    "total": 13,
+    "auto_generated": 0
   },
   "current": {
-    "total": 41,
+    "total": 13,
     "markers": {
-      "TODO": 36,
+      "TODO": 8,
       "FIXME": 3,
       "HACK": 0,
       "XXX": 2
     },
-    "auto_generated": 43,
-    "files_scanned": 118
+    "auto_generated": 0,
+    "files_scanned": 155
   },
-  "increase_percent": 0.0
+  "increase_percent": 100.0
 }

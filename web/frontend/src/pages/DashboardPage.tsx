@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SkeletonLoader from '@/components/SkeletonLoader'
-import AnnualReportCard from '@/components/AnnualReportCard'
 import {
   Shield,
   TrendingUp,
