@@ -809,6 +809,121 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
     except Exception as e:
         logger.warning("Failed to register file tools: %s", e)
 
+    # ------------------------------------------------------------------ #
+    # Tool Gateway + LLM Router (Prompt 1 & 2)
+    # ------------------------------------------------------------------ #
+    try:
+        from core.tools.universal_tool_registry import ToolGateway, ToolRegistry
+        from core.llm.smart_router import ModelRegistry, SmartRouter
+
+        _tool_gateway = ToolGateway()
+        _llm_registry = ModelRegistry()
+        _smart_router = SmartRouter(_llm_registry)
+
+        @mcp.tool("tool.list")
+        def tool_list() -> str:
+            """返回已注册工具清单"""
+            try:
+                tools = _tool_gateway.list_tools()
+                return json.dumps({"success": True, "tools": tools}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("tool.call")
+        def tool_call(source: str, tool_name: str, params: str = "{}") -> str:
+            """通过 ToolGateway 安全调用任意工具"""
+            try:
+                import asyncio
+                parsed = json.loads(params) if params else {}
+                result = asyncio.run(_tool_gateway.execute(source, tool_name, parsed))
+                return json.dumps({"success": True, "result": result}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("tool.register_external")
+        def tool_register_external(name: str, endpoint: str, metadata: str = "{}") -> str:
+            """注册外部 MCP Tool"""
+            try:
+                meta = json.loads(metadata) if metadata else {}
+                meta["endpoint"] = endpoint
+                def external_handler(**kwargs):
+                    return {"status": "delegated", "tool": name, "params": kwargs}
+                _tool_gateway.registry.register(name, external_handler, meta)
+                return json.dumps({"success": True, "registered": name}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("file.add_allowed_dir")
+        def file_add_allowed_dir(path: str) -> str:
+            """授权目录到文件网关白名单"""
+            try:
+                from core.security.file_gateway import FileGateway
+                fg = FileGateway()
+                fg.add_allowed_directory(path)
+                return json.dumps({"success": True, "allowed": fg.allowed_directories}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("file.remove_allowed_dir")
+        def file_remove_allowed_dir(path: str) -> str:
+            """撤销目录授权"""
+            try:
+                from core.security.file_gateway import FileGateway
+                fg = FileGateway()
+                fg.remove_allowed_directory(path)
+                return json.dumps({"success": True, "allowed": fg.allowed_directories}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("llm.register_model")
+        def llm_register_model(
+            name: str,
+            endpoint: str,
+            api_key: str,
+            cost_per_1m: float,
+            tags: str = "",
+            context_length: int = 4096,
+        ) -> str:
+            """注册新模型到 SmartRouter"""
+            try:
+                tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+                _llm_registry.add_model(name, endpoint, api_key, cost_per_1m, tag_list, context_length)
+                return json.dumps({"success": True, "registered": name}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("llm.optimize_request")
+        def llm_optimize_request(task_description: str, strategy: str = "balanced") -> str:
+            """根据任务描述返回推荐模型"""
+            try:
+                result = _smart_router.route(task_description, strategy=strategy)
+                if result:
+                    return json.dumps({"success": True, "recommendation": result}, ensure_ascii=False)
+                return json.dumps({"success": False, "error": "No available model"}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("llm.call_with_routing")
+        def llm_call_with_routing(task_description: str, prompt: str, strategy: str = "balanced") -> str:
+            """自动路由并调用模型（返回推荐结果，实际调用由调用方执行）"""
+            try:
+                result = _smart_router.route(task_description, strategy=strategy)
+                if result:
+                    return json.dumps({
+                        "success": True,
+                        "selected_model": result["name"],
+                        "endpoint": result["endpoint"],
+                        "estimated_cost_per_1m": result["cost_per_1m"],
+                        "prompt": prompt,
+                    }, ensure_ascii=False)
+                return json.dumps({"success": False, "error": "No available model"}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] Tool gateway + LLM router tools registered")
+    except Exception as e:
+        logger.warning("Failed to register tool/llm tools: %s", e)
+
     return mcp
 
 

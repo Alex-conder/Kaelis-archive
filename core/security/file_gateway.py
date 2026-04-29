@@ -80,6 +80,7 @@ class FileGateway:
     def __init__(self):
         self.approval_service = ApprovalService(default_timeout=300)
         self._audit_log: List[Dict] = []
+        self.allowed_directories: List[str] = []  # 白名单目录
 
     # ------------------------------------------------------------------ #
     # 第一层：规则引擎
@@ -188,12 +189,17 @@ class FileGateway:
         评估文件操作请求，返回审批结果。
         调用方需根据 result.approved 决定是否执行实际操作。
         """
-        # 第一层：规则引擎
-        decision, reason = self._rule_engine(req)
+        # 0.5 层：目录白名单检查（非只写操作）
+        whitelist_result = self._check_directory_whitelist(req.file_path, req.operation)
+        if whitelist_result:
+            decision, reason = whitelist_result
+        else:
+            # 第一层：规则引擎
+            decision, reason = self._rule_engine(req)
 
-        # 第二层：LLM评估（规则引擎未决时）
-        if decision is None:
-            decision, reason = self._llm_review(req)
+            # 第二层：LLM评估（规则引擎未决时）
+            if decision is None:
+                decision, reason = self._llm_review(req)
 
         # 第三层：用户确认（CONFIRM 决策）
         approval_id = None
@@ -276,6 +282,38 @@ class FileGateway:
     def audit_log(self) -> List[Dict]:
         """返回完整审计日志"""
         return list(self._audit_log)
+
+    # ------------------------------------------------------------------ #
+    # 目录白名单管理
+    # ------------------------------------------------------------------ #
+
+    def add_allowed_directory(self, path: str) -> bool:
+        """添加授权目录"""
+        resolved = Path(path).resolve().as_posix()
+        if resolved not in self.allowed_directories:
+            self.allowed_directories.append(resolved)
+        return True
+
+    def remove_allowed_directory(self, path: str) -> bool:
+        """移除授权目录"""
+        resolved = Path(path).resolve().as_posix()
+        if resolved in self.allowed_directories:
+            self.allowed_directories.remove(resolved)
+            return True
+        return False
+
+    def _check_directory_whitelist(self, file_path: str, operation: FileOperationType) -> Optional[tuple]:
+        """检查目录白名单权限。返回 (decision, reason) 或 None"""
+        if operation == FileOperationType.READ:
+            return None  # 读取操作不受白名单限制
+        if not self.allowed_directories:
+            return None  # 未设置白名单时不限制
+
+        target = Path(file_path).resolve().as_posix()
+        for allowed in self.allowed_directories:
+            if target == allowed or target.startswith(allowed + "/"):
+                return None
+        return (RiskDecision.BLOCK, f"路径不在授权目录白名单内: {file_path}")
 
     # ------------------------------------------------------------------ #
     # 便捷方法：封装常用文件操作

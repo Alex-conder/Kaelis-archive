@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
-type SettingsTab = 'permissions' | 'general' | 'privacy'
+type SettingsTab = 'permissions' | 'general' | 'privacy' | 'llm_router'
 
 // ======================================================================
 // Agent Permission Console (D6)
@@ -623,6 +623,153 @@ function PrivacySettings() {
   )
 }
 
+// ==============================================================================
+// LLM Router Settings (Prompt 2 前端集成)
+// ==============================================================================
+
+function LLMRouterSettings() {
+  const [models, setModels] = useState<any[]>([])
+  const [strategy, setStrategy] = useState('balanced')
+  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({ name: '', endpoint: '', api_key: '', cost_per_1m: '', tags: '', context_length: '4096' })
+
+  useEffect(() => {
+    fetch('/api/llm/models')
+      .then(r => r.json())
+      .then(data => { if (data.success) setModels(data.models) })
+  }, [])
+
+  const handleAdd = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/llm/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          endpoint: form.endpoint,
+          api_key: form.api_key,
+          cost_per_1m: parseFloat(form.cost_per_1m),
+          tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+          context_length: parseInt(form.context_length),
+        }),
+      })
+      if (res.ok) {
+        setForm({ name: '', endpoint: '', api_key: '', cost_per_1m: '', tags: '', context_length: '4096' })
+        const refresh = await fetch('/api/llm/models')
+        const data = await refresh.json()
+        if (data.success) setModels(data.models)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <Zap className="w-5 h-5 text-yellow-500" />
+          模型路由配置
+        </h3>
+
+        {/* 路由策略 */}
+        <div className="mb-6">
+          <label className="text-sm text-[var(--text-muted)] mb-2 block">路由策略</label>
+          <div className="flex gap-2">
+            {[
+              { key: 'cost_first', label: '成本优先' },
+              { key: 'quality_first', label: '质量优先' },
+              { key: 'balanced', label: '平衡模式' },
+            ].map(s => (
+              <button
+                key={s.key}
+                onClick={() => setStrategy(s.key)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
+                  strategy === s.key
+                    ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]'
+                    : 'border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 已注册模型列表 */}
+        <div className="mb-6">
+          <label className="text-sm text-[var(--text-muted)] mb-2 block">已注册模型 ({models.length})</label>
+          <div className="space-y-2">
+            {models.map(m => (
+              <div key={m.name} className="flex items-center justify-between p-3 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+                <div>
+                  <div className="text-sm font-medium text-[var(--text-primary)]">{m.name}</div>
+                  <div className="text-xs text-[var(--text-muted)]">
+                    ${m.cost_per_1m}/1M · {m.context_length} ctx · {m.tags.join(', ')}
+                  </div>
+                </div>
+                <div className={`w-2 h-2 rounded-full ${m.cost_per_1m < 1 ? 'bg-green-500' : m.cost_per_1m < 3 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+              </div>
+            ))}
+            {models.length === 0 && (
+              <div className="text-xs text-[var(--text-muted)] text-center py-4">暂无模型，请添加</div>
+            )}
+          </div>
+        </div>
+
+        {/* 添加模型表单 */}
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            placeholder="模型名称"
+            value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+          <input
+            placeholder="Endpoint"
+            value={form.endpoint}
+            onChange={e => setForm({ ...form, endpoint: e.target.value })}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+          <input
+            placeholder="API Key"
+            type="password"
+            value={form.api_key}
+            onChange={e => setForm({ ...form, api_key: e.target.value })}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+          <input
+            placeholder="成本 ($/1M tokens)"
+            value={form.cost_per_1m}
+            onChange={e => setForm({ ...form, cost_per_1m: e.target.value })}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+          <input
+            placeholder="标签 (逗号分隔)"
+            value={form.tags}
+            onChange={e => setForm({ ...form, tags: e.target.value })}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+          <input
+            placeholder="Context Length"
+            value={form.context_length}
+            onChange={e => setForm({ ...form, context_length: e.target.value })}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+          />
+        </div>
+        <button
+          onClick={handleAdd}
+          disabled={loading}
+          className="mt-3 px-4 py-2 text-xs bg-[var(--primary-color)] hover:opacity-90 text-white rounded-lg disabled:opacity-50"
+        >
+          {loading ? '添加中...' : '添加模型'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ======================================================================
 // Main Settings Page
 // ==============================================================================
@@ -677,12 +824,23 @@ export default function SettingsPage() {
             <Lock className="w-4 h-4" />
             隐私
           </button>
+          <button
+            onClick={() => setActiveTab('llm_router')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'llm_router'
+                ? 'bg-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/20'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            模型路由
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {activeTab === 'permissions' ? <PermissionConsole /> : activeTab === 'general' ? <GeneralSettings /> : <PrivacySettings />}
+        {activeTab === 'permissions' ? <PermissionConsole /> : activeTab === 'general' ? <GeneralSettings /> : activeTab === 'privacy' ? <PrivacySettings /> : <LLMRouterSettings />}
       </div>
     </div>
   )

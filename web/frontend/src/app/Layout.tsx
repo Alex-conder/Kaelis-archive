@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   FolderOpen,
+  Wrench,
 } from 'lucide-react'
 import { useLogout } from '@/features/auth/hooks'
 
@@ -18,6 +19,7 @@ const navItems = [
   { path: '/memory', label: 'Second Brain', icon: Brain, shortcut: '⌘3' },
   { path: '/skills', label: 'Capabilities', icon: Zap, shortcut: '⌘4' },
   { path: '/files', label: 'Files', icon: FolderOpen, shortcut: '' },
+  { path: '/tools', label: 'Tools', icon: Wrench, shortcut: '' },
   { path: '/security', label: 'Security', icon: Shield, shortcut: '' },
   { path: '/growth', label: 'My Growth', icon: TrendingUp, shortcut: '' },
   { path: '/settings', label: 'Settings', icon: Settings, shortcut: '' },
