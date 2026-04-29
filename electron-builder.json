@@ -17,7 +17,9 @@
       "filter": [
         "**/*",
         "!__pycache__",
-        "!*.pyc"
+        "!*.pyc",
+        "!**/tests/**",
+        "!**/test_*.py"
       ]
     },
     {
@@ -26,7 +28,10 @@
       "filter": [
         "**/*",
         "!__pycache__",
-        "!*.pyc"
+        "!*.pyc",
+        "!**/tests/**",
+        "!**/test_*.py",
+        "!**/*.md"
       ]
     },
     {
@@ -45,27 +50,47 @@
       "from": "../../config",
       "to": "config",
       "filter": [
-        "**/*"
+        "**/*",
+        "!**/*.log",
+        "!**/logs/**"
       ]
     },
     {
       "from": "../../electron/resources/python",
       "to": "python",
       "filter": [
-        "**/*"
+        "python*.dll",
+        "python*.exe",
+        "python*.pth",
+        "python3*.dll",
+        "python.cat",
+        "lib*.dll",
+        "vcruntime*.dll",
+        "sqlite3.dll",
+        "get-pip.py",
+        "Scripts/**",
+        "Lib/**",
+        "libs/**"
       ]
     },
     {
       "from": "../../electron/resources/backend",
       "to": "backend",
       "filter": [
-        "**/*"
+        "**/*",
+        "!**/*.log",
+        "!**/logs/**"
       ]
     },
     {
       "from": "../../data",
       "to": "data",
-      "filter": ["**/*"]
+      "filter": [
+        "**/*",
+        "!**/*.log",
+        "!**/logs/**",
+        "!**/*.tmp"
+      ]
     }
   ],
   "asar": true,

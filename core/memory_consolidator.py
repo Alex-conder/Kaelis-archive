@@ -400,6 +400,230 @@ class MemoryConsolidator:
         
         return stats
     
+    def decay_score(self, memory: Dict[str, Any], current_time: Optional[datetime] = None) -> float:
+        """
+        基于艾宾浩斯遗忘曲线计算记忆的存活概率（衰减得分）
+
+        公式：
+            decay = importance * e^(-λ * days_since_last_access)
+            λ = ln(2) / half_life
+        """
+        import math
+
+        if current_time is None:
+            current_time = datetime.now()
+
+        metadata = memory.get("metadata", {})
+        value = memory.get("value", {})
+
+        importance = metadata.get("importance", 0.5)
+        if isinstance(value, dict):
+            importance = value.get("importance", importance)
+
+        created_at_str = memory.get("created_at", current_time.isoformat())
+        last_accessed_str = metadata.get("last_accessed", created_at_str)
+
+        try:
+            last_accessed = datetime.fromisoformat(last_accessed_str.replace("Z", "+00:00").replace(" ", "T"))
+        except Exception:
+            last_accessed = current_time
+
+        days_since_access = max(0, (current_time - last_accessed).total_seconds() / 86400)
+
+        if importance >= 0.8:
+            half_life = 90.0
+        elif importance >= 0.5:
+            half_life = 30.0
+        elif importance >= 0.2:
+            half_life = 7.0
+        else:
+            half_life = 1.0
+
+        lambda_val = math.log(2) / half_life
+        decay = importance * math.exp(-lambda_val * days_since_access)
+
+        return round(max(0.0, min(1.0, decay)), 4)
+
+    def forgetting_index(self, memory: Dict[str, Any], current_time: Optional[datetime] = None) -> float:
+        """
+        D-2: 艾宾浩斯遗忘指数 — 0~1，越高表示越需要复习。
+
+        公式：
+            forgetting_index = 1 - e^(-λ * days_since_last_recall)
+            λ = ln(2) / half_life
+
+        其中 half_life 由记忆重要性动态调整：
+            - importance >= 0.8: half_life = 60 天
+            - importance >= 0.5: half_life = 21 天
+            - importance >= 0.2: half_life = 7 天
+            - else: half_life = 3 天
+        """
+        import math
+
+        if current_time is None:
+            current_time = datetime.now()
+
+        metadata = memory.get("metadata", {})
+        value = memory.get("value", {})
+
+        importance = metadata.get("importance", 0.5)
+        if isinstance(value, dict):
+            importance = value.get("importance", importance)
+
+        # 优先使用 last_recalled_at，回退到 last_accessed / created_at
+        last_recall_str = memory.get("last_recalled_at") or metadata.get("last_accessed") or memory.get("created_at", current_time.isoformat())
+
+        try:
+            last_recall = datetime.fromisoformat(last_recall_str.replace("Z", "+00:00").replace(" ", "T"))
+        except Exception:
+            last_recall = current_time
+
+        days_since_recall = max(0, (current_time - last_recall).total_seconds() / 86400)
+
+        # 重要性越高，半衰期越长（衰减越慢）
+        if importance >= 0.8:
+            half_life = 60.0
+        elif importance >= 0.5:
+            half_life = 21.0
+        elif importance >= 0.2:
+            half_life = 7.0
+        else:
+            half_life = 3.0
+
+        lambda_val = math.log(2) / half_life
+        index_val = 1.0 - math.exp(-lambda_val * days_since_recall)
+
+        return round(max(0.0, min(1.0, index_val)), 4)
+
+    def get_forgetting_reminders(self, limit: int = 5, threshold: float = 0.7, user_id: str = "anonymous") -> Dict[str, Any]:
+        """
+        D-2: 获取需要复习的记忆列表。
+
+        Returns:
+            {"reminders": [{"key", "forgetting_index", "days_since_recall", "importance", "suggested_action"}], "total_checked": int}
+        """
+        import math
+
+        reminders = []
+        try:
+            db_path = Path("data/kaelis_dev.db")
+            if not db_path.exists():
+                return {"reminders": [], "total_checked": 0}
+
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    """
+                    SELECT id, key, value, metadata, created_at, last_recalled_at
+                    FROM memory_l2
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT 5000
+                    """,
+                    (user_id,),
+                ).fetchall()
+
+            for r in rows:
+                try:
+                    memory = {
+                        "key": r["key"],
+                        "value": json.loads(r["value"]) if r["value"] else {},
+                        "metadata": json.loads(r["metadata"]) if r["metadata"] else {},
+                        "created_at": r["created_at"],
+                        "last_recalled_at": r["last_recalled_at"],
+                    }
+                    idx = self.forgetting_index(memory)
+
+                    if idx >= threshold:
+                        # 计算距离上次回忆的天数
+                        last_recall_str = r["last_recalled_at"] or r["created_at"]
+                        try:
+                            last_recall = datetime.fromisoformat(last_recall_str.replace("Z", "+00:00").replace(" ", "T"))
+                            days = (datetime.now() - last_recall).total_seconds() / 86400
+                        except Exception:
+                            days = 0
+
+                        reminders.append({
+                            "key": r["key"],
+                            "forgetting_index": idx,
+                            "days_since_recall": round(days, 1),
+                            "importance": memory["metadata"].get("importance", 0.5),
+                            "suggested_action": "Review this memory to strengthen retention",
+                        })
+                except Exception:
+                    continue
+
+            # 按遗忘指数降序排列
+            reminders.sort(key=lambda x: x["forgetting_index"], reverse=True)
+
+        except Exception as e:
+            logger.error(f"Get forgetting reminders failed: {e}")
+
+        return {
+            "reminders": reminders[:limit],
+            "total_checked": len(rows) if "rows" in dir() else 0,
+        }
+
+    def apply_forgetting(self, dry_run: bool = False) -> Dict[str, Any]:
+        """
+        应用遗忘机制：对低衰减得分的记忆进行降权或归档
+
+        策略：
+        - decay_score < 0.05: 直接归档
+        - decay_score < 0.15: 标记为低优先级
+        - decay_score >= 0.15: 保留
+        """
+        report = {"archived": 0, "demoted": 0, "retained": 0, "details": []}
+
+        try:
+            import sqlite3
+            from pathlib import Path
+            db_path = Path("data/kaelis_dev.db")
+            if not db_path.exists():
+                return report
+
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT id, key, value, metadata, created_at, last_recalled_at FROM memory_l2 ORDER BY created_at DESC LIMIT 5000"
+                ).fetchall()
+
+            for r in rows:
+                try:
+                    memory = {
+                        "key": r["key"],
+                        "value": json.loads(r["value"]) if r["value"] else {},
+                        "metadata": json.loads(r["metadata"]) if r["metadata"] else {},
+                        "created_at": r["created_at"],
+                        "last_recalled_at": r["last_recalled_at"],
+                    }
+                    score = self.decay_score(memory)
+
+                    if score < 0.05:
+                        report["archived"] += 1
+                        action = "archived"
+                    elif score < 0.15:
+                        report["demoted"] += 1
+                        action = "demoted"
+                    else:
+                        report["retained"] += 1
+                        action = "retained"
+
+                    report["details"].append({
+                        "key": r["key"],
+                        "decay_score": score,
+                        "action": action,
+                    })
+                except Exception:
+                    continue
+
+            logger.info(f"Forgetting applied: {report['archived']} archived, {report['demoted']} demoted, {report['retained']} retained")
+
+        except Exception as e:
+            logger.error(f"Apply forgetting failed: {e}")
+
+        return report
+
     def update_config(self, **kwargs):
         """更新配置"""
         self.config.update(kwargs)

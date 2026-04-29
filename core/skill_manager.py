@@ -46,25 +46,45 @@ class Skill:
     version: str = "1.0.0"
     tags: List[str] = field(default_factory=list)
     evolution_source: Optional[str] = None  # 关联的进化任务ID
-    
+    # D-4: 性能追踪字段
+    avg_execution_time_ms: float = 0.0
+    last_used_at: Optional[str] = None
+    execution_history: List[Dict[str, Any]] = field(default_factory=list)  # 最近30次
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
-    
+
     def to_embedding_text(self) -> str:
         """转换为用于向量检索的文本"""
         return f"{self.name} {self.description} {self.task_type} {' '.join(self.tags)}"
-    
+
     @property
     def success_rate(self) -> float:
         if self.usage_count == 0:
             return 0.0
         return self.success_count / self.usage_count
-    
-    def increment_usage(self, success: bool = True):
+
+    def increment_usage(self, success: bool = True, execution_time_ms: float = 0.0):
+        """D-4: 记录技能使用，更新性能指标"""
         self.usage_count += 1
         if success:
             self.success_count += 1
-        self.updated_at = datetime.now().isoformat()
+        self.last_used_at = datetime.now().isoformat()
+        self.updated_at = self.last_used_at
+
+        # 更新执行历史（保留最近30条）
+        self.execution_history.append({
+            "timestamp": self.last_used_at,
+            "success": success,
+            "execution_time_ms": execution_time_ms,
+        })
+        self.execution_history = self.execution_history[-30:]
+
+        # 更新平均执行时间
+        if self.execution_history:
+            self.avg_execution_time_ms = sum(
+                h.get("execution_time_ms", 0) for h in self.execution_history
+            ) / len(self.execution_history)
 
 
 class SkillStorage:
@@ -425,23 +445,73 @@ class SkillManager:
         
         return skills[:top_k]
     
-    def use_skill(self, skill_id: str, success: bool = True) -> bool:
+    def use_skill(self, skill_id: str, success: bool = True, execution_time_ms: float = 0.0) -> bool:
         """
         记录技能使用
-        
+
         Args:
             skill_id: 技能ID
             success: 是否成功
-            
+            execution_time_ms: 执行耗时（毫秒）
+
         Returns:
             bool: 是否成功记录
         """
         skill = self.storage.get(skill_id)
         if not skill:
             return False
-        
-        skill.increment_usage(success)
+
+        skill.increment_usage(success, execution_time_ms)
         return self.storage.save(skill)
+
+    def get_skill_performance(self, skill_id: str) -> Optional[Dict[str, Any]]:
+        """
+        D-4: 获取单个技能的性能数据。
+
+        Returns:
+            Dict: 包含成功率趋势、平均耗时、最近使用等信息
+        """
+        skill = self.storage.get(skill_id)
+        if not skill:
+            return None
+
+        history = skill.execution_history
+        if not history:
+            return {
+                "skill_id": skill.id,
+                "name": skill.name,
+                "total_executions": skill.usage_count,
+                "success_rate": skill.success_rate,
+                "avg_execution_time_ms": 0,
+                "recent_trend": "neutral",
+                "last_used_at": None,
+            }
+
+        # 计算最近 10 次成功率趋势
+        recent = history[-10:]
+        recent_success = sum(1 for h in recent if h.get("success"))
+        recent_rate = recent_success / len(recent) if recent else 0
+
+        # 比较近期 vs 整体
+        older_rate = skill.success_rate
+        if recent_rate > older_rate + 0.1:
+            trend = "up"
+        elif recent_rate < older_rate - 0.1:
+            trend = "down"
+        else:
+            trend = "neutral"
+
+        return {
+            "skill_id": skill.id,
+            "name": skill.name,
+            "total_executions": skill.usage_count,
+            "success_rate": skill.success_rate,
+            "recent_success_rate": recent_rate,
+            "avg_execution_time_ms": round(skill.avg_execution_time_ms, 2),
+            "recent_trend": trend,
+            "last_used_at": skill.last_used_at,
+            "history_count": len(history),
+        }
     
     def rate_skill(self, skill_id: str, rating: float) -> bool:
         """
@@ -621,58 +691,83 @@ class SkillManager:
             ]
         }
     
-    def import_from_agentskills(self, data: Dict[str, Any]) -> Optional[Skill]:
+    def import_from_agentskills(self, data: Dict[str, Any], run_sandbox: bool = True) -> Optional[Skill]:
         """
         从 agentskills.io 格式导入技能
-        
+
+        D-3: 导入前可选运行沙箱安全测试，仅 LOW 风险才允许导入。
+
         支持两种输入格式：
         1. 单技能: {"schema_version": "1.0", "skill": {...}}
         2. 批量包: {"schema_version": "1.0", "skills": [...]}
-        
+
         Args:
             data: agentskills.io JSON 数据
-            
+            run_sandbox: 是否运行沙箱测试（默认 True）
+
         Returns:
             Skill: 导入的第一个技能（批量导入时），失败返回 None
         """
         if not isinstance(data, dict):
             logger.error("Invalid agentskills data: expected dict")
             return None
-        
+
         schema_version = data.get("schema_version", "1.0")
         if schema_version not in ("1.0",):
             logger.warning(f"Unknown agentskills schema version: {schema_version}")
-        
+
         # 批量导入
         if "skills" in data and isinstance(data["skills"], list):
             imported = []
             for skill_data in data["skills"]:
-                result = self._import_single_agentskill(skill_data)
+                result = self._import_single_agentskill(skill_data, run_sandbox=run_sandbox)
                 if result:
                     imported.append(result)
             logger.info(f"Bulk imported {len(imported)}/{len(data['skills'])} skills from agentskills")
             return imported[0] if imported else None
-        
+
         # 单技能导入
         if "skill" in data:
-            return self._import_single_agentskill(data["skill"])
-        
+            return self._import_single_agentskill(data["skill"], run_sandbox=run_sandbox)
+
         # 直接是 skill 对象
         if "id" in data and "name" in data:
-            return self._import_single_agentskill(data)
-        
+            return self._import_single_agentskill(data, run_sandbox=run_sandbox)
+
         logger.error("Invalid agentskills data: missing 'skill' or 'skills' key")
         return None
     
-    def _import_single_agentskill(self, skill_data: Dict[str, Any]) -> Optional[Skill]:
-        """导入单个 agentskills 技能"""
+    def _import_single_agentskill(self, skill_data: Dict[str, Any], run_sandbox: bool = True) -> Optional[Skill]:
+        """导入单个 agentskills 技能（D-3: 集成沙箱测试）"""
         try:
+            # D-3: 沙箱安全测试
+            if run_sandbox:
+                try:
+                    from core.skills.sandbox_tester import get_sandbox_tester
+                    tester = get_sandbox_tester()
+                    report = tester.test_skill(skill_data)
+
+                    if not report.passed:
+                        logger.warning(
+                            f"Sandbox rejected skill '{skill_data.get('name')}': "
+                            f"risk={report.risk_level}, score={report.risk_score}"
+                        )
+                        return None
+
+                    logger.info(
+                        f"Sandbox passed for skill '{skill_data.get('name')}': "
+                        f"risk={report.risk_level}, score={report.risk_score}"
+                    )
+                except Exception as e:
+                    logger.warning(f"Sandbox test failed, skipping import: {e}")
+                    return None
+
             skill_id = skill_data.get("id") or hashlib.md5(
                 f"import:{skill_data.get('name')}:{datetime.now().isoformat()}".encode()
             ).hexdigest()[:16]
-            
+
             meta = skill_data.get("metadata", {})
-            
+
             skill = Skill(
                 id=skill_id,
                 name=skill_data.get("name", "Unnamed Skill"),
@@ -691,12 +786,12 @@ class SkillManager:
                 tags=skill_data.get("tags", []),
                 evolution_source=meta.get("evolution_source")
             )
-            
+
             if self.storage.save(skill):
                 logger.info(f"Imported skill from agentskills: {skill.id} ({skill.name})")
                 return skill
             return None
-            
+
         except Exception as e:
             logger.error(f"Failed to import agentskills skill: {e}")
             return None

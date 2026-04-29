@@ -233,117 +233,17 @@ def log_request(f):
 @validate_request(ReportExportRequest)
 @log_request
 def exportReport():
-    """
-    导出报表
-    
-    OpenAPI Operation: exportReport
-    Path: /api/reports/export
-    Method: POST
-    
-    
-    Description:
-        导出知识图谱、代谢组学等报表
-    
-    
-    
-    Request Body:
-        Schema: ReportExportRequest
-    
-    
-    
-    Response:
-        Schema: ReportExportResponse
-    
-    
-    Returns:
-        JSON response conforming to ReportExportResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # Access validated request data
-        data = g.validated_data
-        
-        # TODO: Implement exportReport logic
-        # Example:
-        # result = process_reports_request(data)
-        
-        
-        
-        # Build response using typed model
-        response = ReportExportResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
-@bp.route('/api/reports/status/{job_id}', methods=['GET'])
-
-@log_request
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 def getExportStatus():
-    """
-    查询导出任务状态
-    
-    OpenAPI Operation: getExportStatus
-    Path: /api/reports/status/{job_id}
-    Method: GET
-    
-    
-    
-    
-    Response:
-        Schema: BaseResponse
-    
-    
-    Returns:
-        JSON response conforming to BaseResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # TODO: Implement getExportStatus logic (no request body)
-        
-        
-        
-        # Build response using typed model
-        response = BaseResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

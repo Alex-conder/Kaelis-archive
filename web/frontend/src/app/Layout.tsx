@@ -1,18 +1,24 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
+  LayoutDashboard,
   MessageCircle,
   Brain,
   Zap,
+  Shield,
+  TrendingUp,
   Settings,
   LogOut,
 } from 'lucide-react'
 import { useLogout } from '@/features/auth/hooks'
 
 const navItems = [
-  { path: '/chat', label: 'Chat', icon: MessageCircle },
-  { path: '/memory', label: 'Second Brain', icon: Brain },
-  { path: '/skills', label: 'Capabilities', icon: Zap },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, shortcut: '⌘1' },
+  { path: '/chat', label: 'Chat', icon: MessageCircle, shortcut: '⌘2' },
+  { path: '/memory', label: 'Second Brain', icon: Brain, shortcut: '⌘3' },
+  { path: '/skills', label: 'Capabilities', icon: Zap, shortcut: '⌘4' },
+  { path: '/security', label: 'Security', icon: Shield, shortcut: '' },
+  { path: '/growth', label: 'My Growth', icon: TrendingUp, shortcut: '' },
+  { path: '/settings', label: 'Settings', icon: Settings, shortcut: '' },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -48,14 +54,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                title={`${item.label} ${item.shortcut}`}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group ${
                   isActive
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
                 <item.icon className="w-[18px] h-[18px]" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.shortcut && (
+                  <span className="opacity-0 group-hover:opacity-100 text-[10px] text-slate-500 transition-opacity">
+                    {item.shortcut}
+                  </span>
+                )}
               </NavLink>
             )
           })}

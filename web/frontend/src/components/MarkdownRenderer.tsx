@@ -1,5 +1,6 @@
-import { Suspense, lazy } from 'react'
-import { Info } from 'lucide-react'
+import { Suspense, lazy, useState } from 'react'
+import { Info, Copy, Check } from 'lucide-react'
+import { showToast } from './Toast'
 
 const ReactMarkdown = lazy(() => import('react-markdown'))
 const SyntaxHighlighter = lazy(() =>
@@ -42,6 +43,36 @@ interface MarkdownRendererProps {
   getStrategyLabel?: (strategy?: Strategy) => string
 }
 
+function CodeBlock({ language, children }: { language: string; children: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(children)
+      setCopied(true)
+      showToast('代码已复制到剪贴板')
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      showToast('复制失败', 'error')
+    }
+  }
+
+  return (
+    <div className="relative group">
+      <button
+        onClick={handleCopy}
+        className="absolute top-2 right-2 p-1.5 rounded bg-slate-700/80 hover:bg-slate-600 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Copy code"
+      >
+        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
+      <SyntaxHighlighter language={language} PreTag="div">
+        {children.replace(/\n$/, '')}
+      </SyntaxHighlighter>
+    </div>
+  )
+}
+
 function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
@@ -50,13 +81,7 @@ function MarkdownContent({ content }: { content: string }) {
         code({ node: _node, inline, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '')
           return !inline && match ? (
-            <SyntaxHighlighter
-              language={match[1]}
-              PreTag="div"
-              {...props}
-            >
-              {String(children).replace(/\n$/, '')}
-            </SyntaxHighlighter>
+            <CodeBlock language={match[1]}>{String(children)}</CodeBlock>
           ) : (
             <code className={className} {...props}>
               {children}

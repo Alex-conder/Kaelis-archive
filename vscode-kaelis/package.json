@@ -2,7 +2,7 @@
   "name": "kaelis",
   "displayName": "Kaelis",
   "description": "Kaelis AI Agent — Your memory-enhanced coding companion",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "kaelis",
   "engines": {
     "vscode": "^1.90.0"
@@ -63,10 +63,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kaelis/kaelis.git"
+    "url": "https://github.com/Alex-conder/Kaelis-archive.git"
   },
   "bugs": {
-    "url": "https://github.com/kaelis/kaelis/issues"
+    "url": "https://github.com/Alex-conder/Kaelis-archive/issues"
   },
   "homepage": "https://kaelis.ai",
   "license": "MIT",

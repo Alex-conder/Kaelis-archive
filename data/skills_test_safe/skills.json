@@ -1,0 +1,30 @@
+{
+  "updated_at": "2026-04-29T13:42:11.065515",
+  "skills": [
+    {
+      "id": "safe_import",
+      "name": "安全技能",
+      "task_type": "data",
+      "params": {
+        "method": "minmax"
+      },
+      "workflow": {
+        "type": "transform"
+      },
+      "description": "数据归一化处理",
+      "source": "import",
+      "rating": 0.0,
+      "usage_count": 0,
+      "success_count": 0,
+      "created_by": "agentskills.io",
+      "created_at": "2026-04-29T13:42:11.065490",
+      "updated_at": "2026-04-29T13:42:11.065498",
+      "version": "1.0.0",
+      "tags": [],
+      "evolution_source": null,
+      "avg_execution_time_ms": 0.0,
+      "last_used_at": null,
+      "execution_history": []
+    }
+  ]
+}

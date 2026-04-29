@@ -51,6 +51,19 @@ class KaelisLLMClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        # P0: 污点追踪 — 为外部 API 调用生成污点标签
+        taint_id = None
+        try:
+            from core.security.taint_tracker import get_taint_tracker
+            tracker = get_taint_tracker()
+            taint_id = tracker.tag_source(
+                source=f"api:{self.model.split('-')[0]}",
+                raw_input={"prompt": prompt, "system": system_prompt},
+                agent_id=kwargs.get("agent_id"),
+            )
+        except Exception:
+            pass
+
         try:
             if self.client:
                 extra = {}
@@ -62,7 +75,7 @@ class KaelisLLMClient:
                     temperature=temperature,
                     **extra
                 )
-                return response.choices[0].message.content or ""
+                result = response.choices[0].message.content or ""
             else:
                 # requests 降级模式
                 import requests
@@ -77,7 +90,24 @@ class KaelisLLMClient:
                     timeout=60
                 )
                 resp.raise_for_status()
-                return resp.json()["choices"][0]["message"]["content"] or ""
+                result = resp.json()["choices"][0]["message"]["content"] or ""
+
+            # 记录输出哈希到污点追踪
+            if taint_id:
+                try:
+                    from core.security.taint_tracker import get_taint_tracker
+                    tracker = get_taint_tracker()
+                    tracker.trace_transform(
+                        parent_taint_id=taint_id,
+                        agent_id=kwargs.get("agent_id", "llm_client"),
+                        operation="chat_completion",
+                        input_data=messages,
+                        output_data=result,
+                    )
+                except Exception:
+                    pass
+
+            return result
 
         except Exception as e:
             logger.error(f"LLM 调用失败: {e}")

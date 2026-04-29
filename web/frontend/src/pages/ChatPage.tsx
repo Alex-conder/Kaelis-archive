@@ -3,6 +3,7 @@ import { useChatStore } from '@/features/chat/store'
 import { chatApi } from '@/features/chat/api'
 import type { Message } from '@/shared/api/types'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import SuggestedReplies from '@/components/SuggestedReplies'
 
 import {
   Send,
@@ -16,7 +17,63 @@ import {
   Code,
   Search,
   Zap,
+  Sparkles,
+  BrainCircuit,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
+
+// UX-12: Agent 推理过程折叠面板
+function ReasoningPanel({ steps, confidence }: { steps: Array<{ step: number; title: string; detail: string; tool?: string; memory_refs?: string[]; confidence: number }>; confidence?: number }) {
+  const [expanded, setExpanded] = useState(confidence !== undefined && confidence < 0.7)
+  const lowConfidence = confidence !== undefined && confidence < 0.7
+
+  return (
+    <div className={`max-w-[80%] ml-12 ${expanded ? 'mb-2' : ''}`}>
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className={`flex items-center gap-1.5 text-xs ${lowConfidence ? 'text-amber-400' : 'text-slate-500'} hover:text-slate-300 transition-colors`}
+      >
+        <BrainCircuit className="w-3.5 h-3.5" />
+        {lowConfidence ? '置信度较低，查看推理过程' : '查看推理过程'}
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-2 bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-2">
+          {steps.map((s) => (
+            <div key={s.step} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center text-[10px] font-bold">
+                  {s.step}
+                </div>
+                {s.step < steps.length && <div className="w-px flex-1 bg-slate-700 my-1" />}
+              </div>
+              <div className="flex-1 pb-2">
+                <p className="text-xs font-medium text-slate-300">{s.title}</p>
+                <p className="text-[11px] text-slate-500">{s.detail}</p>
+                {s.tool && (
+                  <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-purple-500/10 text-purple-400 rounded">
+                    Tool: {s.tool}
+                  </span>
+                )}
+                {s.memory_refs && s.memory_refs.length > 0 && (
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {s.memory_refs.map((ref) => (
+                      <span key={ref} className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">
+                        {ref}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ChatPage() {
   const {
@@ -33,7 +90,39 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setLocalError] = useState<string | null>(null)
+  const soundEnabled = (() => {
+    return localStorage.getItem('kaelis_sound_enabled') !== 'false'
+  })()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // UX-2: Web Audio API 音效生成
+  const playSound = (type: 'send' | 'receive') => {
+    if (!soundEnabled) return
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      if (type === 'send') {
+        osc.frequency.setValueAtTime(880, ctx.currentTime)
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1)
+        gain.gain.setValueAtTime(0.05, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.1)
+      } else {
+        osc.frequency.setValueAtTime(523, ctx.currentTime)
+        osc.frequency.exponentialRampToValueAtTime(659, ctx.currentTime + 0.15)
+        gain.gain.setValueAtTime(0.05, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.2)
+      }
+    } catch {
+      // ignore audio errors
+    }
+  }
 
   const currentSession = sessions.find((s) => s.id === currentSessionId)
 
@@ -53,6 +142,13 @@ export default function ChatPage() {
     setInput('')
     setLocalError(null)
 
+    // Handle #memory inline command
+    if (content.startsWith('#memory ')) {
+      const query = content.slice(8).trim()
+      await handleMemorySearch(query)
+      return
+    }
+
     let sessionId = currentSessionId
     if (!sessionId) {
       sessionId = createSession()
@@ -62,6 +158,7 @@ export default function ChatPage() {
     // Add user message
     addUserMessage(sessionId, content)
     setIsLoading(true)
+    playSound('send')
 
     const assistantId = Math.random().toString(36).substring(2, 15)
 
@@ -126,10 +223,53 @@ export default function ChatPage() {
       }
 
       finalizeStream(sessionId, assistantId, finalMessages)
+      playSound('receive')
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Stream failed'
       setLocalError(errorMsg)
       setError(sessionId, assistantId, errorMsg)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleMemorySearch = async (query: string) => {
+    let sessionId = currentSessionId
+    if (!sessionId) {
+      sessionId = createSession()
+    }
+    if (!sessionId) return
+
+    addUserMessage(sessionId, `#memory ${query}`)
+    setIsLoading(true)
+
+    try {
+      const res = await fetch('http://localhost:5000/api/memory/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ layer: 'L2', query, top_k: 3 }),
+      })
+      const data = await res.json()
+      const items = data.data || []
+
+      const cardId = Math.random().toString(36).substring(2, 15)
+      const cardContent = items.length
+        ? `🔍 记忆搜索结果 (${items.length} 条):\n` +
+          items.map((item: any, i: number) =>
+            `${i + 1}. [${item.key}] ${JSON.stringify(item.value).slice(0, 80)}...`
+          ).join('\n')
+        : '🔍 未找到相关记忆'
+
+      addAssistantMessage(sessionId, {
+        id: cardId,
+        role: 'assistant',
+        content: cardContent,
+        timestamp: new Date().toISOString(),
+        isStreaming: false,
+      })
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Memory search failed'
+      setLocalError(errorMsg)
     } finally {
       setIsLoading(false)
     }
@@ -156,8 +296,44 @@ export default function ChatPage() {
     return `${label} · ${Math.round(strategy.confidence * 100)}%`
   }
 
+  const lastAgentMessage = currentSession?.messages
+    .filter((m) => m.role === 'assistant' && !m.isStreaming)
+    .slice(-1)[0]?.content
+
   return (
     <div className="flex flex-col h-full bg-[#0B1120]">
+      <style>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .blinking-cursor {
+          display: inline-block;
+          width: 2px;
+          height: 1em;
+          background-color: currentColor;
+          margin-left: 2px;
+          animation: blink 1s step-end infinite;
+          vertical-align: text-bottom;
+        }
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes thinkingDots {
+          0%, 80%, 100% { opacity: 0; }
+          40% { opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .msg-anim { animation: none !important; }
+        }
+        .msg-user { animation: slideInRight 200ms ease-out; }
+        .msg-agent { animation: slideInLeft 200ms ease-out; }
+      `}</style>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {!currentSession?.messages.length && (
@@ -167,6 +343,13 @@ export default function ChatPage() {
             <p className="text-sm mt-2 text-center max-w-md">
               我会记住我们的每一次对话，不断理解你、帮助你。
             </p>
+            {/* 首次使用引导 */}
+            <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg max-w-md">
+              <p className="text-xs text-purple-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                试试输入 <code className="bg-purple-500/20 px-1 rounded">#memory Kaelis 架构</code> 来搜索记忆
+              </p>
+            </div>
             <div className="mt-6 flex flex-wrap gap-2 justify-center">
               {['帮我分析这段代码', '记住我喜欢用 Python', '查询之前的 API 设计'].map((q) => (
                 <button
@@ -184,8 +367,8 @@ export default function ChatPage() {
         {currentSession?.messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-4 ${
-              msg.role === 'user' ? 'justify-end' : 'justify-start'
+            className={`flex gap-4 msg-anim ${
+              msg.role === 'user' ? 'justify-end msg-user' : 'justify-start msg-agent'
             }`}
           >
             {msg.role !== 'user' && (
@@ -241,6 +424,11 @@ export default function ChatPage() {
                 <User className="w-4 h-4" />
               </div>
             )}
+
+            {/* UX-12: Agent 思维链展示 */}
+            {msg.role === 'assistant' && msg.reasoning && msg.reasoning.length > 0 && (
+              <ReasoningPanel steps={msg.reasoning} confidence={msg.strategy?.confidence} />
+            )}
           </div>
         ))}
 
@@ -261,8 +449,12 @@ export default function ChatPage() {
               <Bot className="w-4 h-4" />
             </div>
             <div className="bg-slate-800 rounded-2xl px-4 py-3 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-              <span className="text-sm text-slate-400">Thinking...</span>
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <span className="text-sm text-slate-400">Agent 正在思考...</span>
             </div>
           </div>
         )}
@@ -271,6 +463,9 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
+      {/* UX-5: 智能回复建议 */}
+      <SuggestedReplies lastAgentMessage={lastAgentMessage} onSelect={(text) => setInput(text)} />
+
       <div className="p-4 bg-[#0B1120]">
         {/* Quick action buttons */}
         <div className="flex gap-2 justify-center mb-3">
@@ -300,6 +495,7 @@ export default function ChatPage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end rounded-xl bg-[#1E293B] border border-slate-700 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent overflow-hidden">
             <textarea
+              data-testid="chat-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -311,7 +507,7 @@ export default function ChatPage() {
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[48px] flex items-center justify-center"
+              className={`px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all h-[48px] flex items-center justify-center ${isLoading ? 'animate-pulse' : ''}`}
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

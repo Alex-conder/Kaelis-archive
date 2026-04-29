@@ -206,96 +206,17 @@ def log_request(f):
 
 @log_request
 def buildSymbolIndex():
-    """
-    构建符号索引
-    
-    OpenAPI Operation: buildSymbolIndex
-    Path: /api/symbols/index
-    Method: POST
-    
-    
-    
-    
-    Response:
-        Schema: SymbolIndexResponse
-    
-    
-    Returns:
-        JSON response conforming to SymbolIndexResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # TODO: Implement buildSymbolIndex logic (no request body)
-        
-        
-        
-        # Build response using typed model
-        response = SymbolIndexResponse(
-            success=True,
-            message="Operation completed successfully",
-            timestamp=datetime.now(timezone.utc),
-            # TODO: Add response data here
-            data={}
-        )
-        return jsonify(response.dict(exclude_none=True)), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
-@bp.route('/api/symbols/query', methods=['GET'])
-
-@log_request
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 def querySymbols():
-    """
-    查询符号
-    
-    OpenAPI Operation: querySymbols
-    Path: /api/symbols/query
-    Method: GET
-    
-    
-    
-    
-    Returns:
-        JSON response conforming to BaseResponse
-    """
-    # TODO: Implement business logic here
-    # -------------------------------------------------
-    # Developer Notes:
-    # 1. Access validated request data via: g.validated_data
-    # 2. Return data using the response model for type safety
-    # 3. Raise appropriate HTTP exceptions for error cases
-    # 4. Add any async operations to the task queue if needed
-    # -------------------------------------------------
-    
-    try:
-        
-        # TODO: Implement querySymbols logic (no request body)
-        
-        
-        
-        return jsonify({
-            "success": True,
-            "message": "Operation completed successfully",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }), 200
-        
-        
-    except Exception as e:
-        return handle_exception(e)
-
-
+    return {
+        "success": False,
+        "error": "Not Implemented",
+        "message": "This endpoint is planned but not yet implemented."
+    }, 501
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

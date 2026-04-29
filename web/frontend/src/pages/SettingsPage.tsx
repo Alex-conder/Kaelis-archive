@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { apiClient } from '@/shared/api/client'
 import {
   Settings,
@@ -12,9 +13,17 @@ import {
   CheckCircle2,
   Clock,
   Zap,
+  Moon,
+  Sun,
+  Monitor,
+  Globe,
+  Lock,
+  Download,
+  Trash2,
 } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 
-type SettingsTab = 'permissions' | 'general'
+type SettingsTab = 'permissions' | 'general' | 'privacy'
 
 // ======================================================================
 // Agent Permission Console (D6)
@@ -300,8 +309,323 @@ function EnergyOverview() {
 }
 
 // ======================================================================
+// General Settings (UX-8: 暗色模式 + UX-10: 音效开关)
+// ======================================================================
+
+function GeneralSettings() {
+  const { theme, setTheme } = useTheme()
+  const { t, i18n } = useTranslation()
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return localStorage.getItem('kaelis_sound_enabled') !== 'false'
+  })
+
+  const toggleSound = () => {
+    const next = !soundEnabled
+    setSoundEnabled(next)
+    localStorage.setItem('kaelis_sound_enabled', String(next))
+  }
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* B-2: 语言设置 */}
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
+        <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <Globe className="w-4 h-4" />
+          {t('外观主题') === '外观主题' ? '语言' : 'Language'}
+        </h3>
+        <div className="flex gap-3">
+          {([
+            { value: 'zh-CN', label: '简体中文' },
+            { value: 'en-US', label: 'English' },
+          ] as const).map((l) => (
+            <button
+              key={l.value}
+              onClick={() => changeLanguage(l.value)}
+              className={`px-4 py-2.5 rounded-lg border text-sm transition-all ${
+                i18n.language === l.value || (l.value === 'zh-CN' && i18n.language === 'zh')
+                  ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--primary-color)]/30'
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 主题设置 */}
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
+        <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">{t('外观主题')}</h3>
+        <div className="flex gap-3">
+          {([
+            { value: 'light', label: '浅色', icon: Sun },
+            { value: 'dark', label: '深色', icon: Moon },
+            { value: 'system', label: '跟随系统', icon: Monitor },
+          ] as const).map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTheme(t.value)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm transition-all ${
+                theme === t.value
+                  ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--primary-color)]/30'
+              }`}
+            >
+              <t.icon className="w-4 h-4" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 音效设置 */}
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
+        <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">{t('声音反馈')}</h3>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={soundEnabled}
+            onChange={toggleSound}
+            className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
+          />
+          <span className="text-sm text-[var(--text-secondary)]">{t('启用消息音效')}</span>
+        </label>
+      </div>
+
+      {/* 快捷键设置 — UX-12 */}
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
+        <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">{t('键盘快捷键')}</h3>
+        <div className="space-y-2">
+          {[
+            { action: '聚焦输入框', key: 'Ctrl + K / Cmd + K', editable: false },
+            { action: '新建对话', key: 'Ctrl + N / Cmd + N', editable: false },
+            { action: '关闭弹窗', key: 'Escape', editable: false },
+          ].map((shortcut) => (
+            <div
+              key={shortcut.action}
+              className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/50 last:border-0"
+            >
+              <span className="text-sm text-[var(--text-secondary)]">{shortcut.action}</span>
+              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs text-[var(--text-muted)] font-mono">
+                {shortcut.key}
+              </kbd>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-[var(--text-muted)] mt-3">{t('快捷键自定义功能即将上线')}</p>
+      </div>
+
+      <EnergyOverview />
+    </div>
+  )
+}
+
+// ======================================================================
 // Main Settings Page
 // ======================================================================
+
+// ======================================================================
+// B-4: Privacy Settings (GDPR Compliance)
+// ==============================================================================
+
+function PrivacySettings() {
+  const { t } = useTranslation()
+  const [exporting, setExporting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [settings, setSettings] = useState({
+    data_retention_days: 365,
+    allow_analytics: true,
+    allow_model_training: false,
+    auto_delete_expired: true,
+    share_with_agents: true,
+  })
+
+  const { data: fetchedSettings } = useQuery({
+    queryKey: ['privacy', 'settings'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/api/privacy/settings')
+      return data.settings || {}
+    },
+  })
+
+  useState(() => {
+    if (fetchedSettings) {
+      setSettings((prev) => ({ ...prev, ...fetchedSettings }))
+    }
+  })
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const { data } = await apiClient.get('/api/privacy/export')
+      const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'kaelis-export-' + new Date().toISOString().slice(0, 10) + '.json'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert(t('导出失败，请稍后重试'))
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await apiClient.post('/api/privacy/delete', { confirm: true, scope: 'all' })
+      setShowDeleteConfirm(false)
+      alert(t('个人数据已删除'))
+    } catch (e) {
+      alert(t('删除失败，请稍后重试'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleUpdateSetting = async (key: string, value: any) => {
+    const next = { ...settings, [key]: value }
+    setSettings(next)
+    try {
+      await apiClient.post('/api/privacy/settings', { settings: { [key]: value } })
+    } catch (e) {
+      // silent fail
+    }
+  }
+
+  return (
+    <div className='space-y-6'>
+      <div className='bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6'>
+        <h3 className='text-sm font-medium text-[var(--text-primary)] mb-4 flex items-center gap-2'>
+          <Download className='w-4 h-4' />
+          {t('数据可携带权')}
+        </h3>
+        <p className='text-sm text-[var(--text-secondary)] mb-4'>
+          导出您的全部个人数据（记忆、配置、知识图谱），以标准 JSON 格式下载。
+        </p>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className='flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--primary-color)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50'
+        >
+          {exporting ? <Loader2 className='w-4 h-4 animate-spin' /> : <Download className='w-4 h-4' />}
+          {exporting ? t('正在导出...') : t('导出我的数据')}
+        </button>
+      </div>
+
+      <div className='bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6'>
+        <h3 className='text-sm font-medium text-[var(--text-primary)] mb-4 flex items-center gap-2'>
+          <Trash2 className='w-4 h-4 text-red-500' />
+          {t('被遗忘权')}
+        </h3>
+        <p className='text-sm text-[var(--text-secondary)] mb-4'>
+          永久删除系统中与您相关的全部个人数据。此操作不可撤销。
+        </p>
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className='flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/30 text-red-500 text-sm font-medium hover:bg-red-500/10 transition-colors'
+          >
+            <Trash2 className='w-4 h-4' />
+            {t('删除我的数据')}
+          </button>
+        ) : (
+          <div className='space-y-3'>
+            <div className='p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500'>
+              <AlertTriangle className='w-4 h-4 inline mr-1' />
+              确认删除？您的所有记忆、配置和知识图谱数据将被永久清除。
+            </div>
+            <div className='flex gap-3'>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className='flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50'
+              >
+                {deleting ? <Loader2 className='w-4 h-4 animate-spin' /> : <Trash2 className='w-4 h-4' />}
+                {deleting ? t('正在删除...') : t('确认永久删除')}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className='px-4 py-2.5 rounded-lg border border-[var(--border-color)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors'
+              >
+                {t('取消')}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className='bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6'>
+        <h3 className='text-sm font-medium text-[var(--text-primary)] mb-4 flex items-center gap-2'>
+          <Lock className='w-4 h-4' />
+          {t('隐私控制')}
+        </h3>
+        <div className='space-y-4'>
+          <label className='flex items-center justify-between cursor-pointer'>
+            <span className='text-sm text-[var(--text-secondary)]'>{t('允许匿名分析')}</span>
+            <input
+              type='checkbox'
+              checked={settings.allow_analytics}
+              onChange={(e) => handleUpdateSetting('allow_analytics', e.target.checked)}
+              className='w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)]'
+            />
+          </label>
+          <label className='flex items-center justify-between cursor-pointer'>
+            <span className='text-sm text-[var(--text-secondary)]'>{t('允许用于模型训练')}</span>
+            <input
+              type='checkbox'
+              checked={settings.allow_model_training}
+              onChange={(e) => handleUpdateSetting('allow_model_training', e.target.checked)}
+              className='w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)]'
+            />
+          </label>
+          <label className='flex items-center justify-between cursor-pointer'>
+            <span className='text-sm text-[var(--text-secondary)]'>{t('自动删除过期记忆')}</span>
+            <input
+              type='checkbox'
+              checked={settings.auto_delete_expired}
+              onChange={(e) => handleUpdateSetting('auto_delete_expired', e.target.checked)}
+              className='w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)]'
+            />
+          </label>
+          <label className='flex items-center justify-between cursor-pointer'>
+            <span className='text-sm text-[var(--text-secondary)]'>{t('允许 Agent 间共享记忆')}</span>
+            <input
+              type='checkbox'
+              checked={settings.share_with_agents}
+              onChange={(e) => handleUpdateSetting('share_with_agents', e.target.checked)}
+              className='w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)]'
+            />
+          </label>
+          <div className='flex items-center justify-between'>
+            <span className='text-sm text-[var(--text-secondary)]'>{t('数据保留期限（天）')}</span>
+            <select
+              value={settings.data_retention_days}
+              onChange={(e) => handleUpdateSetting('data_retention_days', Number(e.target.value))}
+              className='px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] text-sm text-[var(--text-primary)]'
+            >
+              <option value={30}>30</option>
+              <option value={90}>90</option>
+              <option value={180}>180</option>
+              <option value={365}>365</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ======================================================================
+// Main Settings Page
+// ==============================================================================
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('permissions')
@@ -342,12 +666,23 @@ export default function SettingsPage() {
             <Settings className="w-4 h-4" />
             通用设置
           </button>
+          <button
+            onClick={() => setActiveTab('privacy')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'privacy'
+                ? 'bg-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/20'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            <Lock className="w-4 h-4" />
+            隐私
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {activeTab === 'permissions' ? <PermissionConsole /> : <EnergyOverview />}
+        {activeTab === 'permissions' ? <PermissionConsole /> : activeTab === 'general' ? <GeneralSettings /> : <PrivacySettings />}
       </div>
     </div>
   )

@@ -4,8 +4,13 @@ Auto-generated from OpenAPI specification
 Generated at: 2026-04-13T00:50:28.280207
 """
 
+import os
 import pytest
 import json
+
+# CI 稳定性：禁用 ChromaDB ONNX 模型自动下载，避免网络超时
+os.environ.setdefault("CHROMA_DISABLE_ONNX", "1")
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 
 
 @pytest.fixture

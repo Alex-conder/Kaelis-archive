@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 240px; padding: 16px; font-family: sans-serif; background: #0f172a; color: #e2e8f0; }
+    h1 { font-size: 16px; margin: 0 0 12px; }
+    .status { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+    .dot.online { background: #22c55e; }
+    button { width: 100%; padding: 8px; border: none; border-radius: 6px; background: #3b82f6; color: white; cursor: pointer; }
+    button:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>Kaelis</h1>
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Checking...</span>
+  </div>
+  <button id="btn-panel">Open Memory Panel</button>
+  <script src="popup.js"></script>
+</body>
+</html>

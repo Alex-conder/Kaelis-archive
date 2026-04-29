@@ -60,6 +60,14 @@ except ImportError as e:
     PROACTIVE_AVAILABLE = False
     logging.warning(f"ProactiveMemoryEngine not available: {e}")
 
+# D-1/D-2: 记忆洞察引擎
+try:
+    from core.memory_insight_clusterer import get_insight_clusterer, MemoryInsightClusterer
+    INSIGHT_AVAILABLE = True
+except ImportError as e:
+    INSIGHT_AVAILABLE = False
+    logging.warning(f"MemoryInsightClusterer not available: {e}")
+
 logger = logging.getLogger(__name__)
 
 # 创建 Blueprint
@@ -659,6 +667,104 @@ def proactive_push():
         })
     except Exception as e:
         logger.error(f"Proactive push failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== D-1: 记忆语义聚类 ====================
+
+@memory_bp.route('/insights/clusters', methods=['POST'])
+def memory_insight_clusters():
+    """
+    D-1: 记忆语义聚类与主题自动发现
+
+    Request Body:
+        {
+            "days": 7,
+            "k": 0,
+            "dry_run": true,
+            "user_id": "anonymous"
+        }
+
+    Response:
+        {
+            "success": True,
+            "data": {
+                "clusters": [
+                    {"cluster_id": "cluster_0", "topic_labels": ["frontend", "react"], "memory_count": 5, "memory_keys": [...]}
+                ],
+                "total_memories": 10,
+                "method": "sklearn"
+            }
+        }
+    """
+    if not INSIGHT_AVAILABLE:
+        return jsonify({"success": False, "error": "Insight clusterer not available"}), 503
+
+    try:
+        data = request.get_json() or {}
+        days = data.get("days", 7)
+        k = data.get("k", 0)
+        dry_run = data.get("dry_run", True)
+        user_id = data.get("user_id", "anonymous")
+
+        clusterer = get_insight_clusterer()
+        result = clusterer.cluster_analysis(
+            days=days,
+            k=k if k > 0 else None,
+            user_id=user_id,
+            dry_run=dry_run,
+        )
+
+        return jsonify({"success": True, "data": result})
+    except Exception as e:
+        logger.error(f"Memory insight clusters failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== D-2: 遗忘曲线复习建议 ====================
+
+@memory_bp.route('/insights/forgetting', methods=['POST'])
+def memory_forgetting_insights():
+    """
+    D-2: 遗忘曲线复习建议
+
+    Request Body:
+        {
+            "limit": 5,
+            "threshold": 0.7,
+            "user_id": "anonymous"
+        }
+
+    Response:
+        {
+            "success": True,
+            "data": {
+                "reminders": [
+                    {"key": "...", "forgetting_index": 0.85, "days_since_recall": 7.5, "importance": 0.5, "suggested_action": "Review..."}
+                ],
+                "total_checked": 100
+            }
+        }
+    """
+    if not CONSOLIDATOR_AVAILABLE:
+        return jsonify({"success": False, "error": "Consolidator not available"}), 503
+
+    try:
+        data = request.get_json() or {}
+        limit = data.get("limit", 5)
+        threshold = data.get("threshold", 0.7)
+        user_id = data.get("user_id", "anonymous")
+
+        consolidator = get_consolidator()
+        result = consolidator.get_forgetting_reminders(
+            limit=limit,
+            threshold=threshold,
+            user_id=user_id,
+        )
+
+        return jsonify({"success": True, "data": result})
+    except Exception as e:
+        logger.error(f"Memory forgetting insights failed: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 

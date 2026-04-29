@@ -1,0 +1,145 @@
+name: Kaelis Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-python-wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install build deps
+        run: pip install build twine
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaelis-wheel
+          path: dist/*.whl
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*.whl
+        continue-on-error: true
+
+  build-electron:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: |
+          cd web/frontend
+          npm ci
+
+      - name: Build & package Electron
+        run: |
+          cd web/frontend
+          npm run electron:build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaelis-electron-${{ matrix.os }}
+          path: |
+            web/frontend/dist/*.exe
+            web/frontend/dist/*.dmg
+            web/frontend/dist/*.AppImage
+            web/frontend/dist/*.deb
+            web/frontend/dist/*.rpm
+          if-no-files-found: ignore
+
+  build-vscode-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install VSCE
+        run: npm install -g @vscode/vsce
+
+      - name: Package extension
+        run: |
+          cd vscode-kaelis
+          npm ci
+          vsce package
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaelis-vscode
+          path: vscode-kaelis/*.vsix
+
+      - name: Publish to Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          cd vscode-kaelis
+          vsce publish
+        continue-on-error: true
+
+  create-release:
+    needs: [build-python-wheel, build-electron, build-vscode-extension]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Kaelis ${{ github.ref_name }}
+          body: |
+            ## What's New
+            See [CHANGELOG.md](https://github.com/Alex-conder/Kaelis-archive/blob/main/CHANGELOG.md) for details.
+
+            ## Assets
+            - Python Wheel (PyPI)
+            - Desktop App (Windows `.exe`, macOS `.dmg`, Linux `.AppImage`)
+            - VSCode Extension (`.vsix`)
+          files: |
+            artifacts/kaelis-wheel/*.whl
+            artifacts/kaelis-electron-*/*
+            artifacts/kaelis-vscode/*.vsix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

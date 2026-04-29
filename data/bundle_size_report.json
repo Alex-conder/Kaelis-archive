@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-04-29 12:57:32",
+  "passed": true,
+  "messages": [
+    "[PASS] Main JS: 567.7KB <= 600.0KB",
+    "[WARN] Lazy chunk large: html2canvas.esm-CBrSDip1.js = 197.6KB (threshold: 100.0KB)",
+    "[WARN] Lazy chunk large: markdown-DJWH8JwY.js = 124.0KB (threshold: 100.0KB)"
+  ],
+  "result": {
+    "files": [
+      {
+        "name": "index-CFWk8hzD.js",
+        "size": 581289
+      },
+      {
+        "name": "html2canvas.esm-CBrSDip1.js",
+        "size": 202301
+      },
+      {
+        "name": "markdown-DJWH8JwY.js",
+        "size": 127014
+      },
+      {
+        "name": "index-B7lBKw6U.css",
+        "size": 85709
+      },
+      {
+        "name": "syntax-45qQlnJ6.js",
+        "size": 56343
+      },
+      {
+        "name": "geist-latin-wght-normal-Dm3htQBi.woff2",
+        "size": 28400
+      },
+      {
+        "name": "geist-latin-ext-wght-normal-DMtmJ5ZE.woff2",
+        "size": 15308
+      },
+      {
+        "name": "geist-cyrillic-wght-normal-CHSlOQsW.woff2",
+        "size": 14692
+      },
+      {
+        "name": "vsc-dark-plus-S0snyycK.js",
+        "size": 4036
+      },
+      {
+        "name": "bash-L4iHgErd.js",
+        "size": 94
+      },
+      {
+        "name": "json-_3HlK4mf.js",
+        "size": 94
+      },
+      {
+        "name": "markdown-CjSYpECd.js",
+        "size": 94
+      },
+      {
+        "name": "tsx-CfsgM1Iy.js",
+        "size": 94
+      },
+      {
+        "name": "yaml-DqpMLt5n.js",
+        "size": 94
+      },
+      {
+        "name": "python-BpUOY9r1.js",
+        "size": 89
+      }
+    ],
+    "main_js": {
+      "name": "index-CFWk8hzD.js",
+      "size": 581289
+    },
+    "main_css": {
+      "name": "index-B7lBKw6U.css",
+      "size": 85709
+    },
+    "lazy_chunks": [
+      {
+        "name": "bash-L4iHgErd.js",
+        "size": 94
+      },
+      {
+        "name": "html2canvas.esm-CBrSDip1.js",
+        "size": 202301
+      },
+      {
+        "name": "json-_3HlK4mf.js",
+        "size": 94
+      },
+      {
+        "name": "markdown-CjSYpECd.js",
+        "size": 94
+      },
+      {
+        "name": "markdown-DJWH8JwY.js",
+        "size": 127014
+      },
+      {
+        "name": "python-BpUOY9r1.js",
+        "size": 89
+      },
+      {
+        "name": "syntax-45qQlnJ6.js",
+        "size": 56343
+      },
+      {
+        "name": "tsx-CfsgM1Iy.js",
+        "size": 94
+      },
+      {
+        "name": "vsc-dark-plus-S0snyycK.js",
+        "size": 4036
+      },
+      {
+        "name": "yaml-DqpMLt5n.js",
+        "size": 94
+      }
+    ],
+    "total_size": 1115651,
+    "file_count": 15
+  }
+}

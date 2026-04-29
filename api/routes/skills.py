@@ -37,7 +37,11 @@ def _skill_to_dict(skill):
         "created_by": skill.created_by,
         "created_at": skill.created_at,
         "tags": skill.tags,
-        "evolution_source": skill.evolution_source
+        "evolution_source": skill.evolution_source,
+        # D-4: 性能字段
+        "avg_execution_time_ms": getattr(skill, "avg_execution_time_ms", 0),
+        "last_used_at": getattr(skill, "last_used_at", None),
+        "execution_history_count": len(getattr(skill, "execution_history", [])),
     }
 
 
@@ -317,10 +321,11 @@ def get_best_skill(task_type):
 def use_skill(skill_id):
     """
     记录技能使用
-    
+
     Request Body:
         {
-            "success": true/false
+            "success": true/false,
+            "execution_time_ms": 150
         }
     """
     if not SKILL_MANAGER_AVAILABLE:
@@ -328,14 +333,15 @@ def use_skill(skill_id):
             "success": False,
             "error": "SkillManager not available"
         }), 503
-    
+
     try:
         data = request.get_json() or {}
         success = data.get('success', True)
-        
+        execution_time_ms = data.get('execution_time_ms', 0.0)
+
         manager = get_skill_manager()
-        
-        if manager.use_skill(skill_id, success):
+
+        if manager.use_skill(skill_id, success, execution_time_ms):
             return jsonify({
                 "success": True,
                 "message": "Skill usage recorded"
@@ -345,7 +351,7 @@ def use_skill(skill_id):
                 "success": False,
                 "error": f"Skill {skill_id} not found"
             }), 404
-        
+
     except Exception as e:
         logger.error(f"Record skill usage failed: {e}")
         return jsonify({
@@ -437,7 +443,7 @@ def get_statistics():
 def install_skill(skill_id):
     """
     安装/激活技能
-    
+
     将技能标记为已安装，增加使用计数。
     """
     if not SKILL_MANAGER_AVAILABLE:
@@ -445,10 +451,10 @@ def install_skill(skill_id):
             "success": False,
             "error": "SkillManager not available"
         }), 503
-    
+
     try:
         manager = get_skill_manager()
-        
+
         # 检查技能是否存在
         skill = manager.get_skill(skill_id)
         if not skill:
@@ -456,10 +462,10 @@ def install_skill(skill_id):
                 "success": False,
                 "error": f"Skill {skill_id} not found"
             }), 404
-        
+
         # 记录技能使用（作为安装/激活的标记）
-        manager.use_skill(skill_id, success=True)
-        
+        manager.use_skill(skill_id, success=True, execution_time_ms=0)
+
         return jsonify({
             "success": True,
             "message": f"Skill '{skill.name}' installed successfully",
@@ -469,13 +475,145 @@ def install_skill(skill_id):
                 "installed": True
             }
         })
-        
+
     except Exception as e:
         logger.error(f"Install skill failed: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
+
+
+# ==================== D-3: 技能沙箱测试 ====================
+
+@skills_bp.route('/<skill_id>/sandbox', methods=['POST'])
+def sandbox_test_skill(skill_id):
+    """
+    D-3: 对技能进行沙箱安全测试
+
+    Response:
+        {
+            "success": True,
+            "data": {
+                "passed": true,
+                "risk_level": "LOW",
+                "risk_score": 0,
+                "static_scan": {...},
+                "recommendations": []
+            }
+        }
+    """
+    if not SKILL_MANAGER_AVAILABLE:
+        return jsonify({"success": False, "error": "SkillManager not available"}), 503
+
+    try:
+        manager = get_skill_manager()
+        skill = manager.get_skill(skill_id)
+
+        if not skill:
+            return jsonify({"success": False, "error": f"Skill {skill_id} not found"}), 404
+
+        try:
+            from core.skills.sandbox_tester import get_sandbox_tester
+            tester = get_sandbox_tester()
+            report = tester.test_skill(skill.to_dict())
+            return jsonify({"success": True, "data": report.to_dict()})
+        except ImportError:
+            return jsonify({"success": False, "error": "Sandbox tester not available"}), 503
+
+    except Exception as e:
+        logger.error(f"Sandbox test failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== D-4: 技能性能看板 ====================
+
+@skills_bp.route('/<skill_id>/performance', methods=['GET'])
+def get_skill_performance(skill_id):
+    """
+    D-4: 获取单个技能的性能数据
+
+    Response:
+        {
+            "success": True,
+            "data": {
+                "skill_id": "...",
+                "success_rate": 0.85,
+                "recent_success_rate": 0.9,
+                "recent_trend": "up",
+                "avg_execution_time_ms": 120.5,
+                "last_used_at": "...",
+                "history_count": 5
+            }
+        }
+    """
+    if not SKILL_MANAGER_AVAILABLE:
+        return jsonify({"success": False, "error": "SkillManager not available"}), 503
+
+    try:
+        manager = get_skill_manager()
+        perf = manager.get_skill_performance(skill_id)
+
+        if not perf:
+            return jsonify({"success": False, "error": f"Skill {skill_id} not found"}), 404
+
+        return jsonify({"success": True, "data": perf})
+
+    except Exception as e:
+        logger.error(f"Get skill performance failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@skills_bp.route('/performance/all', methods=['GET'])
+def get_all_skills_performance():
+    """
+    D-4: 获取所有技能的性能摘要（用于看板）
+
+    Query Parameters:
+        sort_by: success_rate | usage_count | last_used | trend
+        limit: 返回数量限制
+    """
+    if not SKILL_MANAGER_AVAILABLE:
+        return jsonify({"success": False, "error": "SkillManager not available"}), 503
+
+    try:
+        manager = get_skill_manager()
+        sort_by = request.args.get('sort_by', 'success_rate')
+        limit = request.args.get('limit', 50, type=int)
+
+        skills = manager.list_skills()
+        results = []
+
+        for skill in skills:
+            perf = manager.get_skill_performance(skill.id)
+            if perf:
+                results.append({
+                    **_skill_to_dict(skill),
+                    "performance": perf,
+                })
+
+        # 排序
+        if sort_by == "success_rate":
+            results.sort(key=lambda x: x["performance"]["success_rate"], reverse=True)
+        elif sort_by == "usage_count":
+            results.sort(key=lambda x: x["usage_count"], reverse=True)
+        elif sort_by == "last_used":
+            results.sort(
+                key=lambda x: x["performance"]["last_used_at"] or "",
+                reverse=True,
+            )
+        elif sort_by == "trend":
+            trend_order = {"up": 0, "neutral": 1, "down": 2}
+            results.sort(key=lambda x: trend_order.get(x["performance"]["recent_trend"], 3))
+
+        if limit:
+            results = results[:limit]
+
+        return jsonify({"success": True, "data": {"skills": results, "total": len(results)}})
+
+    except Exception as e:
+        logger.error(f"Get all performance failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @skills_bp.route('/evolution', methods=['GET'])

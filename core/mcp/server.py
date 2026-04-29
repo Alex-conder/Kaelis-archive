@@ -83,6 +83,21 @@ def _get_pubsub():
     return get_pubsub_engine()
 
 
+def _get_clusterer():
+    from core.memory_insight_clusterer import get_insight_clusterer
+    return get_insight_clusterer()
+
+
+def _get_consolidator():
+    from core.memory_consolidator import get_consolidator
+    return get_consolidator()
+
+
+def _get_sandbox_tester():
+    from core.skills.sandbox_tester import get_sandbox_tester
+    return get_sandbox_tester()
+
+
 # ======================================================================
 # FastMCP Server
 # ======================================================================
@@ -219,6 +234,52 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             return json.dumps({"success": True, "bundle": bundle.to_dict()}, ensure_ascii=False, default=str)
         except Exception as e:
             logger.error(f"proactive_push error: {e}")
+            return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def memory_cluster_analysis(days: int = 7, k: int = 0, dry_run: bool = True) -> str:
+        """
+        D-1: 对最近 N 天的 L2 记忆进行语义聚类，自动发现主题。
+        k=0 时自动推断聚类数。
+        """
+        try:
+            clusterer = _get_clusterer()
+            result = clusterer.cluster_analysis(
+                days=days,
+                k=k if k > 0 else None,
+                dry_run=dry_run,
+            )
+            return json.dumps({"success": True, "data": result}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"memory_cluster_analysis error: {e}")
+            return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def memory_forgetting_reminders(limit: int = 5, threshold: float = 0.7) -> str:
+        """
+        D-2: 获取遗忘指数超过阈值的记忆复习建议。
+        """
+        try:
+            consolidator = _get_consolidator()
+            result = consolidator.get_forgetting_reminders(limit=limit, threshold=threshold)
+            return json.dumps({"success": True, "data": result}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"memory_forgetting_reminders error: {e}")
+            return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def skill_sandbox_test(skill_json: str) -> str:
+        """
+        D-3: 对技能 JSON 进行沙箱安全测试。
+        skill_json 为技能的 JSON 字符串。
+        """
+        try:
+            skill_data = json.loads(skill_json)
+            tester = _get_sandbox_tester()
+            report = tester.test_skill(skill_data)
+            return json.dumps({"success": True, "report": report.to_dict()}, ensure_ascii=False, default=str)
+        except Exception as e:
+            logger.error(f"skill_sandbox_test error: {e}")
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #

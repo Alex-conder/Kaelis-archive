@@ -79,7 +79,7 @@ export class KaelisParticipant {
       augmentedPrompt = `User question: ${prompt}\n\nRelevant memories from Kaelis:\n${memoryContext}\n\nPlease answer the user's question, referencing the above memories when relevant.`;
     }
 
-    // Step 3: Call VSCode LLM
+    // Step 3: Call VSCode LLM (streaming)
     try {
       const models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
       if (models.length === 0) {
@@ -92,10 +92,20 @@ export class KaelisParticipant {
         vscode.LanguageModelChatMessage.User(augmentedPrompt)
       ];
 
+      response.progress('Kaelis is thinking...');
       const chatResponse = await model.sendRequest(messages, {}, token);
 
       for await (const fragment of chatResponse.text) {
         response.markdown(fragment);
+      }
+
+      // Step 4: Inline memory references
+      if (memoryContext) {
+        response.markdown('\n\n---\n**Kaelis Memories referenced:**\n');
+        const lines = memoryContext.split('\n').slice(0, 3);
+        for (const line of lines) {
+          response.markdown(`> ${line}\n`);
+        }
       }
 
       if (memoryContext) {

@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](web/frontend/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-38B2AC.svg)](web/frontend/)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-33%2F33%20passed-brightgreen.svg)](tests/)
 [![Metabolomics](https://img.shields.io/badge/Metabolomics-mzML%20supported-blueviolet.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -386,9 +386,40 @@ curl -X POST -F "file=@sample.mzML" http://localhost:5000/api/metabolomics/uploa
 
 ---
 
-## 🤝 贡献
+## 🤝 如何贡献
 
-欢迎提交 Issue 和 Pull Request！
+欢迎提交 Issue 和 Pull Request！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细流程。
+
+### 快速开始
+
+```bash
+# 1. Fork & Clone
+git clone https://github.com/your-username/Kaelis-archive.git
+cd Kaelis-archive
+
+# 2. 安装依赖
+pip install -r requirements.txt
+cd web/frontend && npm install
+
+# 3. 启动开发环境
+# 终端1: python start_server.py
+# 终端2: cd web/frontend && npm run dev
+
+# 4. 运行测试
+pytest -x                              # 后端
+cd web/frontend && npm run build       # 前端
+```
+
+### 贡献者墙
+
+> 感谢每一位让 Kaelis 变得更好的贡献者 💙
+>
+> *(你可能是第一个！提交 PR 即可上榜)*
+
+### 报告问题
+
+- 🐛 [Bug 报告](.github/ISSUE_TEMPLATE/bug_report.md)
+- ✨ [功能建议](.github/ISSUE_TEMPLATE/feature_request.md)
 
 ---
 
@@ -398,8 +429,8 @@ MIT License
 
 ---
 
-**版本**: v2.0.0  
-**完成度**: 85%+  
-**最后更新**: 2026-04-06
+**版本**: v8.0.0  
+**完成度**: 95%+  
+**最后更新**: 2026-04-28
 
 > 🌊 **Kaelis 智流 - 让 AI 记住你，让智能更懂你**

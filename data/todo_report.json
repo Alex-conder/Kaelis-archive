@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-04-29 12:57:24",
+  "baseline": {
+    "timestamp": 1777438571.7009125,
+    "summary": {
+      "total": 41,
+      "markers": {
+        "TODO": 36,
+        "FIXME": 3,
+        "HACK": 0,
+        "XXX": 2
+      },
+      "auto_generated": 43,
+      "files_scanned": 118
+    }
+  },
+  "current": {
+    "total": 41,
+    "markers": {
+      "TODO": 36,
+      "FIXME": 3,
+      "HACK": 0,
+      "XXX": 2
+    },
+    "auto_generated": 43,
+    "files_scanned": 118
+  },
+  "increase_percent": 0.0
+}

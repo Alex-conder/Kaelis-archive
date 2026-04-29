@@ -26,7 +26,7 @@ Your memory-enhanced AI coding companion.
 
 ### Option 2: From .vsix
 
-1. Download `kaelis-0.1.0.vsix`
+1. Download `kaelis-0.3.0.vsix`
 2. Open VSCode → Extensions → "..." → Install from VSIX
 3. Select the downloaded file
 
