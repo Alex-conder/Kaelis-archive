@@ -60,10 +60,17 @@ class FourLayerMemoryManager:
     
     def _get_db_path(self, layer: str) -> str:
         """获取指定层的数据库路径"""
+        import os as _os
         config = LAYER_CONFIG.get(layer)
         if not config:
             raise ValueError(f"Unknown layer: {layer}")
-        db_path = str(self.db_dir.parent / config["db"]) if not Path(config["db"]).is_absolute() else config["db"]
+        raw_db = config["db"]
+        if _os.path.isabs(raw_db):
+            db_path = raw_db
+        else:
+            parent = self.db_dir.parent
+            combined = parent / raw_db
+            db_path = str(combined)
         # 确保数据库所在目录存在
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         return db_path
@@ -94,12 +101,17 @@ class FourLayerMemoryManager:
                     value TEXT NOT NULL,
                     metadata TEXT,
                     user_id TEXT DEFAULT 'anonymous',
+                    privacy_level TEXT DEFAULT 'private',
                     updated_at TEXT NOT NULL,
                     PRIMARY KEY (key, user_id)
                 )
             """)
             try:
                 conn.execute("ALTER TABLE memory_l0 ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE memory_l0 ADD COLUMN privacy_level TEXT DEFAULT 'private'")
             except sqlite3.OperationalError:
                 pass
         
@@ -113,6 +125,7 @@ class FourLayerMemoryManager:
                     metadata TEXT,
                     importance REAL DEFAULT 0.5,
                     user_id TEXT DEFAULT 'anonymous',
+                    privacy_level TEXT DEFAULT 'private',
                     created_at TEXT NOT NULL,
                     expires_at TEXT NOT NULL
                 )
@@ -121,9 +134,14 @@ class FourLayerMemoryManager:
                 conn.execute("ALTER TABLE memory_l1 ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
             except sqlite3.OperationalError:
                 pass
+            try:
+                conn.execute("ALTER TABLE memory_l1 ADD COLUMN privacy_level TEXT DEFAULT 'private'")
+            except sqlite3.OperationalError:
+                pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l1_key ON memory_l1(key)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l1_expires ON memory_l1(expires_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l1_user ON memory_l1(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_l1_privacy ON memory_l1(privacy_level)")
         
             # L2: 事件序列（永久，时间索引）
         with sqlite3.connect(self._get_db_path("L2")) as conn:
@@ -135,6 +153,7 @@ class FourLayerMemoryManager:
                     metadata TEXT,
                     source TEXT DEFAULT 'system',
                     user_id TEXT DEFAULT 'anonymous',
+                    privacy_level TEXT DEFAULT 'private',
                     created_at TEXT NOT NULL,
                     last_recalled_at TEXT
                 )
@@ -147,11 +166,16 @@ class FourLayerMemoryManager:
                 conn.execute("ALTER TABLE memory_l2 ADD COLUMN last_recalled_at TEXT")
             except sqlite3.OperationalError:
                 pass
+            try:
+                conn.execute("ALTER TABLE memory_l2 ADD COLUMN privacy_level TEXT DEFAULT 'private'")
+            except sqlite3.OperationalError:
+                pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_key ON memory_l2(key)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_created ON memory_l2(created_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_source ON memory_l2(source)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_user ON memory_l2(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_recalled ON memory_l2(last_recalled_at)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_l2_privacy ON memory_l2(privacy_level)")
         
             # L3: 知识图谱降级存储（当 graph driver 不可用时使用）
         with sqlite3.connect(self._get_db_path("L3")) as conn:
@@ -162,12 +186,17 @@ class FourLayerMemoryManager:
                     type TEXT,
                     source TEXT,
                     user_id TEXT DEFAULT 'anonymous',
+                    privacy_level TEXT DEFAULT 'private',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(name, user_id)
                 )
             """)
             try:
                 conn.execute("ALTER TABLE kg_entities ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE kg_entities ADD COLUMN privacy_level TEXT DEFAULT 'private'")
             except sqlite3.OperationalError:
                 pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_name ON kg_entities(name)")
@@ -184,7 +213,7 @@ class FourLayerMemoryManager:
                 self._graph_driver = False  # 标记为不可用
         return self._graph_driver if self._graph_driver is not False else None
     
-    def write(self, layer: str, key: str, value: Any, metadata: Optional[Dict] = None, user_id: str = "anonymous") -> bool:
+    def write(self, layer: str, key: str, value: Any, metadata: Optional[Dict] = None, user_id: str = "anonymous", privacy_level: str = "private") -> bool:
         """
         写入记忆
         
@@ -194,6 +223,7 @@ class FourLayerMemoryManager:
             value: 记忆值（任意 JSON 可序列化对象）
             metadata: 元数据字典
             user_id: 用户ID（P12-001 多用户分区）
+            privacy_level: 隐私级别 — public / team / private（P20-002）
             
         Returns:
             bool: 是否成功
@@ -201,17 +231,18 @@ class FourLayerMemoryManager:
         layer = layer.upper()
         metadata = metadata or {}
         metadata["_user_id"] = user_id  # 存入 metadata 便于追溯
+        metadata["_privacy_level"] = privacy_level
         now = datetime.now().isoformat()
         
         try:
             if layer == "L0":
-                return self._write_l0(key, value, metadata, now, user_id)
+                return self._write_l0(key, value, metadata, now, user_id, privacy_level)
             elif layer == "L1":
-                return self._write_l1(key, value, metadata, now, user_id)
+                return self._write_l1(key, value, metadata, now, user_id, privacy_level)
             elif layer == "L2":
-                return self._write_l2(key, value, metadata, now, user_id)
+                return self._write_l2(key, value, metadata, now, user_id, privacy_level)
             elif layer == "L3":
-                return self._write_l3(key, value, metadata, now, user_id)
+                return self._write_l3(key, value, metadata, now, user_id, privacy_level)
             else:
                 raise ValueError(f"Unknown layer: {layer}")
         except Exception as e:
@@ -221,40 +252,40 @@ class FourLayerMemoryManager:
                 self._fallback_jsonl_backup(key, value, metadata, now)
             return False
     
-    def _write_l0(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
+    def _write_l0(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", privacy_level: str = "private") -> bool:
         """L0: 系统元数据，覆盖写"""
         with self._get_db_conn("L0") as conn:
             conn.execute(
-                "INSERT OR REPLACE INTO memory_l0 (key, value, metadata, user_id, updated_at) VALUES (?, ?, ?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), user_id, now)
+                "INSERT OR REPLACE INTO memory_l0 (key, value, metadata, user_id, privacy_level, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), user_id, privacy_level, now)
             )
             conn.commit()
             return True
 
-    def _write_l1(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
+    def _write_l1(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", privacy_level: str = "private") -> bool:
         """L1: 高频活跃记忆，TTL 7天"""
         expires = (datetime.now() + timedelta(days=LAYER_CONFIG["L1"]["ttl_days"])).isoformat()
         importance = metadata.get("importance", 0.5)
         with self._get_db_conn("L1") as conn:
             conn.execute(
-                "INSERT INTO memory_l1 (key, value, metadata, importance, user_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), importance, user_id, now, expires)
+                "INSERT INTO memory_l1 (key, value, metadata, importance, user_id, privacy_level, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), importance, user_id, privacy_level, now, expires)
             )
             conn.commit()
             return True
 
-    def _write_l2(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
+    def _write_l2(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", privacy_level: str = "private") -> bool:
         """L2: 事件序列，永久存储"""
         source = metadata.get("source", "system")
         with self._get_db_conn("L2") as conn:
             conn.execute(
-                "INSERT INTO memory_l2 (key, value, metadata, source, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), source, user_id, now)
+                "INSERT INTO memory_l2 (key, value, metadata, source, user_id, privacy_level, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (key, json.dumps(value, ensure_ascii=False), json.dumps(metadata, ensure_ascii=False), source, user_id, privacy_level, now)
             )
             conn.commit()
             return True
 
-    def _write_l3(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous") -> bool:
+    def _write_l3(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", privacy_level: str = "private") -> bool:
         """L3: 知识图谱，复用 SQLiteGraphDriver"""
         driver = self._get_graph_driver()
         if driver is None:
@@ -286,6 +317,72 @@ class FourLayerMemoryManager:
                 conn.commit()
                 return True
     
+    def search_by_privacy_level(self, layer: str, privacy_level: str, top_k: int = 20, user_id: str = "anonymous") -> List[Dict]:
+        """
+        按隐私级别搜索记忆（P20-002）。
+        
+        Args:
+            layer: L1/L2（L0/L3 不支持此搜索）
+            privacy_level: public / team / private
+            top_k: 返回条数
+            user_id: 用户ID
+            
+        Returns:
+            记忆列表
+        """
+        layer = layer.upper()
+        try:
+            if layer == "L1":
+                return self._search_l1_by_privacy(privacy_level, top_k, user_id)
+            elif layer == "L2":
+                return self._search_l2_by_privacy(privacy_level, top_k, user_id)
+            else:
+                raise ValueError(f"Privacy search not supported for layer {layer}")
+        except Exception as e:
+            logger.error(f"Privacy search {layer} failed: {e}")
+            return []
+    
+    def _search_l1_by_privacy(self, privacy_level: str, top_k: int, user_id: str) -> List[Dict]:
+        now = datetime.now().isoformat()
+        with self._get_db_conn("L1") as conn:
+            cursor = conn.execute(
+                "SELECT key, value, metadata, importance, created_at FROM memory_l1 WHERE privacy_level = ? AND user_id = ? AND expires_at > ? ORDER BY importance DESC LIMIT ?",
+                (privacy_level, user_id, now, top_k)
+            )
+            rows = cursor.fetchall()
+            return [
+                {"key": r[0], "value": json.loads(r[1]), "metadata": json.loads(r[2]) if r[2] else {}, "importance": r[3], "created_at": r[4], "privacy_level": privacy_level}
+                for r in rows
+            ]
+    
+    def _search_l2_by_privacy(self, privacy_level: str, top_k: int, user_id: str) -> List[Dict]:
+        with self._get_db_conn("L2") as conn:
+            cursor = conn.execute(
+                "SELECT key, value, metadata, source, created_at FROM memory_l2 WHERE privacy_level = ? AND user_id = ? ORDER BY created_at DESC LIMIT ?",
+                (privacy_level, user_id, top_k)
+            )
+            rows = cursor.fetchall()
+            return [
+                {"key": r[0], "value": json.loads(r[1]), "metadata": json.loads(r[2]) if r[2] else {}, "source": r[3], "created_at": r[4], "privacy_level": privacy_level}
+                for r in rows
+            ]
+    
+    def filter_by_privacy(self, memories: List[Dict], visibility: str = "private") -> List[Dict]:
+        """
+        对记忆列表进行隐私过滤。
+        
+        visibility 规则：
+        - "private": 仅返回 private（自己的）
+        - "team": 返回 private + team
+        - "public": 返回所有（public + team + private）
+        """
+        if visibility == "public":
+            return memories
+        elif visibility == "team":
+            return [m for m in memories if m.get("privacy_level", "private") in ("private", "team")]
+        else:  # private
+            return [m for m in memories if m.get("privacy_level", "private") == "private"]
+
     def _fallback_jsonl_backup(self, key: str, value: Any, metadata: Dict, now: str):
         """L2 写入失败时的 JSONL 备份"""
         backup_dir = Path("data/fallback")
@@ -316,28 +413,28 @@ class FourLayerMemoryManager:
     
     def _read_l0(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
         with self._get_db_conn("L0") as conn:
-            cursor = conn.execute("SELECT value, metadata FROM memory_l0 WHERE key = ? AND user_id = ?", (key, user_id))
+            cursor = conn.execute("SELECT value, metadata, privacy_level FROM memory_l0 WHERE key = ? AND user_id = ?", (key, user_id))
             row = cursor.fetchone()
             if row:
-                return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}}
+                return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "privacy_level": row[2] or "private"}
             return None
 
     def _read_l1(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
         now = datetime.now().isoformat()
         with self._get_db_conn("L1") as conn:
             cursor = conn.execute(
-                "SELECT value, metadata, importance, created_at FROM memory_l1 WHERE key = ? AND user_id = ? AND expires_at > ? ORDER BY id DESC LIMIT 1",
+                "SELECT value, metadata, importance, created_at, privacy_level FROM memory_l1 WHERE key = ? AND user_id = ? AND expires_at > ? ORDER BY id DESC LIMIT 1",
                 (key, user_id, now)
             )
             row = cursor.fetchone()
             if row:
-                return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "importance": row[2], "created_at": row[3]}
+                return {"value": json.loads(row[0]), "metadata": json.loads(row[1]) if row[1] else {}, "importance": row[2], "created_at": row[3], "privacy_level": row[4] or "private"}
             return None
 
     def _read_l2(self, key: str, user_id: str = "anonymous") -> Optional[Any]:
         with self._get_db_conn("L2") as conn:
             cursor = conn.execute(
-                "SELECT id, value, metadata, source, created_at FROM memory_l2 WHERE key = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                "SELECT id, value, metadata, source, created_at, privacy_level FROM memory_l2 WHERE key = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
                 (key, user_id)
             )
             row = cursor.fetchone()
@@ -351,7 +448,7 @@ class FourLayerMemoryManager:
                     conn.commit()
                 except Exception as e:
                     logger.warning(f"Failed to update last_recalled_at: {e}")
-                return {"value": json.loads(row[1]), "metadata": json.loads(row[2]) if row[2] else {}, "source": row[3], "created_at": row[4]}
+                return {"value": json.loads(row[1]), "metadata": json.loads(row[2]) if row[2] else {}, "source": row[3], "created_at": row[4], "privacy_level": row[5] or "private"}
             return None
 
     def _read_l3(self, key: str) -> Optional[Any]:
@@ -500,6 +597,50 @@ class FourLayerMemoryManager:
             conn.commit()
             logger.info(f"Cleared {layer}: removed {deleted} records")
             return deleted
+    
+    def search_by_privacy_level(self, layer: str, privacy_level: str, top_k: int = 10) -> List[Dict[str, Any]]:
+        """按隐私级别搜索记忆 (P20-002)"""
+        layer = layer.upper()
+        config = LAYER_CONFIG.get(layer)
+        if not config or layer == "L3":
+            return []
+        
+        with self._get_db_conn(layer) as conn:
+            table = config["table"]
+            cursor = conn.execute(
+                f"SELECT key, value, metadata, created_at, source, privacy_level "
+                f"FROM {table} WHERE privacy_level = ? ORDER BY created_at DESC LIMIT ?",
+                (privacy_level, top_k)
+            )
+            rows = cursor.fetchall()
+            return [
+                {
+                    "key": row[0],
+                    "value": json.loads(row[1]) if row[1] else None,
+                    "metadata": json.loads(row[2]) if row[2] else {},
+                    "created_at": row[3],
+                    "source": row[4],
+                    "privacy_level": row[5] or "private",
+                }
+                for row in rows
+            ]
+    
+    def filter_by_privacy(self, memories: List[Dict[str, Any]], visibility: str = "private") -> List[Dict[str, Any]]:
+        """按可见性过滤记忆列表 (P20-002)
+        
+        visibility 规则:
+        - "private": 仅返回 private 级别
+        - "team": 返回 team + private
+        - "public": 返回全部 (public + team + private)
+        """
+        visibility = visibility.lower()
+        hierarchy = {"private": 0, "team": 1, "public": 2}
+        required = hierarchy.get(visibility, 0)
+        
+        return [
+            m for m in memories
+            if hierarchy.get(m.get("privacy_level", "private"), 0) <= required
+        ]
     
     def stats(self) -> Dict[str, Any]:
         """获取各层统计"""
