@@ -269,9 +269,14 @@ function PrivateMemorySection() {
   const [selectedMemory, setSelectedMemory] = useState<MemoryItem | null>(null)
   const [shareMode, setShareMode] = useState<'idle' | 'copied' | 'downloaded'>('idle')
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
+  const [privacyFilter, setPrivacyFilter] = useState<string>('')
+  const [showWriteForm, setShowWriteForm] = useState(false)
+  const [writeKey, setWriteKey] = useState('')
+  const [writeValue, setWriteValue] = useState('')
+  const [writePrivacy, setWritePrivacy] = useState<'private' | 'team' | 'public'>('private')
   const cardRef = useRef<HTMLDivElement>(null)
 
-  const { data: memories = [], isLoading } = useMemorySearch(activeLayer, searchQuery)
+  const { data: memories = [], isLoading } = useMemorySearch(activeLayer, searchQuery, privacyFilter || undefined)
   const { data: pushBundle } = useProactivePush('anonymous', '')
 
   const pushItems = (() => {
@@ -348,6 +353,27 @@ function PrivateMemorySection() {
             </button>
           </form>
 
+          {/* Privacy Filter */}
+          <select
+            value={privacyFilter}
+            onChange={(e) => setPrivacyFilter(e.target.value)}
+            className="px-2 py-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+          >
+            <option value="">全部隐私</option>
+            <option value="public">🌐 公开</option>
+            <option value="team">👥 团队</option>
+            <option value="private">🔒 私有</option>
+          </select>
+
+          {/* Write Memory Toggle */}
+          <button
+            onClick={() => setShowWriteForm(!showWriteForm)}
+            className="px-2 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] text-xs transition-colors flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            写入
+          </button>
+
           {/* Filter Icon */}
           <button className="p-2 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] transition-colors">
             <SlidersHorizontal className="w-4 h-4" />
@@ -373,6 +399,82 @@ function PrivateMemorySection() {
         </div>
       </div>
 
+      {/* Write Memory Form */}
+      {showWriteForm && (
+        <div className="max-w-6xl mx-auto px-4 pb-4">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault()
+              try {
+                const apiUrl = import.meta.env.VITE_API_URL || ''
+                const res = await fetch(`${apiUrl}/api/memory/write`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    layer: activeLayer,
+                    key: writeKey,
+                    value: writeValue,
+                    privacy_level: writePrivacy,
+                  }),
+                })
+                if (res.ok) {
+                  setWriteKey('')
+                  setWriteValue('')
+                  setShowWriteForm(false)
+                  window.location.reload()
+                }
+              } catch (err) {
+                console.error('Write memory failed:', err)
+              }
+            }}
+            className="p-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] space-y-3"
+          >
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={writeKey}
+                onChange={(e) => setWriteKey(e.target.value)}
+                placeholder="记忆键 (key)"
+                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                required
+              />
+              <select
+                value={writePrivacy}
+                onChange={(e) => setWritePrivacy(e.target.value as 'private' | 'team' | 'public')}
+                className="px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+              >
+                <option value="private">🔒 私有</option>
+                <option value="team">👥 团队</option>
+                <option value="public">🌐 公开</option>
+              </select>
+            </div>
+            <textarea
+              value={writeValue}
+              onChange={(e) => setWriteValue(e.target.value)}
+              placeholder="记忆内容 (value)"
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] resize-none"
+              required
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowWriteForm(false)}
+                className="px-3 py-1.5 rounded-lg text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs hover:bg-blue-500 transition-colors"
+              >
+                写入记忆
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Memory Grid / Timeline */}
       <div className="max-w-6xl mx-auto px-4 py-4">
         {memories.length === 0 && !isLoading ? (
@@ -384,10 +486,12 @@ function PrivateMemorySection() {
         ) : viewMode === 'timeline' ? (
           <MemoryTimeline
             memories={memories.map((m) => ({
+              id: m.key,
               key: m.key,
               layer: m.layer,
               value: m.value,
               created_at: m.created_at,
+              privacy_level: m.privacy_level,
             }))}
             onSelect={(m) => setSelectedMemory(m as MemoryItem)}
           />

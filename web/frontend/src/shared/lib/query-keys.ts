@@ -4,7 +4,7 @@ export const queryKeys = {
     session: ['auth', 'session'] as const,
   },
   memory: {
-    search: (layer: string, query: string) => ['memory', 'search', layer, query] as const,
+    search: (layer: string, query: string, privacyLevel?: string) => ['memory', 'search', layer, query, privacyLevel || 'all'] as const,
     stats: ['memory', 'stats'] as const,
     proactive: (context?: string) => ['memory', 'proactive', context] as const,
   },

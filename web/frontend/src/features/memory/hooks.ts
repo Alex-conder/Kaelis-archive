@@ -15,14 +15,15 @@ import type {
 // Private Memory Hooks (L0-L3)
 // ======================================================================
 
-export function useMemorySearch(layer: string, query: string) {
+export function useMemorySearch(layer: string, query: string, privacyLevel?: string) {
   return useQuery({
-    queryKey: queryKeys.memory.search(layer, query),
+    queryKey: queryKeys.memory.search(layer, query, privacyLevel),
     queryFn: async () => {
       const { data } = await memoryApi.search({
         layer,
         query: query.trim() || '*',
         top_k: 20,
+        privacy_level: privacyLevel,
       })
       return (data.data || []) as MemoryItem[]
     },

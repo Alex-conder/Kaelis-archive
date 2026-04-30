@@ -179,6 +179,8 @@ def write_memory():
         key = data.get('key')
         value = data.get('value')
         metadata = data.get('metadata', {})
+        privacy_level = data.get('privacy_level', 'private')
+        user_id = data.get('user_id', 'anonymous')
         
         if not layer or not key or value is None:
             return jsonify({"success": False, "error": "layer, key, and value required"}), 400
@@ -187,13 +189,14 @@ def write_memory():
             return jsonify({"success": False, "error": f"Invalid layer: {layer}"}), 400
         
         mm = get_memory_manager()
-        ok = mm.write(layer, key, value, metadata)
+        ok = mm.write(layer, key, value, metadata, user_id=user_id, privacy_level=privacy_level)
         
         return jsonify({
             "success": ok,
             "message": "Memory written" if ok else "Write failed",
             "layer": layer,
-            "key": key
+            "key": key,
+            "privacy_level": privacy_level
         })
         
     except Exception as e:
@@ -295,6 +298,7 @@ def search_memory():
         query = data.get('query', '')
         use_fts = data.get('use_fts', True)
         top_k = data.get('top_k', 10)
+        privacy_level = data.get('privacy_level')
         
         if not layer:
             return jsonify({"success": False, "error": "layer required"}), 400
@@ -303,6 +307,20 @@ def search_memory():
             return jsonify({"success": False, "error": f"Search not supported for layer: {layer}"}), 400
         
         results = []
+        
+        # 优先按隐私级别搜索
+        if privacy_level and FOUR_LAYER_AVAILABLE:
+            mm = get_memory_manager()
+            results = mm.search_by_privacy_level(layer, privacy_level, top_k)
+            return jsonify({
+                "success": True,
+                "data": results,
+                "method": "privacy_filter",
+                "count": len(results),
+                "layer": layer,
+                "query": query or '*',
+                "privacy_level": privacy_level
+            })
         
         # 特殊查询: '*' 或空查询时返回最近 N 条记录
         if not query or query == '*' or query == '':
@@ -314,7 +332,7 @@ def search_memory():
                 with sqlite3.connect(db_path) as conn:
                     table = f"memory_{layer.lower()}"
                     cursor = conn.execute(
-                        f"SELECT id, key, value, metadata, created_at FROM {table} ORDER BY created_at DESC LIMIT ?",
+                        f"SELECT id, key, value, metadata, created_at, privacy_level FROM {table} ORDER BY created_at DESC LIMIT ?",
                         (top_k,)
                     )
                     rows = cursor.fetchall()
@@ -325,6 +343,7 @@ def search_memory():
                             "value": json.loads(r[2]),
                             "metadata": json.loads(r[3]) if r[3] else {},
                             "created_at": r[4],
+                            "privacy_level": r[5] or 'private',
                             "layer": layer,
                         }
                         for r in rows

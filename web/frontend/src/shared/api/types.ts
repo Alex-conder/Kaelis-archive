@@ -96,12 +96,15 @@ export interface MemoryWriteRequest {
   key: string
   value: unknown
   metadata?: Record<string, unknown>
+  privacy_level?: 'private' | 'team' | 'public'
+  user_id?: string
 }
 
 export interface MemorySearchRequest {
   query: string
   layer?: string
   top_k?: number
+  privacy_level?: string
 }
 
 export interface MemoryItem {
@@ -112,6 +115,7 @@ export interface MemoryItem {
   timestamp?: string
   created_at?: number
   updated_at?: number
+  privacy_level?: string
 }
 
 export interface MemoryStatsLayer {
