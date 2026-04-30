@@ -930,6 +930,55 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             except Exception as e:
                 return json.dumps({"error": str(e)}, ensure_ascii=False)
 
+        @mcp.tool("llm.route_task")
+        def llm_route_task(
+            task_description: str,
+            context_length: int = 0,
+            budget_limit: float = 0.0,
+            strategy: str = "balanced",
+        ) -> str:
+            """
+            智能路由：根据任务描述推荐最优 LLM 模型，并返回预估成本。
+
+            Args:
+                task_description: 任务描述
+                context_length: 需要的上下文长度
+                budget_limit: 预算上限（$/1M tokens），0 表示无限制
+                strategy: cost_first | quality_first | balanced
+            """
+            try:
+                budget = budget_limit if budget_limit > 0 else None
+                result = _smart_router.route(
+                    task_description=task_description,
+                    context_length_required=context_length,
+                    max_cost_budget=budget,
+                    strategy=strategy,
+                )
+                if result:
+                    return json.dumps({
+                        "success": True,
+                        "recommended_model": result["name"],
+                        "endpoint": result["endpoint"],
+                        "estimated_cost_usd": result.get("estimated_cost"),
+                        "cost_per_1m": result["cost_per_1m"],
+                        "context_length": result["context_length"],
+                        "matched_categories": result["matched_categories"],
+                        "strategy": result["strategy"],
+                    }, ensure_ascii=False)
+                return json.dumps({"success": False, "error": "No available model"}, ensure_ascii=False)
+            except Exception as e:
+                logger.error(f"llm.route_task error: {e}")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("llm.get_stats")
+        def llm_get_stats() -> str:
+            """获取 LLM 路由调用统计。"""
+            try:
+                stats = _smart_router.get_stats()
+                return json.dumps({"success": True, "stats": stats}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
         logger.info("[MCP] Tool gateway + LLM router tools registered")
     except Exception as e:
         logger.warning("Failed to register tool/llm tools: %s", e)
