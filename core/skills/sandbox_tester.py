@@ -14,6 +14,8 @@ import logging
 import os
 import re
 import sqlite3
+import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -39,6 +41,9 @@ DANGEROUS_PATTERNS = {
         r"del\s+/",
         r"format\s*\(.*?system",
         r"shutil\.rmtree\s*\(.*?/\s*\)",
+        r"base64\.b64decode\s*\(.*?\).*?(exec|eval)\s*\(",
+        r"__builtins__\s*\[\s*['\"]__import__['\"]\s*\]",
+        r"(exec|eval|compile)\s*\(\s*['\"]\s*(import|from)",
     ],
     "HIGH": [
         r"open\s*\(\s*['\"]/",
@@ -61,6 +66,47 @@ DANGEROUS_PATTERNS = {
         r"logging\.",
         r"debug\s*\(",
     ],
+}
+
+# CWE 映射表：危险正则模式 -> CWE ID
+CWE_PATTERNS = {
+    # OS Command Injection (CWE-78)
+    r"os\.system\s*\(": "CWE-78",
+    r"subprocess\.call\s*\(": "CWE-78",
+    r"subprocess\.run\s*\(": "CWE-78",
+    r"subprocess\.Popen\s*\(": "CWE-78",
+    r"rm\s+-rf\s+/": "CWE-78",
+    r"del\s+/": "CWE-78",
+    # Code Injection (CWE-94)
+    r"eval\s*\(": "CWE-94",
+    r"exec\s*\(": "CWE-94",
+    r"compile\s*\(": "CWE-94",
+    r"__import__\s*\(": "CWE-94",
+    r"importlib\.import_module\s*\(": "CWE-94",
+    r"builtins\.__import__": "CWE-94",
+    r"__builtins__\s*\[\s*['\"]__import__['\"]\s*\]": "CWE-94",
+    r"base64\.b64decode\s*\(.*?\).*?(exec|eval)\s*\(": "CWE-94",
+    r"(exec|eval|compile)\s*\(\s*['\"]\s*(import|from)": "CWE-94",
+    # Path Traversal (CWE-22)
+    r"open\s*\(\s*['\"]/": "CWE-22",
+    r"pathlib\.Path\s*\(\s*['\"]/": "CWE-22",
+    r"shutil\.rmtree\s*\(.*?/\s*\)": "CWE-22",
+    # SSRF / Network (CWE-918)
+    r"requests\.(get|post|put|delete)\s*\(": "CWE-918",
+    r"urllib\.request\.urlopen\s*\(": "CWE-918",
+    r"socket\.(socket|connect)\s*\(": "CWE-918",
+    r"ftplib\.": "CWE-918",
+    r"telnetlib\.": "CWE-918",
+    # File Operation / Info Disclosure (CWE-200)
+    r"open\s*\(": "CWE-200",
+    r"write\s*\(": "CWE-200",
+    r"read\s*\(": "CWE-200",
+    r"os\.(mkdir|rmdir|remove|rename|chmod|chown)": "CWE-200",
+    r"shutil\.(copy|move|copytree)": "CWE-200",
+    # Debug / Info Disclosure (CWE-489)
+    r"print\s*\(": "CWE-489",
+    r"logging\.": "CWE-489",
+    r"debug\s*\(": "CWE-489",
 }
 
 RISK_WEIGHTS = {"CRITICAL": 100, "HIGH": 40, "MEDIUM": 15, "LOW": 5}
@@ -304,6 +350,81 @@ class SkillSandboxTester:
                 return depth
             return max(SkillSandboxTester._calc_nested_depth(v, depth + 1) for v in data)
         return depth
+
+    def exec_sandbox_test(self, skill_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        在受限子进程中执行技能代码，测试运行时安全性。
+        使用 subprocess.run 限制 PYTHONPATH、设置无效代理以阻断网络，
+        并设置超时防止无限挂起。
+        """
+        code = (
+            skill_data.get("code")
+            or skill_data.get("source")
+            or skill_data.get("script")
+        )
+        if not code:
+            return {"passed": True, "reason": "No executable code found"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(code)
+            tmp_path = f.name
+
+        try:
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(tempfile.gettempdir())
+            env["HTTP_PROXY"] = "http://127.0.0.1:1"
+            env["HTTPS_PROXY"] = "http://127.0.0.1:1"
+            env["NO_NETWORK"] = "1"
+
+            result = subprocess.run(
+                [sys.executable, tmp_path],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env=env,
+            )
+            passed = result.returncode == 0
+            return {
+                "passed": passed,
+                "returncode": result.returncode,
+                "stdout": result.stdout[:1000],
+                "stderr": result.stderr[:1000],
+                "timeout": False,
+                "reason": "Execution completed" if passed else "Non-zero exit code",
+            }
+        except subprocess.TimeoutExpired:
+            return {"passed": False, "reason": "Execution timed out", "timeout": True}
+        except Exception as e:
+            return {"passed": False, "reason": str(e), "timeout": False}
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+
+    @classmethod
+    def marketplace_gate(cls, skill_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        技能市场网关。
+        仅当风险等级为 LOW 且执行沙箱测试通过时才允许发布。
+        """
+        tester = cls()
+        report = tester.test_skill(skill_data)
+
+        if report.risk_level != "LOW":
+            return {
+                "allowed": False,
+                "reason": f"Risk level is {report.risk_level}, expected LOW",
+            }
+
+        exec_result = tester.exec_sandbox_test(skill_data)
+        if not exec_result.get("passed", False):
+            return {
+                "allowed": False,
+                "reason": f"Execution sandbox test failed: {exec_result.get('reason', 'Unknown')}",
+            }
+
+        return {"allowed": True, "reason": "Skill passed all security gates"}
 
 
 # 全局实例

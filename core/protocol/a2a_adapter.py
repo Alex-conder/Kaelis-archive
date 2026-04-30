@@ -13,6 +13,7 @@ A2A 核心概念：
 
 import json
 import logging
+import threading
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -217,3 +218,196 @@ class A2AAdapter:
         except Exception as e:
             logger.warning(f"Failed to import A2A agent: {e}")
             return None
+
+    # ------------------------------------------------------------------
+    # 外部 A2A Agent 交互（新增）
+    # ------------------------------------------------------------------
+
+    def _build_auth_headers(self, credentials: Optional[Dict[str, Any]]) -> Dict[str, str]:
+        """根据 credentials 构建 HTTP 认证头"""
+        headers = {}
+        if not credentials:
+            return headers
+
+        auth_type = credentials.get("type", "none")
+        if auth_type == "oauth2":
+            token = credentials.get("access_token")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+        elif auth_type == "apiKey":
+            key = credentials.get("api_key")
+            if key:
+                header_name = credentials.get("header_name", "x-api-key")
+                headers[header_name] = key
+        return headers
+
+    def send_task(
+        self,
+        agent_url: str,
+        task_payload: Dict[str, Any],
+        credentials: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        通过 HTTP POST 向外部 A2A Agent 发送 Task 请求。
+
+        Args:
+            agent_url: 外部 A2A Agent 的根 URL
+            task_payload: 符合 A2A 标准的 Task JSON payload
+            credentials: 可选认证信息，格式 {"type": "oauth2"|"apiKey", ...}
+
+        Returns:
+            A2A Task 响应 JSON，失败时返回 None
+        """
+        import requests
+
+        url = f"{agent_url.rstrip('/')}/tasks/send"
+        headers = {"Content-Type": "application/json"}
+        headers.update(self._build_auth_headers(credentials))
+
+        try:
+            logger.info(f"Sending A2A task to {url}, task_id={task_payload.get('id')}")
+            resp = requests.post(url, json=task_payload, headers=headers, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            logger.info(f"A2A task sent successfully, task_id={data.get('id')}")
+            return data
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout sending A2A task to {url}")
+            return None
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error sending A2A task to {url}: {e.response.status_code} - {e.response.text}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to send A2A task to {url}: {e}")
+            return None
+
+    def poll_task_status(
+        self,
+        agent_url: str,
+        task_id: str,
+        credentials: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        通过 HTTP GET 轮询外部 A2A Agent 的 Task 状态。
+
+        Args:
+            agent_url: 外部 A2A Agent 的根 URL
+            task_id: 要查询的 Task ID
+            credentials: 可选认证信息
+
+        Returns:
+            A2A Task 状态 JSON，失败时返回 None
+        """
+        import requests
+
+        url = f"{agent_url.rstrip('/')}/tasks/{task_id}"
+        headers = self._build_auth_headers(credentials)
+
+        try:
+            logger.info(f"Polling A2A task status from {url}")
+            resp = requests.get(url, headers=headers, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            logger.info(f"A2A task status polled successfully, task_id={task_id}, status={data.get('status')}")
+            return data
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout polling A2A task status from {url}")
+            return None
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error polling A2A task status from {url}: {e.response.status_code} - {e.response.text}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to poll A2A task status from {url}: {e}")
+            return None
+
+    def register_a2a_agent(
+        self,
+        agent_card: Dict[str, Any],
+        credentials: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
+        """
+        注册外部 A2A Agent 并绑定认证信息。
+
+        Args:
+            agent_card: 外部 Agent 的 Agent Card（JSON dict）
+            credentials: 可选认证信息，将存入 A2ACredentialVault
+
+        Returns:
+            注册成功的 skill_id，失败时返回 None
+        """
+        skill_id = self.import_external_skill(agent_card)
+        if skill_id and credentials:
+            # 绑定凭证到该 agent
+            agent_name = agent_card.get("name", skill_id)
+            vault = A2ACredentialVault()
+            vault.store(agent_name, credentials)
+            logger.info(f"Stored credentials for A2A agent '{agent_name}'")
+        return skill_id
+
+
+# ------------------------------------------------------------------
+# 凭证管理（新增）
+# ------------------------------------------------------------------
+
+class A2ACredentialVault:
+    """
+    管理 A2A Agent 的 OAuth2 / API Key 凭证。
+
+    线程安全，按 agent_id 维度存储和检索。
+    """
+
+    def __init__(self):
+        self._store: Dict[str, Dict[str, Any]] = {}
+        self._lock = threading.Lock()
+
+    def store(self, agent_id: str, credentials: Dict[str, Any]) -> None:
+        """
+        存储指定 Agent 的凭证。
+
+        Args:
+            agent_id: Agent 唯一标识
+            credentials: 凭证字典，示例：
+                {"type": "oauth2", "access_token": "..."}
+                {"type": "apiKey", "api_key": "...", "header_name": "x-api-key"}
+        """
+        with self._lock:
+            self._store[agent_id] = credentials
+            logger.info(f"Credentials stored for agent_id={agent_id}")
+
+    def retrieve(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """
+        检索指定 Agent 的凭证。
+
+        Args:
+            agent_id: Agent 唯一标识
+
+        Returns:
+            凭证字典，不存在时返回 None
+        """
+        with self._lock:
+            creds = self._store.get(agent_id)
+            if creds is None:
+                logger.debug(f"No credentials found for agent_id={agent_id}")
+            return creds
+
+    def remove(self, agent_id: str) -> bool:
+        """
+        删除指定 Agent 的凭证。
+
+        Args:
+            agent_id: Agent 唯一标识
+
+        Returns:
+            是否成功删除
+        """
+        with self._lock:
+            if agent_id in self._store:
+                del self._store[agent_id]
+                logger.info(f"Credentials removed for agent_id={agent_id}")
+                return True
+            return False
+
+    def list_agents(self) -> List[str]:
+        """列出所有已存储凭证的 Agent ID"""
+        with self._lock:
+            return list(self._store.keys())

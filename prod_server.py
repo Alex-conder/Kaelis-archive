@@ -115,6 +115,13 @@ def create_app():
     app.register_blueprint(files_bp)
     app.register_blueprint(tools_bp)
     app.register_blueprint(llm_router_bp)
+
+    # A2A Protocol (P19-001)
+    try:
+        from api.routes.a2a import a2a_bp
+        app.register_blueprint(a2a_bp)
+    except Exception as e:
+        logger.warning("Failed to register A2A blueprint: %s", e)
     
     # 注册 Swagger UI（API 交互式文档）
     try:
