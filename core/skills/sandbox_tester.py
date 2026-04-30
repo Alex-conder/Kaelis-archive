@@ -111,7 +111,38 @@ CWE_PATTERNS = {
 
 RISK_WEIGHTS = {"CRITICAL": 100, "HIGH": 40, "MEDIUM": 15, "LOW": 5}
 RISK_THRESHOLD_LOW = 20      # <= 20 为 LOW 安全等级
-RISK_THRESHOLD_MEDIUM = 60   # <= 60 为 MEDIUM，> 60 为 HIGH
+RISK_THRESHOLD_MEDIUM = 60   # <= 60 为 MEDIUM
+RISK_THRESHOLD_HIGH = 100    # <= 100 为 HIGH，> 100 为 CRITICAL
+
+# 已知恶意网络端点黑名单
+MALICIOUS_ENDPOINTS = {
+    "pastebin.com",
+    "transfer.sh",
+    "hookbin.com",
+    "requestbin.net",
+    "ngrok.io",
+    "serveo.net",
+    "localhost:4444",
+    "0.0.0.0:4444",
+}
+
+# 文件系统越权检测模式
+FS_ESCAPE_PATTERNS = [
+    r"open\s*\(\s*['\"]\.",           # 相对路径通常安全
+    r"open\s*\(\s*['\"]~",             # home 目录访问
+    r"open\s*\(\s*['\"]/",             # 绝对路径访问（根目录）
+    r"pathlib\.Path\s*\(\s*['\"]/",
+    r"os\.path\.expanduser",
+    r"os\.environ\[.*?HOME",
+]
+
+# 资源滥用检测模式
+RESOURCE_ABUSE_PATTERNS = [
+    r"while\s+True\s*:",                # 无限循环
+    r"for\s+.*\s+in\s+range\s*\(\s*\d{6,}",  # 超大 range
+    r"\[\s*0\s*\]\s*\*\s*\d{8,}",       # 超大列表分配
+    r"\.append\s*\(.*\)\s*\n.*\.append", # 无限追加模式
+]
 
 
 @dataclass
@@ -181,10 +212,25 @@ class SkillSandboxTester:
         if not report.db_isolation_test.get("passed", False):
             report.risk_score += 30
 
-        # 3. 性能基线（参数复杂度）
+        # 3. 网络安全检测
+        network_test = self._network_security_test(skill_data)
+        if not network_test.get("passed", False):
+            report.risk_score += 50
+
+        # 4. 文件系统越权检测
+        fs_test = self._filesystem_escape_test(skill_data)
+        if not fs_test.get("passed", False):
+            report.risk_score += 30
+
+        # 5. 资源滥用检测
+        resource_test = self._resource_abuse_test(skill_data)
+        if not resource_test.get("passed", False):
+            report.risk_score += 25
+
+        # 6. 性能基线（参数复杂度）
         report.performance_baseline = self._performance_baseline(skill_data)
 
-        # 4. 计算风险等级
+        # 7. 计算风险等级
         if report.risk_score <= RISK_THRESHOLD_LOW:
             report.risk_level = "LOW"
             report.passed = True
@@ -192,10 +238,14 @@ class SkillSandboxTester:
             report.risk_level = "MEDIUM"
             report.passed = False
             report.recommendations.append("技能存在中等风险，建议审查后再发布")
-        else:
+        elif report.risk_score <= RISK_THRESHOLD_HIGH:
             report.risk_level = "HIGH"
             report.passed = False
             report.recommendations.append("技能检测到高风险内容，禁止发布")
+        else:
+            report.risk_level = "CRITICAL"
+            report.passed = False
+            report.recommendations.append("技能检测到致命风险，绝对禁止发布")
 
         # 根据静态扫描结果添加建议
         for issue in report.static_scan.get("issues", []):
@@ -319,6 +369,51 @@ class SkillSandboxTester:
     # ------------------------------------------------------------------ #
     # 性能基线
     # ------------------------------------------------------------------ #
+
+    def _network_security_test(self, skill_data: Dict[str, Any]) -> Dict[str, Any]:
+        """检测技能中是否包含对已知恶意端点的网络请求。"""
+        issues = []
+        text_to_scan = self._extract_all_text(skill_data)
+
+        for endpoint in MALICIOUS_ENDPOINTS:
+            if endpoint.lower() in text_to_scan.lower():
+                issues.append(f"Known malicious endpoint detected: {endpoint}")
+
+        return {
+            "passed": len(issues) == 0,
+            "issues": issues,
+            "malicious_endpoints_found": issues,
+        }
+
+    def _filesystem_escape_test(self, skill_data: Dict[str, Any]) -> Dict[str, Any]:
+        """检测文件系统越权访问模式。"""
+        issues = []
+        text_to_scan = self._extract_all_text(skill_data)
+
+        for pattern in FS_ESCAPE_PATTERNS:
+            for match in re.finditer(pattern, text_to_scan, re.IGNORECASE):
+                issues.append(f"Filesystem escape pattern: {match.group(0)[:50]}")
+
+        return {
+            "passed": len(issues) == 0,
+            "issues": issues,
+            "escape_patterns_found": issues,
+        }
+
+    def _resource_abuse_test(self, skill_data: Dict[str, Any]) -> Dict[str, Any]:
+        """检测资源滥用模式（CPU/内存超限）。"""
+        issues = []
+        text_to_scan = self._extract_all_text(skill_data)
+
+        for pattern in RESOURCE_ABUSE_PATTERNS:
+            for match in re.finditer(pattern, text_to_scan, re.IGNORECASE):
+                issues.append(f"Resource abuse pattern: {match.group(0)[:50]}")
+
+        return {
+            "passed": len(issues) == 0,
+            "issues": issues,
+            "abuse_patterns_found": issues,
+        }
 
     def _performance_baseline(self, skill_data: Dict[str, Any]) -> Dict[str, Any]:
         """基于参数复杂度估算性能基线。"""

@@ -1,0 +1,18 @@
+{
+  "agents": {
+    "code-reviewer": {
+      "description": "代码审查专家，负责代码质量、安全漏洞和最佳实践检查",
+      "capabilities": ["code", "review", "security"],
+      "toolset": ["static_analysis", "diff_parser"],
+      "system_prompt": "You are a senior code reviewer. Focus on: 1) Security vulnerabilities 2) Performance bottlenecks 3) Code readability 4) Test coverage. Provide actionable suggestions.",
+      "max_tokens": 8192
+    },
+    "data-analyst": {
+      "description": "数据分析专家，处理统计计算、可视化建议和洞察生成",
+      "capabilities": ["data", "analysis", "statistics", "visualization"],
+      "toolset": ["pandas", "numpy", "matplotlib"],
+      "system_prompt": "You are a data analyst. Analyze datasets, identify trends, detect anomalies, and suggest visualizations. Always validate data quality first.",
+      "max_tokens": 4096
+    }
+  }
+}

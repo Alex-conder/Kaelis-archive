@@ -983,6 +983,200 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
     except Exception as e:
         logger.warning("Failed to register tool/llm tools: %s", e)
 
+    # ------------------------------------------------------------------ #
+    # Agent Swarm Tools (P22)
+    # ------------------------------------------------------------------ #
+    try:
+        from core.agent_swarm.labor_market import get_labor_market
+        from core.agent_swarm.task_delegator import get_task_delegator, TaskStatus
+
+        _labor_market = get_labor_market()
+        _task_delegator = get_task_delegator()
+
+        @mcp.tool("agent.create_subagent")
+        def agent_create_subagent(
+            name: str,
+            description: str = "",
+            capabilities: str = "[]",
+            tools: str = "[]",
+            system_prompt: str = "",
+            max_tokens: int = 4096,
+        ) -> str:
+            """动态创建 Subagent。capabilities 和 tools 为 JSON 字符串数组。"""
+            try:
+                caps = json.loads(capabilities) if capabilities else []
+                tool_list = json.loads(tools) if tools else []
+                agent = _labor_market.add_dynamic_subagent(
+                    name=name,
+                    description=description,
+                    capabilities=caps,
+                    tools=tool_list,
+                    system_prompt=system_prompt,
+                    max_tokens=max_tokens,
+                )
+                return json.dumps({"success": True, "agent": agent.spec.name}, ensure_ascii=False)
+            except ValueError as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("agent.create_subagent failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("agent.list_subagents")
+        def agent_list_subagents() -> str:
+            """列出所有 Subagent（fixed + dynamic）。"""
+            try:
+                agents = _labor_market.list_subagents()
+                return json.dumps({"success": True, "count": len(agents), "agents": agents}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("agent.remove_subagent")
+        def agent_remove_subagent(name: str) -> str:
+            """移除 dynamic Subagent（fixed 不可移除）。"""
+            try:
+                ok = _labor_market.remove_subagent(name)
+                return json.dumps({"success": ok, "removed": name if ok else None}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("task.delegate")
+        def task_delegate(
+            description: str,
+            subagent_name: str = "",
+            context: str = "",
+            timeout: int = 300,
+        ) -> str:
+            """委托任务给 Subagent。subagent_name 为空时自动匹配。"""
+            try:
+                import asyncio as _asyncio
+                record = _asyncio.run(_task_delegator.delegate(
+                    description=description,
+                    subagent_name=subagent_name or None,
+                    context=context,
+                    timeout=timeout,
+                ))
+                return json.dumps({
+                    "success": True,
+                    "task_id": record.task_id,
+                    "status": record.status.value,
+                    "subagent": record.subagent_name,
+                    "result": record.result,
+                }, ensure_ascii=False, default=str)
+            except Exception as e:
+                logger.exception("task.delegate failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("task.status")
+        def task_status(task_id: str) -> str:
+            """查询任务状态。"""
+            try:
+                status = _task_delegator.get_status(task_id)
+                if status:
+                    return json.dumps({"success": True, "status": status}, ensure_ascii=False, default=str)
+                return json.dumps({"success": False, "error": "Task not found"}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("task.cancel")
+        def task_cancel(task_id: str) -> str:
+            """取消执行中的任务。"""
+            try:
+                import asyncio as _asyncio
+                ok = _asyncio.run(_task_delegator.cancel(task_id))
+                return json.dumps({"success": ok, "cancelled": ok}, ensure_ascii=False)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] Agent swarm tools registered")
+    except Exception as e:
+        logger.warning("Failed to register agent swarm tools: %s", e)
+
+    # ------------------------------------------------------------------ #
+    # A2A Protocol Tools (P22-003)
+    # ------------------------------------------------------------------ #
+    try:
+        from core.protocol.a2a_adapter import A2AAdapter
+
+        _a2a_adapter = A2AAdapter()
+
+        @mcp.tool("a2a.register_external")
+        def a2a_register_external(card_url: str) -> str:
+            """通过 URL 注册外部 A2A Agent 到 Kaelis。"""
+            try:
+                card = _a2a_adapter.discover_external_agents(card_url)
+                if not card:
+                    return json.dumps({"success": False, "error": "Failed to fetch agent card"}, ensure_ascii=False)
+                agent_id = _a2a_adapter.from_agent_card(card)
+                if agent_id:
+                    return json.dumps({"success": True, "agent_id": agent_id}, ensure_ascii=False)
+                return json.dumps({"success": False, "error": "Failed to register agent"}, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("a2a.register_external failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("a2a.send_task")
+        def a2a_send_task(target_url: str, task_json: str = "{}") -> str:
+            """向外部 A2A Agent 发送任务。"""
+            try:
+                task = json.loads(task_json) if task_json else {}
+                result = _a2a_adapter.send_task(target_url, task)
+                return json.dumps({"success": True, "result": result}, ensure_ascii=False, default=str)
+            except Exception as e:
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] A2A protocol tools registered")
+    except Exception as e:
+        logger.warning("Failed to register A2A tools: %s", e)
+
+    # ------------------------------------------------------------------ #
+    # OpenClaw Migration Tool (P22-004)
+    # ------------------------------------------------------------------ #
+    try:
+        from core.migration.openclaw_importer import OpenClawImporter
+
+        @mcp.tool("migration.import_openclaw")
+        def migration_import_openclaw(directory: str = "") -> str:
+            """导入 OpenClaw 技能和记忆。directory 为空时扫描默认目录。"""
+            try:
+                importer = OpenClawImporter(source_path=directory or None)
+                report = importer.run_migration(directory=directory or None)
+                return json.dumps({"success": True, "report": report}, ensure_ascii=False, default=str)
+            except Exception as e:
+                logger.exception("migration.import_openclaw failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] OpenClaw migration tool registered")
+    except Exception as e:
+        logger.warning("Failed to register OpenClaw migration tool: %s", e)
+
+    # ------------------------------------------------------------------ #
+    # Sandbox Tester Tool (P22-005)
+    # ------------------------------------------------------------------ #
+    try:
+        from core.skills.sandbox_tester import SkillSandboxTester
+
+        @mcp.tool("skill.test_in_sandbox")
+        def skill_test_in_sandbox(skill_json: str = "{}") -> str:
+            """在沙箱中测试技能安全性。skill_json 为技能 JSON 字符串。"""
+            try:
+                skill = json.loads(skill_json) if skill_json else {}
+                tester = SkillSandboxTester()
+                report = tester.test_skill(skill)
+                return json.dumps({
+                    "success": True,
+                    "passed": report.passed,
+                    "risk_level": report.risk_level,
+                    "risk_score": report.risk_score,
+                    "recommendations": report.recommendations,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("skill.test_in_sandbox failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] Sandbox tester tool registered")
+    except Exception as e:
+        logger.warning("Failed to register sandbox tester tool: %s", e)
+
     return mcp
 
 

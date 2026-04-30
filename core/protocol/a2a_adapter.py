@@ -11,6 +11,7 @@ A2A 核心概念：
 参考: https://github.com/google/A2A
 """
 
+import asyncio
 import json
 import logging
 import threading
@@ -319,6 +320,93 @@ class A2AAdapter:
         except Exception as e:
             logger.error(f"Failed to poll A2A task status from {url}: {e}")
             return None
+
+    def from_agent_card(self, card: Dict[str, Any]) -> Optional[str]:
+        """
+        解析外部 A2A Agent Card，注册到 Kaelis。
+        同时注册到 LaborMarket，使其成为可调度 Agent。
+
+        Args:
+            card: A2A Agent Card JSON dict
+
+        Returns:
+            注册成功的 agent_id，失败时返回 None
+        """
+        try:
+            skill_id = self.import_external_skill(card)
+            if not skill_id:
+                return None
+
+            # 同时注册到 LaborMarket
+            from core.agent_swarm.labor_market import get_labor_market
+            lm = get_labor_market()
+
+            agent_name = card.get("name", skill_id)
+            capabilities = [s.get("name", "unknown") for s in card.get("skills", [])]
+            endpoint = card.get("url", "")
+
+            lm.add_dynamic_subagent(
+                name=agent_name,
+                description=card.get("description", ""),
+                capabilities=capabilities,
+                system_prompt=f"External A2A Agent. Endpoint: {endpoint}",
+            )
+            logger.info(f"Registered A2A agent to LaborMarket: {agent_name}")
+            return agent_name
+        except Exception as e:
+            logger.warning(f"Failed to register A2A agent from card: {e}")
+            return None
+
+    def to_agent_card(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """将 Kaelis Agent 转换为 A2A 标准 agent_card 格式"""
+        return self.export_agent_card(agent_id)
+
+    def receive_task(self, task_request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        接收外部 A2A Agent 的任务委托。
+
+        将 A2A Task 转换为 Kaelis 内部格式，通过 LaborMarket 调度执行。
+
+        Args:
+            task_request: A2A Task 请求 JSON
+
+        Returns:
+            A2A Task 响应 JSON
+        """
+        try:
+            from core.agent_swarm.task_delegator import get_task_delegator
+            internal = self.convert_a2a_task(task_request)
+            description = internal.get("message", "")
+            task_id = task_request.get("id", "unknown")
+
+            delegator = get_task_delegator()
+
+            # 检查是否在事件循环中
+            try:
+                loop = asyncio.get_running_loop()
+                # 在事件循环内：提交异步任务并立即返回 queued 状态
+                # 生产环境应接入后台任务队列（Celery / APScheduler）
+                coro = delegator.delegate(description=description, context=description)
+                if asyncio.iscoroutine(coro):
+                    asyncio.ensure_future(coro, loop=loop)
+                return {
+                    "id": task_id,
+                    "status": "submitted",
+                    "message": "Task received and queued for execution",
+                }
+            except RuntimeError:
+                # 无事件循环：同步执行（测试/CLI 场景）
+                record = asyncio.run(
+                    delegator.delegate(description=description, context=description)
+                )
+                return self.convert_kaelis_result(record.result, task_id)
+        except Exception as e:
+            logger.exception(f"Failed to receive A2A task: {e}")
+            return {
+                "id": task_request.get("id", "unknown"),
+                "status": "failed",
+                "error": str(e),
+            }
 
     def register_a2a_agent(
         self,
