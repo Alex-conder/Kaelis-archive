@@ -97,8 +97,8 @@ class SQLiteConnectionPool:
             else:
                 try:
                     conn.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Connection close failed: {e}")
     
     def _is_alive(self, conn: sqlite3.Connection) -> bool:
         """检查连接是否存活"""
@@ -125,8 +125,8 @@ class SQLiteConnectionPool:
             for conn in self._pool:
                 try:
                     conn.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Connection close failed: {e}")
             self._pool.clear()
             self._in_use.clear()
 

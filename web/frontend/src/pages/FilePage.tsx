@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Folder,
   FileText,
-  ChevronRight,
-  ChevronDown,
   Search,
   Trash2,
   Edit3,
@@ -21,12 +19,6 @@ interface FileItem {
   modified: number
 }
 
-interface FileNode {
-  item: FileItem
-  children?: FileNode[]
-  expanded: boolean
-}
-
 function formatSize(bytes: number): string {
   if (bytes === 0) return '0 B'
   const k = 1024
@@ -42,7 +34,7 @@ function formatTime(ts: number): string {
 export default function FilePage() {
   const [currentPath, setCurrentPath] = useState<string>('.')
   const [items, setItems] = useState<FileItem[]>([])
-  const [tree, setTree] = useState<FileNode[]>([])
+  // const [tree, setTree] = useState<FileNode[]>([])
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [fileContent, setFileContent] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -161,29 +153,6 @@ export default function FilePage() {
     setTimeout(() => {
       setChatMessages(prev => [...prev, { role: 'agent', text: `已收到关于 "${selectedFile?.name || '文件'}" 的问题: ${userMsg}` }])
     }, 600)
-  }
-
-  const buildTree = (path: string): Promise<FileNode[]> => {
-    return fetch(`${apiBase}/browse?path=${encodeURIComponent(path)}`)
-      .then(r => r.json())
-      .then(data => {
-        return (data.items || [])
-          .filter((i: FileItem) => i.is_dir)
-          .map((i: FileItem) => ({
-            item: i,
-            expanded: false,
-            children: undefined,
-          }))
-      })
-  }
-
-  const toggleTreeNode = async (node: FileNode, index: number, parentPath?: string) => {
-    if (!node.expanded && !node.children) {
-      node.children = await buildTree(node.item.path)
-    }
-    node.expanded = !node.expanded
-    // Force re-render
-    setTree([...tree])
   }
 
   return (

@@ -142,8 +142,8 @@ class FileGateway:
                 size = Path(req.file_path).stat().st_size
                 if size > 10 * 1024 * 1024:
                     return (RiskDecision.CONFIRM, f"删除大文件 ({size / 1024 / 1024:.1f} MB)，需确认")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"File size check failed: {e}")
 
         # 批量删除（通配符）
         if "*" in req.file_path or "?" in req.file_path:

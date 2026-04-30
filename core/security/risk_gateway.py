@@ -240,8 +240,8 @@ class RiskAwareGateway:
                     try:
                         text = child.read_text(encoding="utf-8", errors="ignore")
                         risky_content.append(text)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"Cannot read file for risk assessment: {e}")
             content = "\n".join(risky_content)
         else:
             content = p.read_text(encoding="utf-8", errors="ignore")
@@ -306,8 +306,8 @@ class RiskAwareGateway:
                             base.level = self._score_to_level(new_score)
                             base.reason += f" [溯源警告: 数据来自高风险来源 {p['source']}]"
                             break
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Taint tracker not available: {e}")
 
         return base
 

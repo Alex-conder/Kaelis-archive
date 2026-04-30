@@ -142,8 +142,8 @@ class MemoryConsolidator:
                             all_memories.extend(data)
                         elif isinstance(data, dict):
                             all_memories.append(data)
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to load archive file {mf}: {e}")
             
             if len(all_memories) < 10:
                 return 0
@@ -241,8 +241,8 @@ class MemoryConsolidator:
                             archive_file.unlink()
                         cleaned_count += 1
                         logger.info(f"Cleaned old archive: {archive_file}")
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Failed to parse archive date for {archive_file}: {e}")
             
         except Exception as e:
             logger.error(f"Clean expired memories failed: {e}")

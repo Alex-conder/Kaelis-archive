@@ -239,7 +239,7 @@ class MemoryFTS:
             try:
                 conn.execute("PRAGMA threads = 4")
             except Exception:
-                pass  # 旧版本 SQLite 可能不支持
+                logger.debug("SQLite PRAGMA threads not supported")
             
             if layer_lower == "l1":
                 cursor = conn.execute("""

@@ -82,8 +82,8 @@ class ThreadLocalSQLitePool:
         except Exception:
             try:
                 conn.rollback()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Rollback failed: {e}")
             raise
     
     def close_all(self):

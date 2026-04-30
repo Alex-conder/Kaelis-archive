@@ -129,9 +129,9 @@ class APIProxy:
             response.raise_for_status()
             return response.json()
         except ImportError:
-            pass
-        except Exception:
-            pass
+            logger.debug("requests not installed, falling back to urllib")
+        except Exception as e:
+            logger.warning(f"HTTP request via requests failed: {e}")
 
         # Fallback to urllib
         import urllib.request

@@ -177,7 +177,7 @@ class AgentPermissionManager:
                 try:
                     self._agent_roles[agent_id] = AgentRole(role)
                 except ValueError:
-                    pass
+                    logger.warning(f"Invalid agent role: {role}")
             # Load permission matrix overrides
             rows = conn.execute("SELECT resource, action, min_role FROM permission_matrix").fetchall()
             for resource, action, min_role in rows:
@@ -186,7 +186,7 @@ class AgentPermissionManager:
                 try:
                     self._matrix[resource][action] = AgentRole(min_role)
                 except ValueError:
-                    pass
+                    logger.warning(f"Invalid permission matrix role: {min_role}")
 
     # ------------------------------------------------------------------ #
     # Core Permission API
@@ -370,8 +370,8 @@ class AgentPermissionManager:
             agent_id = data.get("agent_id", "")
             if agent_id:
                 return agent_id
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to extract agent_id from request body: {e}")
         # 4. 环境变量回退（服务端内部调用）
         agent_id = os.environ.get("KAELIS_AGENT_ID", "")
         if agent_id:

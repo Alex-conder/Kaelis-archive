@@ -357,8 +357,8 @@ class SkillSandboxTester:
             if tmp_path:
                 try:
                     os.unlink(tmp_path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Failed to remove temp db file: {e}")
 
         return {
             "passed": passed,
@@ -494,8 +494,8 @@ class SkillSandboxTester:
         finally:
             try:
                 os.unlink(tmp_path)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to remove temp script file: {e}")
 
     @classmethod
     def marketplace_gate(cls, skill_data: Dict[str, Any]) -> Dict[str, Any]:

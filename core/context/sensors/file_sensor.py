@@ -10,7 +10,9 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
+
+from core.context.sensor_base import BaseContextSensor
 
 logger = logging.getLogger(__name__)
 
@@ -281,3 +283,56 @@ class FileIndexer:
         except Exception as e:
             logger.error(f"清空索引失败: {e}")
             return False
+
+
+class FileChangeSensor(BaseContextSensor):
+    """
+    文件变更传感器。
+
+    扫描指定目录，收集最近修改的文件列表。
+    不依赖 watchdog，基于文件 mtime 做简单扫描。
+    """
+
+    def __init__(self, watch_dir: str = ".", sensor_id: str = "file", privacy_level: str = "internal"):
+        super().__init__(sensor_id, privacy_level)
+        self.watch_dir = Path(watch_dir).resolve()
+        self._stopped = False
+
+    def collect(self) -> Dict[str, Any]:
+        """收集最近 5 分钟内发生变更的文件列表"""
+        if self._stopped:
+            return {"changed_files": [], "watch_dir": str(self.watch_dir)}
+
+        changed = []
+        try:
+            cutoff = datetime.now().timestamp() - 300  # 5 minutes
+            for root, _dirs, files in os.walk(self.watch_dir):
+                for fname in files:
+                    fpath = Path(root) / fname
+                    try:
+                        if fpath.stat().st_mtime > cutoff:
+                            changed.append(str(fpath))
+                    except (OSError, PermissionError):
+                        continue
+        except Exception as e:
+            logger.warning(f"FileChangeSensor scan failed: {e}")
+
+        return {"changed_files": changed, "watch_dir": str(self.watch_dir)}
+
+    def filter_sensitive(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """过滤敏感文件路径"""
+        sensitive_names = {".env", "password", "secret", "key", "token", "credential"}
+        filtered = []
+        for p in data.get("changed_files", []):
+            name = Path(p).name.lower()
+            if any(s in name for s in sensitive_names):
+                continue
+            filtered.append(p)
+        return {
+            "changed_files": filtered,
+            "watch_dir": data.get("watch_dir", "."),
+        }
+
+    def stop(self) -> None:
+        """停止传感器"""
+        self._stopped = True

@@ -123,7 +123,7 @@ export default function MemoryTimeline({ memories, searchQuery = '', ganttMode =
     return ((t - timeRange.min) / (timeRange.max - timeRange.min)) * 100
   }
 
-  const getGanttWidth = (dateStr: string) => {
+  const getGanttWidth = (_dateStr: string) => {
     if (!timeRange || timeRange.max === timeRange.min) return 8
     return 8
   }
