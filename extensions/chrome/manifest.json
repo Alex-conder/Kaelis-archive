@@ -1,17 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Kaelis — AI Second Brain for the Web",
-  "version": "0.1.0",
-  "description": "Inject Kaelis memory and skills into ChatGPT, Claude, and any web AI.",
+  "version": "0.4.0",
+  "description": "Inject Kaelis memory and skills into ChatGPT, Claude, and any web AI. Auto-suggests relevant memories as you chat.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "notifications"
   ],
   "host_permissions": [
     "https://chat.openai.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
-    "http://localhost:5000/*"
+    "http://localhost:5000/*",
+    "ws://localhost:5001/*"
   ],
   "background": {
     "service_worker": "background.js"

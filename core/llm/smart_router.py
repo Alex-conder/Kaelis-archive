@@ -7,12 +7,14 @@ SmartRouter + ModelRegistry
 import json
 import logging
 import os
+import sqlite3
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from core.resilience import get_circuit_breaker
-from core.security.credential_vault import CredentialVault
+from core.security.credential_vault import CredentialVault, resolve_llm_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +80,75 @@ class CostTracker:
 class ModelRegistry:
     """
     模型注册表：管理所有可用 LLM 模型。
+    支持环境变量预置 + SQLite 持久化的用户自定义模型。
     """
 
-    def __init__(self):
+    def __init__(self, db_path: Optional[str] = None):
         self._models: Dict[str, ModelConfig] = {}
+        self._db_path = Path(db_path or os.path.expanduser("~/.kaelis/llm_models.db"))
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._vault = CredentialVault()
+        self._init_db()
         self._load_from_env()
+        self._load_from_db()
+
+    # ------------------------------------------------------------------ #
+    # Database
+    # ------------------------------------------------------------------ #
+
+    def _init_db(self):
+        with sqlite3.connect(str(self._db_path)) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS llm_user_models (
+                    name TEXT PRIMARY KEY,
+                    endpoint TEXT NOT NULL,
+                    cost_per_1m REAL NOT NULL,
+                    tags TEXT,
+                    context_length INTEGER DEFAULT 4096,
+                    created_at TEXT
+                )
+            """)
+            conn.commit()
+
+    def _save_to_db(self, name: str, endpoint: str, cost_per_1m: float,
+                    tags: List[str], context_length: int):
+        with sqlite3.connect(str(self._db_path)) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO llm_user_models
+                (name, endpoint, cost_per_1m, tags, context_length, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (name, endpoint, cost_per_1m, json.dumps(tags), context_length,
+                  time.strftime("%Y-%m-%d %H:%M:%S")))
+            conn.commit()
+
+    def _delete_from_db(self, name: str):
+        with sqlite3.connect(str(self._db_path)) as conn:
+            conn.execute("DELETE FROM llm_user_models WHERE name = ?", (name,))
+            conn.commit()
+
+    def _load_from_db(self):
+        try:
+            with sqlite3.connect(str(self._db_path)) as conn:
+                rows = conn.execute("SELECT * FROM llm_user_models").fetchall()
+                for row in rows:
+                    name, endpoint, cost_per_1m, tags_raw, context_length, _ = row
+                    api_key = self._vault.get(f"model:{name}:api_key") or ""
+                    if api_key:
+                        self._models[name] = ModelConfig(
+                            name=name,
+                            endpoint=endpoint,
+                            api_key=api_key,
+                            cost_per_1m=cost_per_1m,
+                            tags=json.loads(tags_raw) if tags_raw else [],
+                            context_length=context_length or 4096,
+                        )
+                        logger.info("[ModelRegistry] Loaded from DB: %s", name)
+        except Exception as e:
+            logger.warning("[ModelRegistry] Failed to load from DB: %s", e)
+
+    # ------------------------------------------------------------------ #
+    # Public API
+    # ------------------------------------------------------------------ #
 
     def add_model(
         self,
@@ -93,7 +159,7 @@ class ModelRegistry:
         tags: Optional[List[str]] = None,
         context_length: int = 4096,
     ) -> bool:
-        """注册新模型"""
+        """注册新模型（自动持久化到 SQLite + Vault）"""
         self._models[name] = ModelConfig(
             name=name,
             endpoint=endpoint,
@@ -102,20 +168,87 @@ class ModelRegistry:
             tags=tags or [],
             context_length=context_length,
         )
-        logger.info(f"[ModelRegistry] Registered: {name} (${cost_per_1m}/1M)")
+        # 持久化：配置写入 SQLite，API Key 写入 Vault
+        try:
+            self._save_to_db(name, endpoint, cost_per_1m, tags or [], context_length)
+            if api_key:
+                self._vault.set(f"model:{name}:api_key", api_key)
+        except Exception as e:
+            logger.warning("[ModelRegistry] Failed to persist model %s: %s", name, e)
+        logger.info("[ModelRegistry] Registered: %s ($%s/1M)", name, cost_per_1m)
         return True
 
     def remove_model(self, name: str) -> bool:
         if name in self._models:
             del self._models[name]
+            try:
+                self._delete_from_db(name)
+                self._vault.delete(f"model:{name}:api_key")
+            except Exception as e:
+                logger.warning("[ModelRegistry] Failed to remove persisted model %s: %s", name, e)
             return True
         return False
+
+    def update_model(
+        self,
+        name: str,
+        endpoint: str,
+        api_key: str,
+        cost_per_1m: float,
+        tags: Optional[List[str]] = None,
+        context_length: int = 4096,
+    ) -> bool:
+        """更新已有模型配置（内存 + SQLite + Vault）"""
+        if name not in self._models:
+            return False
+        self._models[name] = ModelConfig(
+            name=name,
+            endpoint=endpoint,
+            api_key=api_key,
+            cost_per_1m=cost_per_1m,
+            tags=tags or [],
+            context_length=context_length,
+        )
+        try:
+            self._save_to_db(name, endpoint, cost_per_1m, tags or [], context_length)
+            if api_key:
+                self._vault.set(f"model:{name}:api_key", api_key)
+        except Exception as e:
+            logger.warning("[ModelRegistry] Failed to persist updated model %s: %s", name, e)
+        logger.info("[ModelRegistry] Updated: %s", name)
+        return True
+
+    def test_model_connection(self, name: str) -> Dict[str, Any]:
+        """探测模型端点连通性，返回 {success, latency_ms, error}。不记录 API Key。"""
+        import requests
+
+        model = self._models.get(name)
+        if not model:
+            return {"success": False, "error": "Model not found"}
+
+        start = time.time()
+        try:
+            headers = {"Authorization": f"Bearer {model.api_key}"}
+            test_url = model.endpoint.rstrip("/") + "/models"
+            resp = requests.get(test_url, headers=headers, timeout=10, allow_redirects=True)
+            latency_ms = int((time.time() - start) * 1000)
+            if resp.status_code == 200:
+                return {"success": True, "latency_ms": latency_ms}
+            if resp.status_code in (401, 403):
+                return {"success": False, "error": "Authentication error"}
+            return {"success": False, "error": f"HTTP {resp.status_code}"}
+        except requests.exceptions.ConnectionError:
+            return {"success": False, "error": "Connection error"}
+        except requests.exceptions.Timeout:
+            return {"success": False, "error": "Timeout"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def get_model(self, name: str) -> Optional[ModelConfig]:
         return self._models.get(name)
 
     def get_models(self) -> List[Dict]:
-        """返回所有模型配置（字典形式）"""
+        """返回所有模型配置（字典形式，不含 api_key）"""
         return [
             {
                 "name": m.name,
@@ -128,11 +261,9 @@ class ModelRegistry:
         ]
 
     def _load_from_env(self):
-        """从环境变量和 CredentialVault 自动加载已配置模型"""
-        vault = CredentialVault()
-
+        """从环境变量和 CredentialVault 自动加载预置模型"""
         # OpenAI
-        openai_key = os.environ.get("OPENAI_API_KEY") or vault.get("openai_api_key") or ""
+        openai_key = resolve_llm_api_key("openai")
         if openai_key:
             self.add_model(
                 name="gpt-4o",
@@ -152,7 +283,7 @@ class ModelRegistry:
             )
 
         # DeepSeek
-        deepseek_key = os.environ.get("DEEPSEEK_API_KEY") or vault.get("deepseek_api_key") or ""
+        deepseek_key = resolve_llm_api_key("deepseek")
         if deepseek_key:
             self.add_model(
                 name="deepseek-chat",
@@ -164,7 +295,7 @@ class ModelRegistry:
             )
 
         # Claude
-        claude_key = os.environ.get("ANTHROPIC_API_KEY") or vault.get("anthropic_api_key") or ""
+        claude_key = resolve_llm_api_key("anthropic")
         if claude_key:
             self.add_model(
                 name="claude-3-5-sonnet",

@@ -63,9 +63,13 @@ class QualityScheduler:
         if not self.scheduler:
             return
         
-        # 每天凌晨 2 点执行全量质检
+        # 加载进化配置
+        evolution_config = self._load_evolution_config()
+        
         try:
             from apscheduler.triggers.cron import CronTrigger
+            
+            # 每天凌晨 2 点执行全量质检
             self.scheduler.add_job(
                 self._run_scheduled_inspection,
                 CronTrigger(hour=2, minute=0),
@@ -84,10 +88,117 @@ class QualityScheduler:
                 name='Hourly Metrics Update'
             )
             
+            # 每日自进化任务
+            if evolution_config.get('evolution', {}).get('enabled', True):
+                daily_time = evolution_config.get('evolution', {}).get('daily_time', '02:00')
+                hour, minute = map(int, daily_time.split(':'))
+                self.scheduler.add_job(
+                    self._run_evolution_task,
+                    CronTrigger(hour=hour, minute=minute),
+                    id='daily_evolution',
+                    replace_existing=True,
+                    name='Daily Self-Evolution'
+                )
+                logger.info(f"Daily evolution task scheduled at {daily_time}")
+            
+            # 每周技能生成任务
+            if evolution_config.get('evolution', {}).get('skill_generation', {}).get('enabled', True):
+                weekly_time = evolution_config.get('evolution', {}).get('skill_generation', {}).get('weekly_time', '03:00')
+                weekly_day = evolution_config.get('evolution', {}).get('skill_generation', {}).get('weekly_day', 'sunday')
+                hour, minute = map(int, weekly_time.split(':'))
+                day_of_week = {'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+                               'friday': 4, 'saturday': 5, 'sunday': 6}.get(weekly_day.lower(), 6)
+                self.scheduler.add_job(
+                    self._run_skill_generation,
+                    CronTrigger(day_of_week=day_of_week, hour=hour, minute=minute),
+                    id='weekly_skill_generation',
+                    replace_existing=True,
+                    name='Weekly Skill Generation'
+                )
+                logger.info(f"Weekly skill generation scheduled on {weekly_day} at {weekly_time}")
+            
             self.scheduler.start()
-            logger.info("QualityScheduler started (daily at 02:00)")
+            logger.info("QualityScheduler started")
         except Exception as e:
             logger.error(f"Failed to start scheduler: {e}")
+    
+    def _load_evolution_config(self) -> Dict[str, Any]:
+        """加载进化调度配置"""
+        import yaml
+        config_path = Path("config/evolution.yaml")
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f) or {}
+            except Exception as e:
+                logger.warning(f"Failed to load evolution config: {e}")
+        return {}
+    
+    def _run_evolution_task(self):
+        """每日自进化任务：扫描 L2 记忆，触发技能生成检查"""
+        logger.info("Scheduled evolution task triggered")
+        try:
+            from core.memory_manager_v2 import get_memory_manager
+            from core.skill_generator import get_skill_generator
+            
+            mm = get_memory_manager()
+            generator = get_skill_generator()
+            
+            # 读取最近 20 条 L2 执行记录
+            recent = mm.search("L2", "execution", top_k=20)
+            if not recent:
+                logger.info("No recent executions found for evolution")
+                return
+            
+            # 按 task_type 分组
+            by_task: Dict[str, list] = {}
+            for r in recent:
+                task_type = r.get("metadata", {}).get("task_type", "unknown")
+                by_task.setdefault(task_type, []).append({
+                    "success": r.get("metadata", {}).get("status") == "success",
+                    "confidence": r.get("metadata", {}).get("confidence", 0.0),
+                    "params": r.get("value", {}).get("best_params", {}),
+                    "result": r.get("value", {}).get("best_result", {}),
+                })
+            
+            for task_type, executions in by_task.items():
+                result = generator.check_and_generate(task_type, executions)
+                if result:
+                    logger.info(f"Evolution triggered for {task_type}: {result}")
+                else:
+                    logger.debug(f"Evolution threshold not met for {task_type}")
+                    
+        except Exception as e:
+            logger.error(f"Evolution task failed: {e}")
+    
+    def _run_skill_generation(self):
+        """每周技能生成任务：为高频 task_type 生成 SKILL.md"""
+        logger.info("Scheduled skill generation task triggered")
+        try:
+            from core.memory_manager_v2 import get_memory_manager
+            from core.skill_generator import get_skill_generator
+            
+            mm = get_memory_manager()
+            generator = get_skill_generator()
+            
+            # 读取最近 50 条成功记录
+            recent = mm.search("L2", "execution", top_k=50)
+            successful = [r for r in recent if r.get("metadata", {}).get("status") == "success"]
+            
+            if len(successful) < generator.trigger_threshold:
+                logger.info(f"Not enough successful executions for skill generation ({len(successful)}/{generator.trigger_threshold})")
+                return
+            
+            # 为最近的一条成功记录生成技能文档
+            latest = successful[0]
+            doc_path = generator.generate(latest.get("value", {}), skill_id=latest.get("key"))
+            if doc_path:
+                logger.info(f"Skill document generated: {doc_path}")
+            else:
+                logger.debug("Skill generation returned None")
+                
+        except Exception as e:
+            logger.error(f"Skill generation task failed: {e}")
     
     def stop(self):
         """停止调度器"""

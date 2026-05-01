@@ -16,12 +16,20 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-from zeroconf import (
-    ServiceBrowser,
-    ServiceInfo,
-    Zeroconf,
-    IPVersion,
-)
+try:
+    from zeroconf import (
+        ServiceBrowser,
+        ServiceInfo,
+        Zeroconf,
+        IPVersion,
+    )
+    ZEROCONF_AVAILABLE = True
+except ImportError:
+    ZEROCONF_AVAILABLE = False
+    ServiceBrowser = None
+    ServiceInfo = None
+    Zeroconf = None
+    IPVersion = None
 
 from core.mesh.identity import get_node_identity
 
@@ -50,7 +58,7 @@ class KaelisDiscovery:
     """
 
     def __init__(self):
-        self._zeroconf: Optional[Zoconf] = None
+        self._zeroconf: Optional[Zeroconf] = None
         self._browser: Optional[ServiceBrowser] = None
         self._service_info: Optional[ServiceInfo] = None
         self._registered = False
@@ -65,6 +73,9 @@ class KaelisDiscovery:
 
     def start(self, port: int = 8765) -> bool:
         """注册 mDNS 服务，广播自身存在。"""
+        if not ZEROCONF_AVAILABLE:
+            logger.error("zeroconf not installed, cannot start discovery")
+            return False
         if self._registered:
             logger.warning("Discovery already started")
             return True
@@ -211,6 +222,14 @@ class KaelisDiscovery:
                 "discovered_at": time.time(),
             }
             logger.info("Discovered peer: %s@%s:%d (%s)", kni, host, info.port, display_name)
+
+            # Auto-register with mesh transport for handshake
+            try:
+                from core.mesh.transport import get_mesh_transport
+                transport = get_mesh_transport()
+                transport.register_peer(kni, host, info.port, capabilities)
+            except Exception as e:
+                logger.debug("Auto-register peer to transport failed: %s", e)
 
         except Exception as e:
             logger.warning("Failed to parse service info: %s", e)

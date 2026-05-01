@@ -113,8 +113,75 @@ jobs:
           vsce publish
         continue-on-error: true
 
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+          tags: |
+            kaelis/kaelis:${{ steps.version.outputs.VERSION }}
+            kaelis/kaelis:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        continue-on-error: true
+
+  generate-sbom:
+    runs-on: ubuntu-latest
+    needs: [build-python-wheel]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install SBOM tools
+        run: |
+          pip install cyclonedx-bom pip-audit
+
+      - name: Generate Python SBOM
+        run: |
+          cyclonedx-py requirements -o sbom-python.json --schema-version 1.5
+          cyclonedx-py requirements -o sbom-python.xml --schema-version 1.5
+        continue-on-error: true
+
+      - name: Generate NPM SBOM
+        run: |
+          cd web/frontend
+          npm ci
+          npx @cyclonedx/cyclonedx-npm --output-file ../sbom-frontend.json
+        continue-on-error: true
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: sbom-*
+
   create-release:
-    needs: [build-python-wheel, build-electron, build-vscode-extension]
+    needs: [build-python-wheel, build-electron, build-vscode-extension, build-docker, generate-sbom]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -137,9 +204,12 @@ jobs:
             - Python Wheel (PyPI)
             - Desktop App (Windows `.exe`, macOS `.dmg`, Linux `.AppImage`)
             - VSCode Extension (`.vsix`)
+            - Docker Image (`docker pull kaelis/kaelis:${{ github.ref_name }}`)
+            - SBOM Reports (Python + Frontend)
           files: |
             artifacts/kaelis-wheel/*.whl
             artifacts/kaelis-electron-*/*
             artifacts/kaelis-vscode/*.vsix
+            artifacts/sbom-reports/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

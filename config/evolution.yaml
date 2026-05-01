@@ -1,0 +1,12 @@
+# 自进化调度配置
+evolution:
+  enabled: true
+  daily_interval: 24        # 小时
+  daily_time: "02:00"       # 每日执行时间
+  skill_generation:
+    enabled: true
+    weekly_day: sunday
+    weekly_time: "03:00"
+  quality_inspection:
+    enabled: true
+    daily_time: "02:00"

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import {
   ReactFlow,
   Background,
@@ -21,10 +21,21 @@ import CustomNode from './nodes/CustomNode'
 import NodePalette from './components/NodePalette'
 import WorkflowToolbar from './components/WorkflowToolbar'
 import { useWorkflowNodes } from './hooks/useWorkflowNodes'
+import { useWorkflowExecute } from './hooks/useWorkflowExecute'
 import type { WorkflowNodeDefinition, WorkflowNodeData, WorkflowDefinition } from './types'
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
+}
+
+function getNodeColor(status?: string): string {
+  switch (status) {
+    case 'running': return '#3b82f6'
+    case 'completed': return '#22c55e'
+    case 'failed': return '#ef4444'
+    case 'pending': return '#64748b'
+    default: return '#0ea5e9'
+  }
 }
 
 function CanvasInner({
@@ -38,6 +49,29 @@ function CanvasInner({
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const { screenToFlowPosition } = useReactFlow()
+  const { isRunning, executionStatus, startExecution, stopPolling } = useWorkflowExecute()
+
+  // Apply execution status colors to nodes
+  useEffect(() => {
+    if (!executionStatus?.node_results) return
+    setNodes((nds) =>
+      nds.map((n) => {
+        const nr = executionStatus.node_results[n.id]
+        if (!nr) return n
+        return {
+          ...n,
+          style: {
+            ...n.style,
+            borderColor: getNodeColor(nr.status),
+            borderWidth: 3,
+            boxShadow: nr.status === 'running'
+              ? `0 0 12px ${getNodeColor(nr.status)}`
+              : undefined,
+          },
+        }
+      })
+    )
+  }, [executionStatus, setNodes])
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -158,12 +192,31 @@ function CanvasInner({
       setNodes([])
       setEdges([])
       setSelectedNode(null)
+      stopPolling()
     }
-  }, [setNodes, setEdges])
+  }, [setNodes, setEdges, stopPolling])
 
   const handleRun = useCallback(() => {
-    alert(`Running workflow with ${nodes.length} nodes and ${edges.length} edges`)
-  }, [nodes, edges])
+    const workflow: WorkflowDefinition = {
+      id: `wf_${Date.now()}`,
+      name: 'Untitled Workflow',
+      nodes: nodes.map((n) => ({
+        id: n.id,
+        type: n.type || 'custom',
+        position: n.position,
+        data: n.data as WorkflowNodeData,
+      })),
+      edges: edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        label: (e.data as any)?.label,
+      })),
+    }
+    startExecution(workflow).catch((err) => {
+      alert(`Execution failed: ${err.message}`)
+    })
+  }, [nodes, edges, startExecution])
 
   const handleSave = useCallback(() => {
     alert('Workflow saved to local storage')
@@ -192,6 +245,7 @@ function CanvasInner({
           onImport={handleImport}
           onClear={handleClear}
           onSave={handleSave}
+          isRunning={isRunning}
           nodeCount={nodes.length}
           edgeCount={edges.length}
         />
@@ -227,7 +281,24 @@ function CanvasInner({
                   <p className="text-xs text-slate-500 mb-3">
                     {(selectedNode.data as WorkflowNodeData).definition.description}
                   </p>
-                  <div className="text-[10px] text-slate-600 font-mono break-all">
+                  {executionStatus?.node_results[selectedNode.id] && (
+                    <div className="text-[10px] font-mono space-y-1">
+                      <div className={`font-semibold ${
+                        executionStatus.node_results[selectedNode.id].status === 'completed' ? 'text-green-400' :
+                        executionStatus.node_results[selectedNode.id].status === 'failed' ? 'text-red-400' :
+                        executionStatus.node_results[selectedNode.id].status === 'running' ? 'text-blue-400' :
+                        'text-slate-500'
+                      }`}>
+                        Status: {executionStatus.node_results[selectedNode.id].status}
+                      </div>
+                      {executionStatus.node_results[selectedNode.id].error && (
+                        <div className="text-red-400">
+                          Error: {executionStatus.node_results[selectedNode.id].error}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="text-[10px] text-slate-600 font-mono break-all mt-2">
                     ID: {selectedNode.id}
                   </div>
                 </div>

@@ -10,6 +10,12 @@ import {
   LogOut,
   FolderOpen,
   Wrench,
+  Workflow,
+  Network,
+  MessageSquare,
+  Lightbulb,
+  ShieldCheck,
+  Monitor,
 } from 'lucide-react'
 import { useLogout } from '@/features/auth/hooks'
 
@@ -18,6 +24,13 @@ const navItems = [
   { path: '/chat', label: 'Chat', icon: MessageCircle, shortcut: '⌘2' },
   { path: '/memory', label: 'Second Brain', icon: Brain, shortcut: '⌘3' },
   { path: '/skills', label: 'Capabilities', icon: Zap, shortcut: '⌘4' },
+  { path: '/workflow', label: 'Workflow', icon: Workflow, shortcut: '' },
+  { path: '/mesh', label: 'Mesh', icon: Network, shortcut: '' },
+  { path: '/messages', label: 'Messages', icon: MessageSquare, shortcut: '' },
+  { path: '/knowledge-graph', label: 'Knowledge', icon: Brain, shortcut: '' },
+  { path: '/insights', label: 'Insights', icon: Lightbulb, shortcut: '' },
+  { path: '/monitoring', label: 'Monitoring', icon: Monitor, shortcut: '' },
+  { path: '/privacy-policy', label: 'Privacy', icon: ShieldCheck, shortcut: '' },
   { path: '/files', label: 'Files', icon: FolderOpen, shortcut: '' },
   { path: '/tools', label: 'Tools', icon: Wrench, shortcut: '' },
   { path: '/security', label: 'Security', icon: Shield, shortcut: '' },

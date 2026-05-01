@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.4.0] — v0.4.0 Release (Committee Scan Remediation)
+
+### Security
+- **CredentialVault 升级**：`cryptography.fernet.Fernet` (AES-256) 主加密，保留 XOR 向下兼容旧 vault；统一 `resolve_llm_api_key()` 优先级（env → vault → error）
+- **API Key 掩码**：日志中所有 API Key 显示为 `first4***last4` 格式，防止泄露
+- **依赖安全扫描**：CI 新增 `security-scan` job（`pip-audit` + `npm audit --audit-level=high`）及 SBOM 生成（`cyclonedx-bom`）
+- **.env 清理**：示例文件替换为占位符，禁止提交真实密钥
+
+### Added
+- **LLM 首次启动向导**：README 新增 LLM 配置章节 + `docs/llm-setup.md` + CLI `kaelis config init` 交互式配置向导
+- **OpenTelemetry 可观测性**：`core/observability/otel_setup.py`（TracerProvider + `@trace_span` 同步/异步装饰器）+ `/api/metrics` REST API + `/monitoring` 前端页面（WebSocket 实时追踪 + REST 回退）
+- **ModelRegistry 持久化**：用户添加的模型持久化到 SQLite (`llm_user_models`) + Vault (`model:{name}:api_key`)；支持连接测试（`POST /api/llm/models/<name>/test`）
+- **SettingsPage LLM 路由管理**：新增/编辑/删除/测试模型连接，实时显示延迟
+- **数据备份脚本**：`scripts/backup.ps1` & `scripts/backup.sh`，保留 7 天 `.db` + `.env`
+- **工作流超时机制**：`workflow_executor.py` 节点支持 `timeout_seconds`，超时自动记录 failure event 到 L2
+- **发布流水线**：`.github/workflows/publish.yml` 支持 PyPI + Electron 多平台 + VSCode + Docker Hub + SBOM；新增 `Dockerfile` + `.dockerignore`
+- **Chrome 扩展 CI**：`extension-build` job 自动打包为 zip artifact
+
+### Changed
+- **异常处理卫生**：全部 `except: pass` 替换为 `logger.warning/error`；CI 新增 `hygiene-check` 门禁
+- **前端版本同步**：`package.json` & Chrome `manifest.json` 统一至 `0.4.0`
+- **pyproject.toml 版本**：升级至 `0.4.0`
+
+### Fixed
+- **`test_journey_lifecycle.py` 失败**：`MilestoneNotifier` 和 `SmartDigest` 在独立测试环境中未初始化 `memory_l2` 表，现已在 `__init__` 中自动建表
+- **覆盖率聚合**：CI 使用 `coverage report --include=` 精确统计 v0.4.0 核心模块（目标 70.8%）
+- **后端 `kg_flywheel_agent.py` 策略信息透传**：每条回复附带 `intent` / `confidence` / `agent_state`
+
+---
+
 ## [Unreleased] — Sprint 4
 
 ### Added

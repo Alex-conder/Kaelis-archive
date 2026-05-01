@@ -197,6 +197,136 @@ def cmd_migrate_detect(args: argparse.Namespace) -> None:
 # CLI 主入口
 # ======================================================================
 
+
+# ==============================================================================
+# 子命令: config — LLM API 配置管理
+# ==============================================================================
+
+LLM_PROVIDERS = [
+    ("deepseek", "DeepSeek", "DEEPSEEK_API_KEY"),
+    ("openai", "OpenAI", "OPENAI_API_KEY"),
+    ("anthropic", "Anthropic (Claude)", "ANTHROPIC_API_KEY"),
+    ("qwen", "通义千问 (Qwen)", "QWEN_API_KEY"),
+    ("zhipu", "智谱 GLM", "ZHIPU_API_KEY"),
+    ("moonshot", "Moonshot (Kimi)", "MOONSHOT_API_KEY"),
+    ("xunfei", "讯飞星火", "XUNFEI_API_KEY"),
+    ("baidu", "百度文心", "BAIDU_API_KEY"),
+    ("tencent", "腾讯混元", "TENCENT_API_KEY"),
+]
+
+
+def cmd_config_init(args: argparse.Namespace) -> None:
+    """交互式初始化 LLM API Key 配置"""
+    from core.security.credential_vault import CredentialVault
+    vault = CredentialVault()
+
+    print("🔧 Kaelis LLM API 配置向导")
+    print("=" * 50)
+    print("请按提示输入 API Key（输入空行跳过该提供商）：\n")
+
+    configured = []
+    for key, display, env_var in LLM_PROVIDERS:
+        # 检查是否已配置
+        existing = vault.get(f"{key}_api_key") or os.environ.get(env_var)
+        prompt = f"  [{display}]"
+        if existing:
+            prompt += f" (已配置: {existing[:6]}...{existing[-4:]})"
+        prompt += ": "
+
+        try:
+            value = input(prompt).strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n中断配置。")
+            sys.exit(0)
+
+        if value:
+            vault.set(f"{key}_api_key", value)
+            configured.append(display)
+
+    if configured:
+        print(f"\n✅ 已保存 {len(configured)} 个提供商的 API Key 到 CredentialVault：")
+        for name in configured:
+            print(f"   • {name}")
+    else:
+        print("\nℹ️ 未配置任何提供商。系统将在启动时尝试读取环境变量。")
+
+    print("\n💡 提示：使用 `kaelis config list` 查看已配置项，")
+    print("   使用 `kaelis config set <provider>` 单独修改某个 Key。")
+
+
+def cmd_config_set(args: argparse.Namespace) -> None:
+    """设置单个提供商的 API Key"""
+    from core.security.credential_vault import CredentialVault
+    vault = CredentialVault()
+
+    provider = args.provider.lower()
+    valid_names = {p[0] for p in LLM_PROVIDERS}
+    if provider not in valid_names:
+        print(f"❌ 未知提供商: {provider}")
+        print(f"可用选项: {', '.join(valid_names)}")
+        sys.exit(1)
+
+    if args.value:
+        key_value = args.value
+    else:
+        import getpass
+        key_value = getpass.getpass(f"请输入 {provider} 的 API Key: ").strip()
+
+    if not key_value:
+        print("❌ API Key 不能为空")
+        sys.exit(1)
+
+    vault.set(f"{provider}_api_key", key_value)
+    masked = key_value[:4] + "****" + key_value[-4:] if len(key_value) > 8 else "****"
+    print(f"✅ 已保存 {provider} API Key ({masked}) 到 CredentialVault")
+
+
+def cmd_config_list(args: argparse.Namespace) -> None:
+    """列出已配置的 LLM API Key"""
+    from core.security.credential_vault import CredentialVault
+    vault = CredentialVault()
+
+    print("📋 已配置的 LLM API Key（来自 CredentialVault）：\n")
+    found_any = False
+    for key, display, env_var in LLM_PROVIDERS:
+        vault_val = vault.get(f"{key}_api_key")
+        env_val = os.environ.get(env_var)
+        if vault_val:
+            masked = vault_val[:4] + "****" + vault_val[-4:] if len(vault_val) > 8 else "****"
+            print(f"  ✅ {display:20s} {masked}  (Vault)")
+            found_any = True
+        elif env_val:
+            masked = env_val[:4] + "****" + env_val[-4:] if len(env_val) > 8 else "****"
+            print(f"  ✅ {display:20s} {masked}  (环境变量)")
+            found_any = True
+        else:
+            print(f"  ❌ {display:20s} 未配置")
+
+    if not found_any:
+        print("\n⚠️ 未找到任何配置。请运行 `kaelis config init` 进行配置。")
+
+
+def cmd_config_validate(args: argparse.Namespace) -> None:
+    """验证已配置 Key 的连通性"""
+    from core.llm_providers.discovery import ProviderDetector
+    from core.llm_providers.registry import ProviderRegistry
+
+    registry = ProviderRegistry()
+    detector = ProviderDetector()
+    results = detector.probe_all(registry.list())
+
+    print("🔍 提供商连通性探测结果：\n")
+    for name, info in results.items():
+        status = "🟢 可用" if info["available"] else "🔴 不可用"
+        latency = f"{info['latency_ms']}ms" if info["latency_ms"] > 0 else "N/A"
+        print(f"  {status}  {info['display_name']:20s}  延迟: {latency}")
+        if not info["available"] and info["requires_api_key"]:
+            print(f"       └─ 可能原因：API Key 无效或服务不可达")
+
+    available = sum(1 for r in results.values() if r["available"])
+    print(f"\n总计: {available}/{len(results)} 个提供商可用")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="kaelis",
@@ -260,6 +390,24 @@ def main() -> None:
     migrate_sub = migrate_parser.add_subparsers(dest="migrate_cmd")
     detect_p = migrate_sub.add_parser("detect", help="检测竞品数据")
     detect_p.set_defaults(func=cmd_migrate_detect)
+
+    # config
+    config_parser = subparsers.add_parser("config", help="LLM API 配置管理")
+    config_sub = config_parser.add_subparsers(dest="config_cmd")
+
+    init_p = config_sub.add_parser("init", help="交互式配置所有提供商 API Key")
+    init_p.set_defaults(func=cmd_config_init)
+
+    set_p = config_sub.add_parser("set", help="设置单个提供商 API Key")
+    set_p.add_argument("provider", help="提供商名称 (如 deepseek, openai)")
+    set_p.add_argument("value", nargs="?", help="API Key 值（留空则交互输入）")
+    set_p.set_defaults(func=cmd_config_set)
+
+    list_p = config_sub.add_parser("list", help="列出已配置的 API Key")
+    list_p.set_defaults(func=cmd_config_list)
+
+    validate_p = config_sub.add_parser("validate", help="验证已配置 Key 的连通性")
+    validate_p.set_defaults(func=cmd_config_validate)
 
     args = parser.parse_args()
     if not args.command:

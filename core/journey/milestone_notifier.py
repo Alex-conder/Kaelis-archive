@@ -84,6 +84,33 @@ class MilestoneNotifier:
         self.db_dir = Path(db_dir)
         self.user_id = user_id
         self.db_path = self.db_dir / "kaelis_dev.db"
+        self._ensure_schema()
+
+    def _ensure_schema(self) -> None:
+        """确保 L2 记忆表存在（MilestoneNotifier 直接操作该表）"""
+        self.db_dir.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_l2 (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    metadata TEXT,
+                    source TEXT DEFAULT 'system',
+                    user_id TEXT DEFAULT 'anonymous',
+                    privacy_level TEXT DEFAULT 'private',
+                    created_at TEXT NOT NULL,
+                    last_recalled_at TEXT
+                )
+            """)
+            try:
+                conn.execute("ALTER TABLE memory_l2 ADD COLUMN user_id TEXT DEFAULT 'anonymous'")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE memory_l2 ADD COLUMN privacy_level TEXT DEFAULT 'private'")
+            except sqlite3.OperationalError:
+                pass
 
     def _query(self, sql: str, params: tuple = ()) -> List[sqlite3.Row]:
         with sqlite3.connect(self.db_path) as conn:

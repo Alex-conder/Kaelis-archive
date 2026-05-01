@@ -2,6 +2,7 @@
 Kaelis 生产服务器入口
 使用 waitress 替代 Flask 开发服务器
 """
+import atexit
 import os
 import sys
 
@@ -79,6 +80,16 @@ def create_app():
     from api.routes.files import files_bp
     from api.routes.tools import tools_bp
     from api.routes.llm_router import llm_router_bp
+    from api.routes.intent import bp as intent_bp
+    from api.routes.knowledge_graph import bp as knowledge_graph_bp
+    from api.routes.reports import bp as reports_bp
+    from api.routes.symbols import bp as symbols_bp
+    from api.routes.system import bp as system_bp
+    from api.routes.team import bp as team_bp
+    from api.routes.observability import observability_bp
+    from api.routes.workflow_engine import workflow_engine_bp
+    from api.routes.mesh import mesh_bp
+    from api.routes.ws_sync import ws_sync_bp
     
     app = Flask(__name__, static_folder='api/static')
     app.secret_key = os.environ.get('SECRET_KEY', 'kaelis-dev-secret-key-change-in-production')
@@ -115,6 +126,38 @@ def create_app():
     app.register_blueprint(files_bp)
     app.register_blueprint(tools_bp)
     app.register_blueprint(llm_router_bp)
+    app.register_blueprint(intent_bp)
+    app.register_blueprint(knowledge_graph_bp)
+    app.register_blueprint(reports_bp)
+    app.register_blueprint(symbols_bp)
+    app.register_blueprint(system_bp)
+    app.register_blueprint(team_bp)
+    app.register_blueprint(workflow_engine_bp)
+    app.register_blueprint(observability_bp)
+    app.register_blueprint(mesh_bp)
+    app.register_blueprint(ws_sync_bp)
+    
+    # Initialize OpenTelemetry tracing
+    try:
+        from core.observability.otel_setup import setup_tracing, instrument_flask
+        setup_tracing(service_name="kaelis")
+        instrument_flask(app)
+    except Exception as e:
+        logger.warning("OpenTelemetry tracing initialization skipped: %s", e)
+
+    # Insights (P24-002 fix: daily insight frontend API)
+    try:
+        from api.routes.insights import insights_bp
+        app.register_blueprint(insights_bp)
+    except Exception as e:
+        logger.warning("Failed to register insights blueprint: %s", e)
+
+    # Privacy Policy Management (P24-003: auto-classification rules)
+    try:
+        from api.routes.privacy_policy import privacy_policy_bp
+        app.register_blueprint(privacy_policy_bp)
+    except Exception as e:
+        logger.warning("Failed to register privacy_policy blueprint: %s", e)
 
     # A2A Protocol (P19-001)
     try:
@@ -175,6 +218,24 @@ def create_app():
     except Exception as e:
         import logging
         logging.getLogger(__name__).warning(f"Quality scheduler not started: {e}")
+    
+    # 启动 Mesh 网络后台调度器（心跳 + Gossip）
+    try:
+        from core.mesh.scheduler import get_mesh_scheduler
+        mesh_scheduler = get_mesh_scheduler()
+        mesh_scheduler.start()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Mesh scheduler not started: {e}")
+    
+    # 启动 WebSocket 跨设备消息服务器
+    try:
+        from core.network.ws_server import get_ws_server
+        ws_server = get_ws_server()
+        ws_server.start_in_thread()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"WebSocket server not started: {e}")
     
     # 首次启动安全审计
     try:
@@ -282,7 +343,63 @@ def create_app():
             "host": platform.node()
         }
     
+    # 启动 .env 热重载监听器（开发模式）
+    if os.environ.get("FLASK_ENV", "production") == "development":
+        try:
+            from core.config_reloader import start_env_watcher
+            start_env_watcher(".env", interval=5.0)
+        except Exception as e:
+            logger.warning("Env watcher not started: %s", e)
+    
     return app
+
+
+def _graceful_shutdown():
+    """应用退出时的优雅关闭钩子"""
+    import logging
+    _logger = logging.getLogger(__name__)
+    _logger.info("Graceful shutdown started...")
+
+    # 1. 关闭 WebSocket 服务器
+    try:
+        from core.network.ws_server import get_ws_server
+        ws_server = get_ws_server()
+        ws_server.stop()
+        _logger.info("WebSocket server shutdown signaled")
+    except Exception as e:
+        _logger.warning("WebSocket shutdown error: %s", e)
+
+    # 2. 关闭数据库连接
+    try:
+        from core.memory_manager_v2 import get_memory_manager
+        mm = get_memory_manager()
+        mm.close()
+        _logger.info("Memory manager connections closed")
+    except Exception as e:
+        _logger.warning("Memory manager shutdown error: %s", e)
+
+    # 3. 停止 Mesh 调度器
+    try:
+        from core.mesh.scheduler import get_mesh_scheduler
+        mesh_scheduler = get_mesh_scheduler()
+        mesh_scheduler.stop()
+        _logger.info("Mesh scheduler stopped")
+    except Exception as e:
+        _logger.warning("Mesh scheduler shutdown error: %s", e)
+
+    # 4. 停止质量调度器
+    try:
+        from core.monitoring.scheduler import get_quality_scheduler
+        quality_scheduler = get_quality_scheduler()
+        quality_scheduler.stop()
+        _logger.info("Quality scheduler stopped")
+    except Exception as e:
+        _logger.warning("Quality scheduler shutdown error: %s", e)
+
+    _logger.info("Graceful shutdown complete")
+
+
+atexit.register(_graceful_shutdown)
 
 
 if __name__ == '__main__':

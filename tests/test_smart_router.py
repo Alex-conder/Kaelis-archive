@@ -19,6 +19,28 @@ class TestModelRegistry:
         assert reg.remove_model("to-remove") is True
         assert reg.remove_model("missing") is False
 
+    def test_update_model(self):
+        reg = ModelRegistry()
+        reg.add_model("to-update", "http://old", "k", 1.0, ["summary"], 4096)
+        ok = reg.update_model("to-update", "http://new", "k2", 2.0, ["code"], 8192)
+        assert ok is True
+        model = reg.get_model("to-update")
+        assert model.endpoint == "http://new"
+        assert model.cost_per_1m == 2.0
+        assert model.tags == ["code"]
+        assert model.context_length == 8192
+
+    def test_update_model_missing(self):
+        reg = ModelRegistry()
+        ok = reg.update_model("missing", "http://t", "k", 1.0)
+        assert ok is False
+
+    def test_test_model_connection_not_found(self):
+        reg = ModelRegistry()
+        result = reg.test_model_connection("nonexistent")
+        assert result["success"] is False
+        assert "not found" in result["error"].lower() or "Model not found" == result["error"]
+
 
 class TestSmartRouter:
     def test_simple_task_routes_to_cheap_model(self):

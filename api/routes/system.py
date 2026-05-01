@@ -171,20 +171,12 @@ def log_request(f):
 # ============================================================================
 
 
-@bp.route('/health', methods=['GET'])
-
-@log_request
-def healthCheck():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================
 
 @bp.route('/health', methods=['GET'])
+@log_request
 def health_check():
     """
     Health check endpoint for this module.

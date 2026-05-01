@@ -66,7 +66,7 @@ def e2e_app(e2e_temp_dir):
     singleton_modules = [
         ("core.skill_manager", "_skill_manager"),
         ("core.memory_fts", "_fts_instance"),
-        ("core.memory_manager_v2", "_memory_manager_instance"),
+        ("core.memory_manager_v2", "_mm_instance"),
         ("core.knowledge_retriever", "_knowledge_retriever_instance"),
         ("core.memory_consolidator", "_consolidator_instance"),
         ("core.semantic_pubsub", "_pubsub_instance"),

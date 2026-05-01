@@ -99,7 +99,8 @@ class PredictiveEngine:
                         entry = json.loads(line)
                         pattern = self._extract_pattern(entry["file"])
                         history[pattern][entry["action"]] += 1
-                    except: pass
+                    except Exception as e:
+                        logger.warning("Failed to parse auto-exec log line: %s", e)
         return history
 
     def _extract_pattern(self, filepath: str) -> str:

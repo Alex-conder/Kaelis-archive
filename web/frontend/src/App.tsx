@@ -24,6 +24,13 @@ const GrowthPage = lazy(() => import('./pages/GrowthPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const FilePage = lazy(() => import('./pages/FilePage'))
 const ToolsPage = lazy(() => import('./pages/ToolsPage'))
+const WorkflowPage = lazy(() => import('./pages/WorkflowPage'))
+const MeshPage = lazy(() => import('./pages/MeshPage'))
+const MessageCenterPage = lazy(() => import('./pages/MessageCenterPage'))
+const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'))
+const DailyInsightPage = lazy(() => import('./pages/DailyInsightPage'))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useAuthUser()
@@ -139,6 +146,13 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/files" element={<FilePage />} />
                     <Route path="/tools" element={<ToolsPage />} />
+                    <Route path="/workflow" element={<WorkflowPage />} />
+                    <Route path="/mesh" element={<MeshPage />} />
+                    <Route path="/messages" element={<MessageCenterPage />} />
+                    <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
+                    <Route path="/insights" element={<DailyInsightPage />} />
+                    <Route path="/monitoring" element={<MonitoringPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>

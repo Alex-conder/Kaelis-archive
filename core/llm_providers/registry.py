@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Type
 from core.llm_providers.base import BaseLLMProvider, LLMConfig
 from core.llm_providers.openai_compatible import OpenAICompatibleProvider
 from core.llm_providers.ollama import OllamaProvider
+from core.security.credential_vault import resolve_llm_api_key
 
 # 延迟导入可选 Provider，避免 ImportError 影响整个模块
 logger = logging.getLogger(__name__)
@@ -117,7 +118,7 @@ class ProviderRegistry:
             logger.debug("Failed to init Ollama provider: %s", e)
 
     def _try_add_openai_compatible(self, name: str, preset: Dict[str, str]):
-        api_key = os.getenv(preset["env_key"])
+        api_key = os.getenv(preset["env_key"]) or resolve_llm_api_key(name, preset["env_key"])
         if not api_key:
             return
         try:
@@ -137,7 +138,7 @@ class ProviderRegistry:
             logger.warning("Failed to init %s provider: %s", name, e)
 
     def _try_add_anthropic(self):
-        api_key = os.getenv("ANTHROPIC_API_KEY")
+        api_key = os.getenv("ANTHROPIC_API_KEY") or resolve_llm_api_key("anthropic")
         if not api_key:
             return
         try:
@@ -155,8 +156,8 @@ class ProviderRegistry:
             logger.warning("Failed to init Anthropic provider: %s", e)
 
     def _try_add_baidu(self):
-        api_key = os.getenv("BAIDU_API_KEY")
-        secret_key = os.getenv("BAIDU_SECRET_KEY")
+        api_key = os.getenv("BAIDU_API_KEY") or resolve_llm_api_key("baidu", "BAIDU_API_KEY")
+        secret_key = os.getenv("BAIDU_SECRET_KEY") or resolve_llm_api_key("baidu", "BAIDU_SECRET_KEY")
         if not api_key or not secret_key:
             return
         try:
@@ -175,8 +176,8 @@ class ProviderRegistry:
             logger.warning("Failed to init Baidu provider: %s", e)
 
     def _try_add_tencent(self):
-        api_key = os.getenv("TENCENT_API_KEY")
-        secret_id = os.getenv("TENCENT_SECRET_ID")
+        api_key = os.getenv("TENCENT_API_KEY") or resolve_llm_api_key("tencent", "TENCENT_API_KEY")
+        secret_id = os.getenv("TENCENT_SECRET_ID") or resolve_llm_api_key("tencent", "TENCENT_SECRET_ID")
         if not api_key or not secret_id:
             return
         try:

@@ -203,20 +203,41 @@ def log_request(f):
 
 
 @bp.route('/api/symbols/index', methods=['POST'])
-
 @log_request
 def buildSymbolIndex():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
+    data = request.get_json(silent=True) or {}
+    source = data.get('source', 'default')
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "source": source,
+            "indexed_count": 0,
+            "index_version": "1.0.0",
+            "status": "ready",
+            "message": "Symbol index is ready. No indexing backend is configured."
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 200
+
+
+@bp.route('/api/symbols/query', methods=['GET'])
+@log_request
 def querySymbols():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
+    q = request.args.get('q', '')
+    limit = request.args.get('limit', 20, type=int)
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "query": q,
+            "limit": limit,
+            "results": [],
+            "result_count": 0,
+            "message": "Symbol query requires a configured symbol store."
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 200
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

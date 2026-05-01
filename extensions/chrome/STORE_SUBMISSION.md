@@ -1,32 +1,27 @@
-# Chrome Web Store 提交包
+# Kaelis Chrome Extension v0.2.0
 
-## 商店描述（150 字以内）
+## Submission Notes
 
-**Kaelis — 为网页 AI 注入记忆**
+**What's new in v0.2.0:**
 
-让 ChatGPT、Claude、Gemini 记住你。Kaelis 浏览器扩展将您的个人知识库注入任何网页 AI 对话中，实现跨平台的持久记忆。支持 Ctrl+Shift+K 快速唤起记忆面板，一键搜索历史上下文。
+1. **Deep Context Awareness** — Automatically extracts dialogue context from ChatGPT, Claude, and Gemini. As the user types, the extension queries Kaelis for relevant memories and shows inline suggestions.
 
-## 权限说明
+2. **WebSocket Cross-Device Sync** — Connects to the Kaelis WebSocket server (port 5001) for real-time bidirectional messaging. Receives offline messages when back online.
 
-- **activeTab**: 检测当前访问的 AI 聊天页面
-- **storage**: 本地缓存扩展设置
-- **Host Permissions**: 仅访问 chat.openai.com、claude.ai、gemini.google.com 及本地 Kaelis API
+3. **Device Registration** — Registers itself as a "browser" device with the Kaelis sync hub, enabling cross-device memory sharing.
 
-## 隐私政策
+4. **Auto-Recommendations** — Floating panel shows contextually relevant memories based on the current AI conversation. One-click to search or insert into chat.
 
-Kaelis 采用本地优先架构。所有记忆数据存储在您的本地设备上，不会上传至任何第三方服务器。扩展仅作为本地 Kaelis 后端与网页 AI 的桥接层。
+## Permissions Justification
 
-## 截图说明
+| Permission | Why |
+|---|---|
+| `storage` | Cache device credentials and settings |
+| `activeTab` | Detect current AI chat page for context extraction |
+| `notifications` | Alert user of cross-device messages |
 
-1. **侧边栏记忆卡片**: 在 ChatGPT 页面右侧展示 Kaelis 浮动面板，显示搜索结果和记忆引用
-2. **Popup 状态页**: 展示连接状态与快速操作按钮
+## Host Permissions
 
-## 提交文件清单
-
-- manifest.json
-- background.js
-- content.js
-- popup.html / popup.js
-- icons/icon-16.png
-- icons/icon-48.png
-- icons/icon-128.png
+- `chat.openai.com`, `claude.ai`, `gemini.google.com` — Content script injection for context extraction
+- `localhost:5000` — Kaelis local API
+- `localhost:5001` — Kaelis WebSocket sync server

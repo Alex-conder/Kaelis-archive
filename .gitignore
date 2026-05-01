@@ -98,8 +98,15 @@ data/insights/
 data/faiss_per_user/
 data/archive/
 *.db
+*.db-shm
+*.db-wal
 *.backup.*
+tmp_pytest_out.txt
 
 # Husky (managed by package manager)
 **/.husky/_/
 
+
+# Local state
+.kaelis-telemetry.jsonl
+.kaelis/onboarding_completed

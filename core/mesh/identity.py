@@ -197,12 +197,13 @@ class NodeIdentity:
             raise RuntimeError("Private key not loaded")
         return self._private_key.sign(message)
 
-    def verify_signature(self, message: bytes, signature: bytes, kni: str) -> bool:
+    def verify_signature(self, message: bytes, signature: bytes, kni: str, public_key: Optional[bytes] = None) -> bool:
         """
         验证签名。
 
         如果 kni 是本节点，使用本地公钥验证；
-        否则需要外部提供公钥（未来从网络获取）。
+        如果提供了 public_key 参数，使用该公钥验证远程节点签名；
+        否则尝试从 MeshTransport session 缓存获取公钥。
         """
         if kni == self.kni:
             if not self._public_key:
@@ -212,7 +213,30 @@ class NodeIdentity:
                 return True
             except Exception:
                 return False
-        # TODO: 从网络/缓存获取远程节点公钥
+
+        # 远程节点：使用传入的公钥或从 transport session 缓存获取
+        if public_key:
+            try:
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+                pk = Ed25519PublicKey.from_public_bytes(public_key)
+                pk.verify(signature, message)
+                return True
+            except Exception:
+                return False
+
+        # 尝试从 transport session 缓存获取
+        try:
+            from core.mesh.transport import get_mesh_transport
+            transport = get_mesh_transport()
+            sess = transport.get_session(kni)
+            if sess and sess.public_key_hex:
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+                pk = Ed25519PublicKey.from_public_bytes(bytes.fromhex(sess.public_key_hex))
+                pk.verify(signature, message)
+                return True
+        except Exception:
+            pass
+
         logger.warning("Cannot verify signature for remote KNI %s: public key not cached", kni)
         return False
 

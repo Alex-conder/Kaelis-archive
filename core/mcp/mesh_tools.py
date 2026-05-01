@@ -103,39 +103,63 @@ def register_mesh_tools(mcp: Any):
             action_list = [a.strip() for a in actions.split(",") if a.strip()]
             request_id = f"req_{get_node_identity().kni}_{target_kni}_{resource_type}_{int(__import__('time').time())}"
 
-            # TODO: 通过网络向目标节点发送请求（当前版本仅记录到本地待审批队列）
-            # 未来实现：通过 mesh_call_remote 发送请求到目标节点的 authorization endpoint
+            # Try to send request over network if target is a known active peer
+            sent_over_network = False
+            try:
+                from core.mesh.transport import get_mesh_transport
+                transport = get_mesh_transport()
+                sess = transport.get_session(target_kni)
+                if sess and sess.status == "active":
+                    import requests
+                    url = f"http://{sess.host}:{sess.port}/api/mesh/auth/request"
+                    resp = requests.post(
+                        url,
+                        json={
+                            "request_id": request_id,
+                            "requester_kni": get_node_identity().kni,
+                            "resource_type": resource_type,
+                            "actions": action_list,
+                        },
+                        headers={"Authorization": f"Bearer {sess.token}"} if sess.token else {},
+                        timeout=10,
+                    )
+                    if resp.status_code == 200:
+                        sent_over_network = True
+            except Exception as e:
+                logger.debug("Network send failed, falling back to local queue: %s", e)
 
-            # 临时：记录到 L0 作为待审批请求
-            mm = __import__("core.memory_manager_v2", fromlist=["get_memory_manager"]).get_memory_manager()
-            pending = mm.read(layer="L0", key="mesh_pending_requests", user_id="system")
-            requests = []
-            if pending and isinstance(pending.get("value"), list):
-                requests = pending["value"]
+            # If network send failed or target not active, record locally
+            if not sent_over_network:
+                mm = __import__("core.memory_manager_v2", fromlist=["get_memory_manager"]).get_memory_manager()
+                pending = mm.read(layer="L0", key="mesh_pending_requests", user_id="system")
+                requests = []
+                if pending and isinstance(pending.get("value"), list):
+                    requests = pending["value"]
 
-            requests.append({
-                "id": request_id,
-                "requester_kni": get_node_identity().kni,
-                "target_kni": target_kni,
-                "resource_type": resource_type,
-                "actions": action_list,
-                "status": "pending",
-                "requested_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
-            })
+                requests.append({
+                    "id": request_id,
+                    "requester_kni": get_node_identity().kni,
+                    "target_kni": target_kni,
+                    "resource_type": resource_type,
+                    "actions": action_list,
+                    "status": "pending",
+                    "requested_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+                })
 
-            mm.write(
-                layer="L0",
-                key="mesh_pending_requests",
-                value=requests,
-                metadata={"type": "mesh_request"},
-                user_id="system",
-                agent_id="kaelis_self",
-            )
+                mm.write(
+                    layer="L0",
+                    key="mesh_pending_requests",
+                    value=requests,
+                    metadata={"type": "mesh_request"},
+                    user_id="system",
+                    agent_id="kaelis_self",
+                )
 
             return json.dumps({
                 "success": True,
                 "request_id": request_id,
-                "message": f"Access request sent to {target_kni}. Waiting for approval.",
+                "sent_over_network": sent_over_network,
+                "message": f"Access request {'sent to' if sent_over_network else 'queued for'} {target_kni}. Waiting for approval.",
             }, ensure_ascii=False)
 
         except Exception as e:
@@ -271,16 +295,15 @@ def register_mesh_tools(mcp: Any):
                 ttl_hours=1,
             )
 
-            # TODO: 实际 HTTP 调用远程节点 MCP endpoint
-            # 当前版本返回模拟结果
-            return json.dumps({
-                "success": True,
-                "note": "Remote call framework ready. Full HTTP transport pending.",
-                "target": target,
-                "tool": tool_name,
-                "params": json.loads(params_json),
-                "jwt_preview": token[:50] + "...",
-            }, ensure_ascii=False)
+            # Perform actual HTTP call via mesh transport
+            from core.mesh.transport import get_mesh_transport
+            transport = get_mesh_transport()
+            result = transport.invoke_remote(
+                target_kni,
+                tool_name,
+                json.loads(params_json),
+            )
+            return json.dumps(result, ensure_ascii=False, default=str)
 
         except Exception as e:
             logger.exception("mesh_call_remote failed")

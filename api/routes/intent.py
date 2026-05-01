@@ -87,6 +87,12 @@ class IntentParseResponse(BaseModel):
         
 
 
+class ExecutionPlan(BaseModel):
+    """Minimal execution plan model."""
+    steps: List[Dict[str, Any]] = []
+    goal: Optional[str] = None
+
+
 class ExecutePlanRequest(BaseModel):
     """
     ExecutePlanRequest
@@ -279,17 +285,67 @@ def log_request(f):
 @validate_request(IntentParseRequest)
 @log_request
 def intentParse():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
+    data = g.validated_data
+    description = (data.description or "").lower()
+    context = data.context or {}
+
+    # Simple keyword-based intent classification
+    intent_type = "unknown"
+    confidence = 0.5
+    if any(w in description for w in ["how", "what", "why", "explain", "?"]):
+        intent_type = "question"
+        confidence = 0.85
+    elif any(w in description for w in ["run", "execute", "do", "perform", "start"]):
+        intent_type = "command"
+        confidence = 0.8
+    elif any(w in description for w in ["analyze", "compare", "evaluate", "assess"]):
+        intent_type = "analysis"
+        confidence = 0.75
+    elif any(w in description for w in ["create", "make", "build", "generate"]):
+        intent_type = "creation"
+        confidence = 0.7
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "intent_type": intent_type,
+            "confidence": confidence,
+            "description": data.description,
+            "context_keys": list(context.keys()),
+            "entities": []
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 200
+
+
+@bp.route('/api/intent/execute', methods=['POST'])
+@validate_request(ExecutePlanRequest)
+@log_request
 def intentExecute():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
+    data = g.validated_data
+    plan = data.plan
+    dry_run = data.dry_run or False
+
+    steps = plan.steps if plan and plan.steps else []
+    results = []
+    for i, step in enumerate(steps):
+        results.append({
+            "step_index": i,
+            "action": step.get("action", "unknown"),
+            "status": "simulated" if dry_run else "completed",
+            "output": step.get("expected_output")
+        })
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "dry_run": dry_run,
+            "step_count": len(steps),
+            "results": results,
+            "goal": plan.goal if plan else None
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 200
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

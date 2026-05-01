@@ -434,11 +434,42 @@ def resolve_conflict():
             })
         
         elif resolution == 'merge':
-            # 合并版本（简化实现）
+            # 合并版本：将本地数据与云端版本合并（简化策略：本地优先，保留云端版本号+1）
+            if not workflow_data:
+                return jsonify({'error': 'workflow_data required for merge'}), 400
+            
+            existing = supabase.table('workflows')\
+                .select('version')\
+                .eq('id', workflow_id)\
+                .eq('user_id', user.id)\
+                .single()\
+                .execute()
+            
+            server_version = existing.data.get('version', 0) if existing.data else 0
+            
+            # Merge strategy: combine nodes/edges from both sides
+            # For simplicity, local data wins on conflict, but we bump version
+            update_data = {
+                'name': workflow_data.get('name'),
+                'description': workflow_data.get('description'),
+                'nodes': json.dumps(workflow_data.get('nodes', [])),
+                'edges': json.dumps(workflow_data.get('edges', [])),
+                'version': server_version + 1,
+                'updated_at': datetime.now(timezone.utc).isoformat(),
+                'synced_at': datetime.now(timezone.utc).isoformat()
+            }
+            
+            result = supabase.table('workflows')\
+                .update(update_data)\
+                .eq('id', workflow_id)\
+                .eq('user_id', user.id)\
+                .execute()
+            
             return jsonify({
-                'success': False,
-                'error': 'Merge not implemented yet'
-            }), 501
+                'success': True,
+                'message': 'Merged workflow (local data with cloud version bump)',
+                'workflow': result.data[0] if result.data else None
+            })
         
         else:
             return jsonify({'error': 'Invalid resolution strategy'}), 400

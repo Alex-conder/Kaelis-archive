@@ -30,7 +30,7 @@ except ImportError as e:
 
 # 导入四层记忆管理器
 try:
-    from core.memory_manager_v2 import get_memory_manager, FourLayerMemoryManager
+    from core.memory_manager_v2 import get_memory_manager, FourLayerMemoryManager, LAYER_CONFIG
     FOUR_LAYER_AVAILABLE = True
 except ImportError as e:
     FOUR_LAYER_AVAILABLE = False
@@ -254,16 +254,15 @@ def delete_memory():
                 return jsonify({"success": False, "error": "key required when clear_layer=false"}), 400
             
             # 直接操作 SQLite 删除
-            from core.memory_manager_v2 import LAYER_CONFIG
+            mm = get_memory_manager()
+            db_path = mm._get_db_path(layer)
             import sqlite3
             config = LAYER_CONFIG[layer]
-            db_path = config["db"] if Path(config["db"]).is_absolute() else str(Path("data") / Path(config["db"]).name)
-            conn = sqlite3.connect(db_path)
             table = config["table"]
-            cursor = conn.execute(f"DELETE FROM {table} WHERE key = ?", (key,))
-            deleted = cursor.rowcount
-            conn.commit()
-            conn.close()
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.execute(f"DELETE FROM {table} WHERE key = ?", (key,))
+                deleted = cursor.rowcount
+                conn.commit()
             
             return jsonify({
                 "success": deleted > 0,

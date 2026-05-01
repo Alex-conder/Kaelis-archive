@@ -1,7 +1,7 @@
 {
   "name": "kaelis",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "electron/main.cjs",
   "description": "Kaelis - AI Native Development Platform",
   "author": "Kaelis Team",

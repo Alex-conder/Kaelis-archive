@@ -1,7 +1,8 @@
 """
 凭证保险库 — CredentialVault
 
-AES-256 加密存储敏感凭证，防止明文泄露。
+采用 Fernet (AES-128-CBC + HMAC-SHA256) 加密存储敏感凭证。
+生产环境建议替换为 HashiCorp Vault 或 AWS Secrets Manager。
 """
 
 import base64
@@ -19,10 +20,22 @@ class CredentialNotFoundError(Exception):
     pass
 
 
+# Lazy import cryptography to avoid hard dependency at module level
+def _get_fernet():
+    try:
+        from cryptography.fernet import Fernet
+        return Fernet
+    except ImportError as e:
+        raise ImportError(
+            "cryptography is required for CredentialVault. "
+            "Install it with: pip install cryptography"
+        ) from e
+
+
 class CredentialVault:
     """
     轻量级凭证保险库。
-    生产环境建议替换为 HashiCorp Vault 或 AWS Secrets Manager。
+    采用 Fernet 对称加密，自动兼容旧版 XOR 数据。
     """
 
     def __init__(self, vault_path: Optional[str] = None, master_key_path: Optional[str] = None):
@@ -34,7 +47,7 @@ class CredentialVault:
         self._load()
 
     def _derive_key(self) -> bytes:
-        """从环境或文件派生加密密钥"""
+        """从环境或文件派生加密密钥（32 字节）"""
         key_env = os.environ.get("KAELIS_VAULT_KEY")
         if key_env:
             return key_env.encode("utf-8")[:32].ljust(32, b"\0")
@@ -46,10 +59,17 @@ class CredentialVault:
             key = secrets.token_bytes(32)
             self._master_key_path.write_bytes(key)
             return key
-        # 使用机器特定信息生成稳定密钥
+        # 使用机器特定信息生成稳定密钥（演示/开发环境）
         machine_id = os.environ.get("COMPUTERNAME", "kaelis") + os.environ.get("USER", "default")
         import hashlib
         return hashlib.sha256(machine_id.encode()).digest()
+
+    def _get_fernet(self):
+        """基于派生密钥创建 Fernet 实例"""
+        Fernet = _get_fernet()
+        # Fernet 需要 32 字节 base64-urlsafe 编码的密钥
+        urlsafe_key = base64.urlsafe_b64encode(self._key)
+        return Fernet(urlsafe_key)
 
     def _load(self) -> None:
         """加载保险库"""
@@ -69,13 +89,23 @@ class CredentialVault:
         self.vault_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     def _encrypt(self, plaintext: str) -> str:
-        """简单 XOR + Base64（演示用，生产请用 Fernet/AES-GCM）"""
-        key = self._key
-        data = plaintext.encode("utf-8")
-        encrypted = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
-        return base64.b64encode(encrypted).decode("ascii")
+        """Fernet 加密 + Base64"""
+        f = self._get_fernet()
+        token = f.encrypt(plaintext.encode("utf-8"))
+        return token.decode("ascii")
 
     def _decrypt(self, ciphertext: str) -> str:
+        """尝试 Fernet 解密，失败则回退到旧版 XOR（兼容迁移）"""
+        try:
+            f = self._get_fernet()
+            decrypted = f.decrypt(ciphertext.encode("ascii"))
+            return decrypted.decode("utf-8")
+        except Exception:
+            # 回退到旧版 XOR（兼容旧数据自动迁移）
+            return self._legacy_xor_decrypt(ciphertext)
+
+    def _legacy_xor_decrypt(self, ciphertext: str) -> str:
+        """旧版 XOR + Base64 解密（用于向后兼容）"""
         key = self._key
         data = base64.b64decode(ciphertext.encode("ascii"))
         decrypted = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
@@ -173,3 +203,54 @@ class CredentialVault:
             "issues": issues,
             "secure_count": len(env_vars) - len(issues),
         }
+
+
+# =============================================================================
+# Unified LLM API Key Resolver
+# =============================================================================
+
+_LLMAPI_VAULT_INSTANCE: Optional[CredentialVault] = None
+
+
+def _get_vault_instance() -> CredentialVault:
+    global _LLMAPI_VAULT_INSTANCE
+    if _LLMAPI_VAULT_INSTANCE is None:
+        _LLMAPI_VAULT_INSTANCE = CredentialVault()
+    return _LLMAPI_VAULT_INSTANCE
+
+
+def resolve_llm_api_key(provider_name: str, env_var_name: Optional[str] = None) -> Optional[str]:
+    """
+    统一解析 LLM API Key。
+
+    查找优先级：
+        1. 环境变量（env_var_name 或 {provider_name.upper()}_API_KEY）
+        2. CredentialVault（key 为 {provider_name.lower()}_api_key）
+        3. 返回 None
+
+    Args:
+        provider_name: 提供商名称，如 "deepseek", "openai", "anthropic"
+        env_var_name: 显式指定的环境变量名，默认 {PROVIDER}_API_KEY
+
+    Returns:
+        API Key 字符串，或 None
+    """
+    if env_var_name is None:
+        env_var_name = f"{provider_name.upper()}_API_KEY"
+
+    # 1. 环境变量优先（向后兼容）
+    env_value = os.environ.get(env_var_name)
+    if env_value:
+        return env_value
+
+    # 2. CredentialVault
+    vault_key = f"{provider_name.lower()}_api_key"
+    try:
+        vault = _get_vault_instance()
+        vault_value = vault.get(vault_key)
+        if vault_value:
+            return vault_value
+    except Exception:
+        pass
+
+    return None

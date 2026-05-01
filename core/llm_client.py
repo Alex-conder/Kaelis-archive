@@ -14,10 +14,27 @@ logger = logging.getLogger(__name__)
 class KaelisLLMClient:
     """
     统一的 LLM 客户端，兼容 DeepSeek / OpenAI API。
+    API Key 解析优先级：环境变量 > CredentialVault
     """
 
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: Optional[str] = None):
-        self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
+        if api_key:
+            self.api_key = api_key
+        else:
+            # 优先从环境变量读取，其次从 CredentialVault 读取
+            self.api_key = (
+                os.getenv("DEEPSEEK_API_KEY")
+                or os.getenv("OPENAI_API_KEY")
+            )
+            if not self.api_key:
+                try:
+                    from core.security.credential_vault import resolve_llm_api_key
+                    self.api_key = (
+                        resolve_llm_api_key("deepseek")
+                        or resolve_llm_api_key("openai")
+                    )
+                except Exception:
+                    pass
         self.base_url = base_url or os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
         self.model = model or os.getenv("LLM_MODEL", "deepseek-chat")
 
@@ -114,9 +131,28 @@ class KaelisLLMClient:
             raise
 
 
-# 模块级单例
-try:
-    llm_client = KaelisLLMClient()
-except Exception as e:
-    logger.warning(f"LLM 客户端单例初始化失败: {e}")
-    llm_client = None
+# 模块级单例（惰性初始化，支持热重载）
+_llm_client_instance: Optional[KaelisLLMClient] = None
+
+
+def get_llm_client() -> Optional[KaelisLLMClient]:
+    """获取 LLM 客户端单例（惰性初始化）"""
+    global _llm_client_instance
+    if _llm_client_instance is None:
+        try:
+            _llm_client_instance = KaelisLLMClient()
+        except Exception as e:
+            logger.warning(f"LLM 客户端初始化失败: {e}")
+            _llm_client_instance = None
+    return _llm_client_instance
+
+
+def reset_llm_client() -> None:
+    """重置 LLM 客户端单例（用于热重载配置后重新初始化）"""
+    global _llm_client_instance
+    _llm_client_instance = None
+    logger.info("LLM 客户端单例已重置，下次调用时将重新初始化")
+
+
+# 向后兼容：模块级变量
+llm_client = get_llm_client()

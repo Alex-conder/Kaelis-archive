@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.venv
+venv
+
+# Node
+node_modules
+web/frontend/node_modules
+extensions/chrome/node_modules
+
+# Build artifacts
+dist
+build
+*.whl
+
+# IDE
+.vscode
+.idea
+
+# Local data & secrets
+.env
+.env.local
+.env.*.local
+data/*.db
+data/fallback
+backups
+
+# Tests & docs
+tests
+docs
+*.md
+
+# CI
+.github

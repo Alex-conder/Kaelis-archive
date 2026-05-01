@@ -96,7 +96,7 @@ class AuthorizationManager:
         验证 JWT 并返回 payload。
 
         如果 token 是本节点签发的，使用本地公钥验证；
-        如果是远程节点签发的，需要其公钥（当前版本仅支持本地验证）。
+        如果是远程节点签发的，从 MeshTransport session 缓存中获取公钥验证。
         """
         try:
             # 先不验证签名，提取 issuer
@@ -112,9 +112,22 @@ class AuthorizationManager:
                 )
                 return payload
             else:
-                # TODO: 从网络/缓存获取远程节点公钥
-                logger.warning("Cannot verify token from remote issuer %s: public key not cached", issuer)
-                return None
+                # 远程节点签发：从 transport session 缓存获取公钥
+                from core.mesh.transport import get_mesh_transport
+                transport = get_mesh_transport()
+                sess = transport.get_session(issuer)
+                if not sess or not sess.public_key_hex:
+                    logger.warning("Cannot verify token from remote issuer %s: no session or public key cached", issuer)
+                    return None
+
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+                peer_pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(sess.public_key_hex))
+                payload = jwt.decode(
+                    token,
+                    key=peer_pub,
+                    algorithms=[JWT_ALGORITHM],
+                )
+                return payload
 
         except jwt.ExpiredSignatureError:
             logger.warning("Token expired")

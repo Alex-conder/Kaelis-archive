@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { Play, Download, Upload, Trash2, Save } from 'lucide-react'
+import { Play, Download, Upload, Trash2, Save, Loader2 } from 'lucide-react'
 
 interface WorkflowToolbarProps {
   onRun?: () => void
@@ -7,6 +7,7 @@ interface WorkflowToolbarProps {
   onImport?: () => void
   onClear?: () => void
   onSave?: () => void
+  isRunning?: boolean
   nodeCount?: number
   edgeCount?: number
 }
@@ -17,6 +18,7 @@ export default function WorkflowToolbar({
   onImport,
   onClear,
   onSave,
+  isRunning = false,
   nodeCount = 0,
   edgeCount = 0,
 }: WorkflowToolbarProps) {
@@ -29,9 +31,9 @@ export default function WorkflowToolbar({
         </span>
       </div>
       <div className="flex items-center gap-1.5">
-        <Button variant="ghost" size="sm" onClick={onRun} className="h-8 gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30">
-          <Play className="w-3.5 h-3.5" />
-          Run
+        <Button variant="ghost" size="sm" onClick={onRun} disabled={isRunning} className="h-8 gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 disabled:opacity-50">
+          {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+          {isRunning ? 'Running...' : 'Run'}
         </Button>
         <div className="w-px h-4 bg-slate-800 mx-1" />
         <Button variant="ghost" size="sm" onClick={onSave} className="h-8 gap-1.5 text-xs text-slate-400 hover:text-slate-200">

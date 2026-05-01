@@ -25,6 +25,7 @@ import {
   DollarSign,
   Server,
   BarChart3,
+  Pencil,
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
@@ -661,6 +662,9 @@ function LLMRouterSettings() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState({ name: '', endpoint: '', api_key: '', cost_per_1m: '', tags: '', context_length: '4096' })
   const [addLoading, setAddLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState<string | null>(null)
+  const [testResults, setTestResults] = useState<Record<string, { status: 'loading' | 'success' | 'error'; latency?: number; error?: string }>>({})
 
   // 模型列表
   const { data: modelsData, isLoading: modelsLoading } = useQuery({
@@ -729,27 +733,85 @@ function LLMRouterSettings() {
     strategyMutation.mutate(s)
   }
 
-  const handleAdd = async () => {
+  const handleSave = async () => {
     setAddLoading(true)
     try {
-      const res = await fetch('/api/llm/models', {
-        method: 'POST',
+      const payload = {
+        name: form.name,
+        endpoint: form.endpoint,
+        api_key: form.api_key,
+        cost_per_1m: parseFloat(form.cost_per_1m),
+        tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+        context_length: parseInt(form.context_length),
+      }
+      const url = editingName
+        ? `/api/llm/models/${encodeURIComponent(editingName)}`
+        : '/api/llm/models'
+      const method = editingName ? 'PUT' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          endpoint: form.endpoint,
-          api_key: form.api_key,
-          cost_per_1m: parseFloat(form.cost_per_1m),
-          tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
-          context_length: parseInt(form.context_length),
-        }),
+        body: JSON.stringify(payload),
       })
       if (res.ok) {
         setForm({ name: '', endpoint: '', api_key: '', cost_per_1m: '', tags: '', context_length: '4096' })
+        setEditingName(null)
         queryClient.invalidateQueries({ queryKey: ['llm', 'models'] })
       }
     } finally {
       setAddLoading(false)
+    }
+  }
+
+  const handleEdit = (model: ModelInfo) => {
+    setEditingName(model.name)
+    setForm({
+      name: model.name,
+      endpoint: model.endpoint,
+      api_key: '',
+      cost_per_1m: String(model.cost_per_1m),
+      tags: model.tags.join(', '),
+      context_length: String(model.context_length),
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingName(null)
+    setForm({ name: '', endpoint: '', api_key: '', cost_per_1m: '', tags: '', context_length: '4096' })
+  }
+
+  const handleDelete = async (name: string) => {
+    if (!confirm(`确定要删除模型 "${name}" 吗？`)) return
+    setDeleteLoading(name)
+    try {
+      const res = await fetch(`/api/llm/models/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ['llm', 'models'] })
+        queryClient.invalidateQueries({ queryKey: ['llm', 'circuit-status'] })
+        queryClient.invalidateQueries({ queryKey: ['llm', 'stats'] })
+      }
+    } finally {
+      setDeleteLoading(null)
+    }
+  }
+
+  const handleTestConnection = async (name: string) => {
+    setTestResults((prev) => ({ ...prev, [name]: { status: 'loading' } }))
+    try {
+      const res = await fetch(`/api/llm/models/${encodeURIComponent(name)}/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTestResults((prev) => ({ ...prev, [name]: { status: 'success', latency: data.latency_ms } }))
+      } else {
+        setTestResults((prev) => ({ ...prev, [name]: { status: 'error', error: data.error || 'Unknown error' } }))
+      }
+    } catch (e) {
+      setTestResults((prev) => ({ ...prev, [name]: { status: 'error', error: 'Request failed' } }))
     }
   }
 
@@ -822,26 +884,34 @@ function LLMRouterSettings() {
             {models.map((m) => {
               const circuit = circuitData?.[m.name]
               const isOpen = circuit?.is_open
+              const testResult = testResults[m.name]
               return (
                 <div
                   key={m.name}
                   className="flex items-center justify-between p-3 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div
                       className={`w-2 h-2 rounded-full shrink-0 ${
                         isOpen ? 'bg-red-500' : 'bg-emerald-500'
                       }`}
                     />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-sm font-medium text-[var(--text-primary)]">{m.name}</div>
                       <div className="text-xs text-[var(--text-muted)]">
                         ${m.cost_per_1m}/1M · {m.context_length.toLocaleString()} ctx ·{' '}
                         {m.tags.join(', ')}
                       </div>
+                      {testResult && testResult.status !== 'loading' && (
+                        <div className={`text-[10px] mt-0.5 ${testResult.status === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {testResult.status === 'success'
+                            ? `🟢 Connected (${testResult.latency}ms)`
+                            : `🔴 Failed: ${testResult.error}`}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
                     {isOpen && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
                         熔断
@@ -852,6 +922,36 @@ function LLMRouterSettings() {
                         活跃
                       </span>
                     )}
+                    <button
+                      onClick={() => handleEdit(m)}
+                      className="px-2 py-1 text-[10px] rounded border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 transition-colors"
+                      title="编辑模型"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => handleTestConnection(m.name)}
+                      disabled={testResult?.status === 'loading'}
+                      className="px-2 py-1 text-[10px] rounded border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+                      title="测试连接"
+                    >
+                      {testResult?.status === 'loading' ? (
+                        <span className="flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          测试中...
+                        </span>
+                      ) : (
+                        '测试连接'
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(m.name)}
+                      disabled={deleteLoading === m.name}
+                      className="px-2 py-1 text-[10px] rounded border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                      title="删除模型"
+                    >
+                      {deleteLoading === m.name ? '删除中...' : '删除'}
+                    </button>
                   </div>
                 </div>
               )
@@ -924,18 +1024,19 @@ function LLMRouterSettings() {
         )}
       </div>
 
-      {/* 添加模型 */}
+      {/* 添加 / 编辑模型 */}
       <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
         <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-yellow-500" />
-          添加模型
+          {editingName ? <Pencil className="w-4 h-4 text-yellow-500" /> : <Zap className="w-4 h-4 text-yellow-500" />}
+          {editingName ? '编辑模型' : '添加模型'}
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <input
             placeholder="模型名称"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
+            disabled={!!editingName}
+            className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)] disabled:opacity-50"
           />
           <input
             placeholder="Endpoint"
@@ -944,7 +1045,7 @@ function LLMRouterSettings() {
             className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
           />
           <input
-            placeholder="API Key"
+            placeholder={editingName ? 'API Key (留空保持不变)' : 'API Key'}
             type="password"
             value={form.api_key}
             onChange={(e) => setForm({ ...form, api_key: e.target.value })}
@@ -969,13 +1070,24 @@ function LLMRouterSettings() {
             className="px-3 py-2 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-color)]"
           />
         </div>
-        <button
-          onClick={handleAdd}
-          disabled={addLoading}
-          className="mt-3 px-4 py-2 text-xs bg-[var(--primary-color)] hover:opacity-90 text-white rounded-lg disabled:opacity-50"
-        >
-          {addLoading ? '添加中...' : '添加模型'}
-        </button>
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={handleSave}
+            disabled={addLoading}
+            className="px-4 py-2 text-xs bg-[var(--primary-color)] hover:opacity-90 text-white rounded-lg disabled:opacity-50"
+          >
+            {addLoading ? '保存中...' : editingName ? '保存更改' : '添加模型'}
+          </button>
+          {editingName && (
+            <button
+              onClick={handleCancelEdit}
+              disabled={addLoading}
+              className="px-4 py-2 text-xs border border-[var(--border-color)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--bg-secondary)] disabled:opacity-50 transition-colors"
+            >
+              取消
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

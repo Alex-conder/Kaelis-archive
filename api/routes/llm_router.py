@@ -43,6 +43,28 @@ def remove_model(name):
     return jsonify({"success": ok})
 
 
+@llm_router_bp.route("/models/<name>", methods=["PUT"])
+def update_model(name):
+    """编辑已有模型"""
+    data = request.get_json() or {}
+    ok = _model_registry.update_model(
+        name=name,
+        endpoint=data.get("endpoint", ""),
+        api_key=data.get("api_key", ""),
+        cost_per_1m=data.get("cost_per_1m", 0.0),
+        tags=data.get("tags", []),
+        context_length=data.get("context_length", 4096),
+    )
+    return jsonify({"success": ok})
+
+
+@llm_router_bp.route("/models/<name>/test", methods=["POST"])
+def test_model_connection(name):
+    """测试模型端点连通性"""
+    result = _model_registry.test_model_connection(name)
+    return jsonify(result)
+
+
 @llm_router_bp.route("/route", methods=["POST"])
 def route_request():
     """根据任务描述获取推荐模型"""

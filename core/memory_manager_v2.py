@@ -16,6 +16,8 @@
 import json
 import logging
 import sqlite3
+import time
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from pathlib import Path
@@ -75,21 +77,32 @@ class FourLayerMemoryManager:
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         return db_path
 
+    @contextmanager
     def _get_db_conn(self, layer: str):
         """FIX-1: 获取数据库连接（优先线程本地连接池）"""
         db_path = self._get_db_path(layer)
         if THREAD_POOL_AVAILABLE:
             pool = get_thread_pool(db_path, max_connections=20)
-            return pool.acquire()
+            with pool.acquire() as conn:
+                yield conn
+            return
         if POOL_AVAILABLE:
             pool = get_pool(db_path, max_connections=8)
-            return pool.acquire()
+            with pool.acquire() as conn:
+                yield conn
+            return
         # Fallback: 直接连接（也应用 WAL 优化）
         conn = sqlite3.connect(db_path, timeout=5.0)
         conn.execute("PRAGMA journal_mode = WAL")
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA busy_timeout = 5000")
-        return conn
+        try:
+            yield conn
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
     
     def _init_tables(self):
         """初始化四层记忆的 SQLite 表"""
@@ -201,6 +214,22 @@ class FourLayerMemoryManager:
                 pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_name ON kg_entities(name)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_type ON kg_entities(type)")
+            # kg_relations: 知识图谱关系存储
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS kg_relations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source TEXT NOT NULL,
+                    target TEXT NOT NULL,
+                    relation TEXT NOT NULL,
+                    source_text TEXT,
+                    user_id TEXT DEFAULT 'anonymous',
+                    privacy_level TEXT DEFAULT 'private',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_relation_source ON kg_relations(source)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_relation_target ON kg_relations(target)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_relation_created ON kg_relations(created_at)")
     
     def _get_graph_driver(self):
         """懒加载图数据库驱动（L3）"""
@@ -247,6 +276,7 @@ class FourLayerMemoryManager:
                 raise ValueError(f"Unknown layer: {layer}")
         except Exception as e:
             logger.error(f"Write to {layer} failed: {e}")
+            self.record_failure_event("write", str(e), {"layer": layer, "key": key})
             # 降级策略
             if layer == "L2":
                 self._fallback_jsonl_backup(key, value, metadata, now)
@@ -392,6 +422,28 @@ class FourLayerMemoryManager:
             record = {"key": key, "value": value, "metadata": metadata, "timestamp": now}
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
         logger.info(f"L2 fallback backup written: {key}")
+
+    def record_failure_event(self, operation: str, error: str, context: dict = None):
+        """
+        当记忆操作失败时，将失败上下文写入 L2，标记为 error 事件。
+        """
+        try:
+            now = datetime.now().isoformat()
+            record = {
+                "event_type": "error",
+                "operation": operation,
+                "error_message": str(error),
+                "timestamp": now,
+                "context": context or {},
+            }
+            self._write_l2(
+                key=f"failure:{operation}:{int(time.time())}",
+                value=record,
+                metadata={"source": "memory_manager", "auto_recorded": True},
+                now=now,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to record failure event: {e}")
     
     def read(self, layer: str, key: str, user_id: str = "anonymous") -> Optional[Any]:
         """读取记忆（P12-001 支持 user_id 隔离）"""
@@ -494,6 +546,7 @@ class FourLayerMemoryManager:
                 raise ValueError(f"Search not supported for layer {layer}")
         except Exception as e:
             logger.error(f"Search {layer} failed: {e}")
+            self.record_failure_event("search", str(e), {"layer": layer, "query": query})
             return []
     
     def _search_l1(self, query: str, top_k: int, user_id: str = "anonymous") -> List[Dict]:
@@ -530,50 +583,55 @@ class FourLayerMemoryManager:
         2. 检测 L2 记忆冲突（基于向量时钟）
         3. 应用遗忘衰减（降权低存活概率记忆）
         """
-        now = datetime.now().isoformat()
-        report = {"timestamp": now, "actions": []}
-
-        # 1. 清理 L1 过期数据
-        with self._get_db_conn("L1") as conn:
-            cursor = conn.execute("DELETE FROM memory_l1 WHERE expires_at < ?", (now,))
-            deleted = cursor.rowcount
-            conn.commit()
-            logger.info(f"Consolidated L1: removed {deleted} expired memories")
-            report["actions"].append({"type": "expire_cleanup", "layer": "L1", "deleted": deleted})
-
-        # 2. L2 冲突检测
         try:
-            from core.memory_conflict import get_conflict_resolver
-            resolver = get_conflict_resolver()
-            conflict_total = 0
-            with self._get_db_conn("L2") as conn:
-                rows = conn.execute(
-                    "SELECT DISTINCT key FROM memory_l2 WHERE user_id = ? LIMIT 1000",
-                    (user_id,),
-                ).fetchall()
-            for (key,) in rows:
-                conflicts = resolver.detect_conflicts(key, "L2")
-                conflict_total += len(conflicts)
-                for c in conflicts:
-                    logger.warning(f"Memory conflict detected: {c['key']} between {c['version_a']['version_id']} and {c['version_b']['version_id']}")
-                    # 尝试自动合并
-                    merge_result = resolver.auto_merge(key, "L2", strategy="field_merge")
-                    if merge_result:
-                        logger.info(f"Auto-merged conflict for {key}: {merge_result['strategy']}")
-            report["actions"].append({"type": "conflict_detection", "layer": "L2", "conflicts_found": conflict_total})
-        except Exception as e:
-            logger.warning(f"Conflict detection during consolidation failed: {e}")
+            now = datetime.now().isoformat()
+            report = {"timestamp": now, "actions": []}
 
-        # 3. 遗忘衰减
-        try:
-            from core.memory_consolidator import get_consolidator
-            consolidator = get_consolidator()
-            forget_report = consolidator.apply_forgetting(dry_run=True)
-            report["actions"].append({"type": "forgetting", **forget_report})
-        except Exception as e:
-            logger.warning(f"Forgetting application during consolidation failed: {e}")
+            # 1. 清理 L1 过期数据
+            with self._get_db_conn("L1") as conn:
+                cursor = conn.execute("DELETE FROM memory_l1 WHERE expires_at < ?", (now,))
+                deleted = cursor.rowcount
+                conn.commit()
+                logger.info(f"Consolidated L1: removed {deleted} expired memories")
+                report["actions"].append({"type": "expire_cleanup", "layer": "L1", "deleted": deleted})
 
-        return report
+            # 2. L2 冲突检测
+            try:
+                from core.memory_conflict import get_conflict_resolver
+                resolver = get_conflict_resolver()
+                conflict_total = 0
+                with self._get_db_conn("L2") as conn:
+                    rows = conn.execute(
+                        "SELECT DISTINCT key FROM memory_l2 WHERE user_id = ? LIMIT 1000",
+                        (user_id,),
+                    ).fetchall()
+                for (key,) in rows:
+                    conflicts = resolver.detect_conflicts(key, "L2")
+                    conflict_total += len(conflicts)
+                    for c in conflicts:
+                        logger.warning(f"Memory conflict detected: {c['key']} between {c['version_a']['version_id']} and {c['version_b']['version_id']}")
+                        # 尝试自动合并
+                        merge_result = resolver.auto_merge(key, "L2", strategy="field_merge")
+                        if merge_result:
+                            logger.info(f"Auto-merged conflict for {key}: {merge_result['strategy']}")
+                report["actions"].append({"type": "conflict_detection", "layer": "L2", "conflicts_found": conflict_total})
+            except Exception as e:
+                logger.warning(f"Conflict detection during consolidation failed: {e}")
+
+            # 3. 遗忘衰减
+            try:
+                from core.memory_consolidator import get_consolidator
+                consolidator = get_consolidator()
+                forget_report = consolidator.apply_forgetting(dry_run=True)
+                report["actions"].append({"type": "forgetting", **forget_report})
+            except Exception as e:
+                logger.warning(f"Forgetting application during consolidation failed: {e}")
+
+            return report
+        except Exception as e:
+            logger.error(f"Consolidate failed: {e}")
+            self.record_failure_event("consolidate", str(e), {"user_id": user_id})
+            return {"timestamp": datetime.now().isoformat(), "actions": [], "error": str(e)}
     
     def clear_layer(self, layer: str, filter_source: Optional[str] = None) -> int:
         """清空指定层"""
@@ -598,7 +656,7 @@ class FourLayerMemoryManager:
             logger.info(f"Cleared {layer}: removed {deleted} records")
             return deleted
     
-    def search_by_privacy_level(self, layer: str, privacy_level: str, top_k: int = 10) -> List[Dict[str, Any]]:
+    def search_by_privacy_level(self, layer: str, privacy_level: str, top_k: int = 10, user_id: str = "anonymous") -> List[Dict[str, Any]]:
         """按隐私级别搜索记忆 (P20-002)"""
         layer = layer.upper()
         config = LAYER_CONFIG.get(layer)
@@ -607,23 +665,42 @@ class FourLayerMemoryManager:
         
         with self._get_db_conn(layer) as conn:
             table = config["table"]
-            cursor = conn.execute(
-                f"SELECT key, value, metadata, created_at, source, privacy_level "
-                f"FROM {table} WHERE privacy_level = ? ORDER BY created_at DESC LIMIT ?",
-                (privacy_level, top_k)
-            )
-            rows = cursor.fetchall()
-            return [
-                {
-                    "key": row[0],
-                    "value": json.loads(row[1]) if row[1] else None,
-                    "metadata": json.loads(row[2]) if row[2] else {},
-                    "created_at": row[3],
-                    "source": row[4],
-                    "privacy_level": row[5] or "private",
-                }
-                for row in rows
-            ]
+            # L1 has no 'source' column; L2 has 'source'
+            if layer == "L2":
+                cursor = conn.execute(
+                    f"SELECT key, value, metadata, created_at, source, privacy_level "
+                    f"FROM {table} WHERE privacy_level = ? AND user_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (privacy_level, user_id, top_k)
+                )
+                rows = cursor.fetchall()
+                return [
+                    {
+                        "key": row[0],
+                        "value": json.loads(row[1]) if row[1] else None,
+                        "metadata": json.loads(row[2]) if row[2] else {},
+                        "created_at": row[3],
+                        "source": row[4],
+                        "privacy_level": row[5] or "private",
+                    }
+                    for row in rows
+                ]
+            else:
+                cursor = conn.execute(
+                    f"SELECT key, value, metadata, created_at, privacy_level "
+                    f"FROM {table} WHERE privacy_level = ? AND user_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (privacy_level, user_id, top_k)
+                )
+                rows = cursor.fetchall()
+                return [
+                    {
+                        "key": row[0],
+                        "value": json.loads(row[1]) if row[1] else None,
+                        "metadata": json.loads(row[2]) if row[2] else {},
+                        "created_at": row[3],
+                        "privacy_level": row[4] or "private",
+                    }
+                    for row in rows
+                ]
     
     def filter_by_privacy(self, memories: List[Dict[str, Any]], visibility: str = "private") -> List[Dict[str, Any]]:
         """按可见性过滤记忆列表 (P20-002)
@@ -648,10 +725,13 @@ class FourLayerMemoryManager:
         
         def safe_count(db_path, sql, params=(), fallback=0):
             try:
-                with sqlite3.connect(db_path) as conn:
+                conn = sqlite3.connect(db_path)
+                try:
                     cursor = conn.execute(sql, params)
                     result = cursor.fetchone()[0]
                     return result
+                finally:
+                    conn.close()
             except Exception:
                 return fallback
         
@@ -670,7 +750,24 @@ class FourLayerMemoryManager:
     
     def close(self):
         """关闭管理器，释放资源"""
-        pass
+        if THREAD_POOL_AVAILABLE:
+            try:
+                from core.database.connection_pool import _pool_registry
+                for pool in _pool_registry.values():
+                    pool.close_all()
+            except Exception as e:
+                logger.warning("Failed to close thread pools: %s", e)
+        global _mm_instance
+        if _mm_instance is self:
+            _mm_instance = None
+        logger.info("FourLayerMemoryManager closed")
+
+    def __del__(self):
+        """析构时尝试关闭资源"""
+        try:
+            self.close()
+        except Exception:
+            pass
 
 
 # 全局实例

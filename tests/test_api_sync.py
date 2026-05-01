@@ -159,15 +159,35 @@ class TestSyncAPI(FlaskAppTestBase):
         self.assertTrue(data['success'])
     
     @patch('api.routes.auth.supabase', new_callable=lambda: _make_mock_supabase())
-    @patch('api.routes.sync.supabase', new_callable=lambda: _make_mock_supabase())
-    def test_resolve_conflict_merge_not_implemented(self, mock_sync, mock_auth):
+    @patch('api.routes.sync.supabase', new_callable=lambda: _make_mock_supabase(data={'version': 2}))
+    def test_resolve_conflict_merge(self, mock_sync, mock_auth):
+        call_count = [0]
+        orig_execute = mock_sync.table.return_value.execute
+        def dynamic_execute(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                result = MagicMock()
+                result.data = {'version': 2}
+                return result
+            else:
+                result = MagicMock()
+                result.data = [{'version': 3}]
+                return result
+        mock_sync.table.return_value.execute = dynamic_execute
+        query = mock_sync.table.return_value
+        query.eq.return_value = query
+        query.select.return_value = query
+        query.single.return_value = query
+        query.update.return_value = query
         resp = self.client.post(
             '/api/sync/resolve-conflict',
-            data='{"workflow_id": "1", "resolution": "merge"}',
+            data='{"workflow_id": "1", "resolution": "merge", "workflow_data": {"name": "merged"}}',
             content_type='application/json',
             headers={'Authorization': 'Bearer token'}
         )
-        self.assertEqual(resp.status_code, 501)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data['success'])
     
     @patch('api.routes.auth.supabase', new_callable=lambda: _make_mock_supabase())
     @patch('api.routes.sync.supabase', new_callable=lambda: _make_mock_supabase())

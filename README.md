@@ -15,7 +15,21 @@ Kaelis 智流是一个具备**四层记忆架构**和**自我进化能力**的 A
 
 ## 🚀 快速开始
 
-### 后端启动
+### 1. 配置 LLM API Key
+
+Kaelis 需要至少一个 LLM 提供商的 API Key 才能运行核心功能（推理、评估、自我进化）。
+
+```bash
+# 复制环境变量模板并编辑
+cp .env.example .env
+# 然后填入你的 API Key（如 DeepSeek / OpenAI）
+```
+
+📖 [查看完整 LLM 配置指南](docs/llm-setup.md)
+
+> 💡 国内用户推荐优先配置 **DeepSeek** 或 **通义千问**，延迟低且性价比高。
+
+### 2. 后端启动
 
 ```bash
 pip install -r requirements.txt

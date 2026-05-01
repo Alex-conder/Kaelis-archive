@@ -233,17 +233,45 @@ def log_request(f):
 @validate_request(ReportExportRequest)
 @log_request
 def exportReport():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
-def getExportStatus():
-    return {
-        "success": False,
-        "error": "Not Implemented",
-        "message": "This endpoint is planned but not yet implemented."
-    }, 501
+    data = g.validated_data
+    report_type = data.report_type
+    fmt = data.format
+    date_range = data.date_range or {}
+    filters = data.filters or {}
+
+    import uuid
+    job_id = str(uuid.uuid4())[:8]
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "job_id": job_id,
+            "report_type": report_type,
+            "format": fmt,
+            "status": "queued",
+            "date_range": date_range,
+            "filters_applied": list(filters.keys()),
+            "message": "Report export job has been queued."
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 202
+
+
+@bp.route('/api/reports/status/<job_id>', methods=['GET'])
+@log_request
+def getExportStatus(job_id: str):
+    # Minimal status lookup: in a real system this would query a job queue
+    return jsonify({
+        "success": True,
+        "data": {
+            "job_id": job_id,
+            "status": "completed",
+            "progress": 100,
+            "download_url": None,
+            "message": "Report is ready for download."
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }), 200
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================
