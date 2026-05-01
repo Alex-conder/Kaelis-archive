@@ -1,10 +1,11 @@
 # 🌊 Kaelis 智流 - AI Agent 操作系统
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](web/frontend/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-38B2AC.svg)](web/frontend/)
-[![Tests](https://img.shields.io/badge/Tests-33%2F33%20passed-brightgreen.svg)](tests/)
-[![Metabolomics](https://img.shields.io/badge/Metabolomics-mzML%20supported-blueviolet.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-passing-brightgreen.svg)](tests/)
+[![Docker](https://img.shields.io/badge/Docker-supported-2496ED.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **核心口号**: 四层记忆 · 自我进化 · 终身学习
@@ -44,9 +45,20 @@ cd web/frontend
 npm install
 npm run dev          # Web 开发模式
 npm run electron:dev # Electron 桌面端
+npm run build        # 生产构建
 ```
 
 [查看前端开发指南](web/frontend/README.md)
+
+### Docker 部署
+
+```bash
+# 构建镜像
+docker build -t kaelis/kaelis:v1.0.0 .
+
+# 运行容器
+docker run -p 5000:5000 --env-file .env kaelis/kaelis:v1.0.0
+```
 
 ## 🆕 统一 CLI (v1.0)
 

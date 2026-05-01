@@ -6,7 +6,7 @@
 FROM python:3.13-slim
 
 LABEL maintainer="Kaelis Team <team@kaelis.ai>"
-LABEL version="0.4.0"
+LABEL version="1.0.0"
 LABEL description="Kaelis AI Agent Operating System"
 
 WORKDIR /app

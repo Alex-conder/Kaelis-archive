@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Kaelis â€” AI Second Brain for the Web",
-  "version": "0.4.0",
+  "name": "Kaelis â€?AI Second Brain for the Web",
+  "version": "1.0.0",
   "description": "Inject Kaelis memory and skills into ChatGPT, Claude, and any web AI. Auto-suggests relevant memories as you chat.",
   "permissions": [
     "storage",

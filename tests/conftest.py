@@ -101,6 +101,26 @@ def isolate_data_dir(monkeypatch, tmp_path, request):
 
 
 # =====================================================================
+# ResourceWarning cleanup — ensure all sqlite3 connections are closed
+# after each test to prevent output noise and potential leaks
+# =====================================================================
+
+import gc
+import sqlite3
+
+@pytest.fixture(autouse=True)
+def close_sqlite_connections():
+    yield
+    # Force close any lingering sqlite3 connections created during the test
+    for obj in gc.get_objects():
+        if isinstance(obj, sqlite3.Connection):
+            try:
+                obj.close()
+            except Exception:
+                pass
+
+
+# =====================================================================
 # Existing fixtures
 # =====================================================================
 

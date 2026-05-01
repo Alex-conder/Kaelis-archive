@@ -3,8 +3,6 @@ import {
   Settings2,
   Monitor,
   Globe,
-  KeyRound,
-  Server,
   Save,
   CheckCircle2,
   Loader2,
@@ -41,14 +39,6 @@ interface BackendModel {
   tags: string[]
   context_length: number
 }
-
-const MODEL_OPTIONS = [
-  { value: 'deepseek-chat', label: 'DeepSeek Chat' },
-  { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
-  { value: 'gpt-4o', label: 'OpenAI GPT-4o' },
-  { value: 'gpt-3.5-turbo', label: 'OpenAI GPT-3.5 Turbo' },
-  { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
-]
 
 const LANG_OPTIONS = [
   { value: 'zh-CN', label: '简体中文' },

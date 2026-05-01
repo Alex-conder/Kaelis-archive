@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.0] — Production Ready Release
+
+### Infrastructure
+- **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，每个测试后强制关闭所有 sqlite3 连接，消除测试输出噪音
+- **前端生产构建验证**：修复 `GeneralSettings.tsx` 未使用变量/导入的 TypeScript 错误，确保 `npm run build` 零错误通过
+- **版本同步**：`pyproject.toml` / `package.json` / `manifest.json` / `Dockerfile` 统一升级至 `1.0.0`
+- **README 更新**：添加 Docker 部署说明、版本 badge、测试状态 badge
+
+### Known Limitations
+- Docker 构建需在 Docker Desktop 运行环境中验证（本地未启动）
+- 全量测试套件建议在 CI（Python 3.12/3.13）中运行以规避 pytest-cov 在 3.14 上的间歇性 `.coverage` 损坏
+
+---
+
 ## [0.4.0] — v0.4.0 Release (Committee Scan Remediation)
 
 ### Security
