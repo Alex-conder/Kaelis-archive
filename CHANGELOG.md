@@ -26,6 +26,9 @@
 - **bare except 清理**：`api/routes/monitoring.py` 3x `except:` → `except Exception as e` + `logger.debug`
 - **scripts/env_contract.py bare except 修复**：2x `except:` → `except Exception`
 - **core/ bare except 清理**：`evaluators.py`、`memory_consolidator.py`、`memory_scorer.py`、`player.py`、`skill_patcher.py`、`skill_validator.py` 共 8x `except:` → `except Exception`
+- **metabolomics/ + proteomics/ bare except 清理**：6x `except:` → `except Exception`
+- **api/routes/ bare except 清理**：`ai_native.py`、`approval.py`、`kg_flywheel_tools.py`、`kg_flywheel_memory.py`、`sync.py` 共 7x `except:` → `except Exception`
+- **services/ bare except 清理**：`kaelis_runtime/main.py` 1x `except:` → `except Exception`
 - **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，消除测试输出噪音
 
 ### Documentation & Contracts
