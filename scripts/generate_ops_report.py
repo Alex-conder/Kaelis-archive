@@ -12,7 +12,7 @@ def run_command(cmd):
     """运行命令并返回输出"""
     try:
         return subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.DEVNULL).strip()
-    except:
+    except Exception:
         return None
 
 

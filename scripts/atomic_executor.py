@@ -372,7 +372,7 @@ class AtomicExecutor:
                 try:
                     record = json.loads(line.strip())
                     history.append(record)
-                except:
+                except Exception:
                     pass
         
         return history[-limit:]

@@ -78,7 +78,7 @@ class SandboxRunner:
                 timeout=5
             )
             return result.returncode == 0
-        except:
+        except Exception:
             return False
 
 
@@ -131,7 +131,7 @@ class DebtVerifier:
                 threshold = float(expected_criteria[2:])
                 actual_num = float(actual)
                 return actual_num > threshold
-            except:
+            except Exception:
                 return False
         
         elif expected_criteria.startswith("contains:"):

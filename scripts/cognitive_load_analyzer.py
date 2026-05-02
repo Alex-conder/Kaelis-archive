@@ -77,7 +77,7 @@ class CognitiveLoadAnalyzer:
                     if event.get('status') == 'error':
                         error_counts[command] += 1
                         
-            except:
+            except Exception:
                 pass
         
         # 更新统计数据

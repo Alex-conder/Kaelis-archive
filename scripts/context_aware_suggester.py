@@ -80,7 +80,7 @@ def analyze_by_content(filepath: str) -> list:
                     "priority": "high"
                 })
         return suggestions
-    except:
+    except Exception:
         return []
 
 def format_output(suggestions: list) -> str:

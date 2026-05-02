@@ -73,7 +73,7 @@ class FaultKnowledgeBase:
                 data = json.loads(line)
                 entry = FaultEntry(**data)
                 self.entries[entry.id] = entry
-            except:
+            except Exception:
                 pass
     
     def _save_entries(self):
@@ -250,7 +250,7 @@ class FaultKnowledgeBase:
             days_ago = (datetime.now() - last_time).days
             recency_score = max(0, 1 - days_ago / 30)  # 30 天内线性衰减
             score += recency_score * 0.2
-        except:
+        except Exception:
             pass
         
         # 4. 修复复杂度（简单命令修复得分低）
@@ -289,7 +289,7 @@ class FaultKnowledgeBase:
                     'file': file_path
                 })
                 
-        except:
+        except Exception:
             pass
         
         return symbols

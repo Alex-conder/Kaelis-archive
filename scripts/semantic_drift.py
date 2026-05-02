@@ -248,7 +248,7 @@ class SemanticDriftDetector:
                 result_time = datetime.fromisoformat(data['timestamp'])
                 if result_time > cutoff:
                     results.append(data)
-            except:
+            except Exception:
                 pass
         
         if not results:

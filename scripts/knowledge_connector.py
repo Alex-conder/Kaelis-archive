@@ -195,7 +195,7 @@ class KnowledgeConnector:
                     fault_id = data.get('id')
                     if fault_id:
                         self.auto_link_from_fault(fault_id)
-                except:
+                except Exception:
                     pass
         
         self._save_links()

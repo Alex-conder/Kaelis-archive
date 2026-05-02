@@ -184,7 +184,7 @@ class DebtImpactScorer:
                             full_name = f"{module}.{alias.name}" if module else alias.name
                             self.dep_graph.add_dependency(current_module, full_name)
             
-            except:
+            except Exception:
                 continue
     
     def _load_debt(self, debt_id: str) -> Optional[Dict]:
@@ -235,7 +235,7 @@ class DebtImpactScorer:
                 # 每过30天增加5分，最高50分
                 age_score = min(50, (days_old // 30) * 5)
                 score += age_score
-            except:
+            except Exception:
                 pass
         
         return score

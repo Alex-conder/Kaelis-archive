@@ -167,7 +167,7 @@ class CognitiveNavigator:
                         if datetime.now() - created < timedelta(days=7):
                             # 最近已创建 ADR，不再建议
                             return False
-                    except:
+                    except Exception:
                         pass
         
         return True
