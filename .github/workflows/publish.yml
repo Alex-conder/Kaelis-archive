@@ -58,7 +58,7 @@ jobs:
       - name: Install frontend deps
         run: |
           cd web/frontend
-          npm ci
+          npm install
 
       - name: Build & package Electron
         run: |
@@ -96,7 +96,8 @@ jobs:
       - name: Package extension
         run: |
           cd vscode-kaelis
-          npm ci
+          npm install
+          npm run compile
           vsce package
 
       - name: Upload VSIX artifact
@@ -170,7 +171,7 @@ jobs:
       - name: Generate NPM SBOM
         run: |
           cd web/frontend
-          npm ci
+          npm install
           npx @cyclonedx/cyclonedx-npm --output-file ../sbom-frontend.json
         continue-on-error: true
 

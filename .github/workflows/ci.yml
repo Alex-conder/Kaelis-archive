@@ -96,7 +96,7 @@ jobs:
           cache-dependency-path: web/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build frontend
         run: npm run build
@@ -126,7 +126,7 @@ jobs:
       - name: Install Chrome extension deps
         run: |
           cd extensions/chrome
-          npm ci
+          npm install
 
       - name: Lint extension
         run: |
@@ -186,14 +186,14 @@ jobs:
       - name: NPM audit (frontend)
         run: |
           cd web/frontend
-          npm ci
+          npm install
           npm audit --audit-level=high || true
         continue-on-error: true
 
       - name: NPM audit (extension)
         run: |
           cd extensions/chrome
-          npm ci
+          npm install
           npm audit --audit-level=high || true
         continue-on-error: true
 
