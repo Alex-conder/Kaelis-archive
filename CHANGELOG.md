@@ -2,11 +2,29 @@
 
 ## [1.0.0] — Production Ready Release
 
-### Infrastructure
-- **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，每个测试后强制关闭所有 sqlite3 连接，消除测试输出噪音
-- **前端生产构建验证**：修复 `GeneralSettings.tsx` 未使用变量/导入的 TypeScript 错误，确保 `npm run build` 零错误通过
+### Architecture & Stability
+- **Knowledge Graph REST 路径修复**：`api/routes/knowledge_graph.py` 去除双重 `/api`（`/api/kg/*` → `/kg/*`），同步前端 `hooks.ts`
+- **Scheduler 单例幂等启动**：`core/monitoring/scheduler.py` `start()` 添加 `scheduler.running` 检查，避免 "already running" 崩溃；新增 `stop()` 方法
+- **WebSocket 端口动态化**：`core/network/ws_server.py` 支持 `KAELIS_WS_PORT` 环境变量，默认 5001
+- **WS Manager 线程安全**：`core/network/ws_manager.py` 添加 `threading.RLock`，所有读写方法加锁
+- **e2e 测试隔离**：`tests/e2e/conftest.py` 动态分配空闲端口 + scheduler/WS 单例重置
+- **FlaskAppTestBase 清理**：`tests/test_base.py` `tearDown` 添加 WS 服务器和 scheduler 停止
+
+### Security
+- **CredentialVault fallback 加固**：移除可预测的 `SHA256(machine_id)` fallback，改为 `secrets.token_bytes(32)` + 持久化到 `~/.kaelis/vault.key`
+- **prod_server SECRET_KEY 加固**：移除 hardcoded fallback，改为 env → `data/.flask_secret_key` 随机持久化 → 启动警告
+- **NEO4J 配置命名对齐**：`kg_flywheel_tools.py` 支持 `NEO4J_PASSWORD`（优先）和 `NEO4J_PASS`（兼容）
+
+### Build & Dependencies
+- **pyproject.toml 依赖对齐**：添加 `opentelemetry-api/sdk/instrumentation` 生产依赖 + `pytest-xdist` dev extra
+- **prometheus_client 懒加载**：`core/monitoring/metrics.py` 线程超时导入（2s）+ `_NoOpMetric` fallback，规避 Windows+Python 3.14 导入挂起
+- **前端生产构建验证**：修复 `GeneralSettings.tsx` 未使用变量/导入的 TypeScript 错误，`npm run build` 零错误通过
 - **版本同步**：`pyproject.toml` / `package.json` / `manifest.json` / `Dockerfile` 统一升级至 `1.0.0`
 - **README 更新**：添加 Docker 部署说明、版本 badge、测试状态 badge
+
+### Monitoring & Hygiene
+- **bare except 清理**：`api/routes/monitoring.py` 3x `except:` → `except Exception as e` + `logger.debug`
+- **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，消除测试输出噪音
 
 ### Known Limitations
 - Docker 构建需在 Docker Desktop 运行环境中验证（本地未启动）

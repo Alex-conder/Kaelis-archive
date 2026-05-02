@@ -1,9 +1,0 @@
-fix(P1): prometheus_client lazy load with thread timeout
-
-- Move prometheus_client import from module level to _ensure_prometheus()
-- Add _load_prometheus() with 2s thread timeout to avoid import hangs
-- Add _NoOpMetric fallback when prometheus_client unavailable
-- Convert KG_METRICS/MEMORY_METRICS/API_METRICS/SYSTEM_METRICS to lazy proxies
-- _ensure_metrics() triggers prometheus load on first attribute access
-
-Mitigates Windows+Python 3.14 prometheus_client import deadlock
