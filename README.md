@@ -30,12 +30,26 @@ cp .env.example .env
 
 > 💡 国内用户推荐优先配置 **DeepSeek** 或 **通义千问**，延迟低且性价比高。
 
-### 2. 后端启动
+### 2. 配置环境变量（关键）
+
+```bash
+# 必需：Flask session 加密密钥（生产环境必须设置）
+export SECRET_KEY="your-production-secret-key"
+
+# 可选：WebSocket 端口（默认 5001，测试/多实例时调整）
+export KAELIS_WS_PORT=5001
+
+# 可选：CredentialVault 主密钥（不设置则自动生成并持久化到 ~/.kaelis/vault.key）
+export KAELIS_VAULT_KEY="your-vault-master-key"
+```
+
+### 3. 后端启动
 
 ```bash
 pip install -r requirements.txt
 python prod_server.py
-# 服务运行在 http://localhost:5000
+# HTTP 服务运行在 http://localhost:5000
+# WebSocket 服务运行在 ws://localhost:5001（可配置）
 ```
 
 ### 前端启动
