@@ -124,8 +124,8 @@ def _update_dynamic_gauges():
                 try:
                     cursor = conn.execute(f"SELECT COUNT(*) FROM {table}")
                     MEMORY_METRICS.memory_layer_count.labels(layer=layer).set(cursor.fetchone()[0])
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug("Failed to count %s: %s", table, e)
             conn.close()
         
         # 更新 L3 计数
@@ -137,8 +137,8 @@ def _update_dynamic_gauges():
                 MEMORY_METRICS.memory_layer_count.labels(layer='L3_entities').set(cursor.fetchone()[0])
                 cursor = conn.execute("SELECT COUNT(*) FROM kg_triples")
                 MEMORY_METRICS.memory_layer_count.labels(layer='L3_triples').set(cursor.fetchone()[0])
-            except:
-                pass
+            except Exception as e:
+                logger.debug("Failed to count kg_entities/kg_triples: %s", e)
             conn.close()
         
         # 更新运行时间
@@ -156,7 +156,8 @@ def _get_safe_gauge(gauge):
         if samples and samples[0].samples:
             return samples[0].samples[0].value
         return None
-    except:
+    except Exception as e:
+        logger.debug("Failed to get safe gauge: %s", e)
         return None
 
 

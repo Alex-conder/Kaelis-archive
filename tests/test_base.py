@@ -187,7 +187,18 @@ class FlaskAppTestBase(unittest.TestCase):
     
     def tearDown(self):
         """每个测试方法后清理"""
-        pass
+        try:
+            from core.network.ws_server import get_ws_server
+            ws = get_ws_server()
+            ws.stop()
+        except Exception:
+            pass
+        try:
+            from core.monitoring.scheduler import get_quality_scheduler
+            scheduler = get_quality_scheduler()
+            scheduler.stop()
+        except Exception:
+            pass
     
     def assert_json_success(self, response, status_code: int = 200):
         """断言成功响应"""
