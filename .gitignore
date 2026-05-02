@@ -97,6 +97,13 @@ data/rl_trajectories/
 data/insights/
 data/faiss_per_user/
 data/archive/
+data/keys/
+data/fallback/
+data/social/
+data/backups/
+data/*.db
+data/*.json
+data/*.jsonl
 *.db
 *.db-shm
 *.db-wal
