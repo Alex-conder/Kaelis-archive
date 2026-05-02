@@ -94,7 +94,7 @@ def analyze_patterns(entries: list) -> dict:
         try:
             content = Path(filepath).read_text(encoding="utf-8")
             content_features = extract_content_features(content)
-        except:
+        except Exception:
             pass
         
         # 构建统计键
@@ -255,7 +255,7 @@ def main():
         # 查询模式
         try:
             content = Path(args.query).read_text(encoding="utf-8")
-        except:
+        except Exception:
             content = ""
         
         result = query_decision(args.query, content)

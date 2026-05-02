@@ -104,7 +104,7 @@ class MetacognitiveMonitor:
                         if entry.get("timestamp", "") > cutoff:
                             if metric_name in entry.get("metrics", {}):
                                 samples.append(entry["metrics"][metric_name])
-                    except:
+                    except Exception:
                         continue
         
         return samples
@@ -123,7 +123,7 @@ class MetacognitiveMonitor:
             for line in f:
                 try:
                     feedbacks.append(json.loads(line.strip()))
-                except:
+                except Exception:
                     continue
         
         if not feedbacks:

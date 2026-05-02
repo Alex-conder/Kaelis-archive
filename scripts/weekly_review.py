@@ -81,7 +81,7 @@ class WeeklyReview:
                     event_time = datetime.fromisoformat(event.get('timestamp', '2000-01-01'))
                     if event_time > week_ago:
                         events.append(event)
-                except:
+                except Exception:
                     pass
         
         # 统计指标
@@ -157,7 +157,7 @@ class WeeklyReview:
                     for line in result.stdout.strip().split('\n'):
                         if line:
                             markers.append(line)
-            except:
+            except Exception:
                 pass
         
         return {

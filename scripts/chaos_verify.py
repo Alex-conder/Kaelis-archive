@@ -284,7 +284,7 @@ class ChaosEngine:
                 event_time = datetime.fromisoformat(event['timestamp'])
                 if event_time > cutoff:
                     events.append(event)
-            except:
+            except Exception:
                 pass
         
         if not events:

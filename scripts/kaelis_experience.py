@@ -120,7 +120,7 @@ class ExperienceEngine:
                             urllib.request.urlopen(endpoint, timeout=2)
                             print(f"[OK] : {endpoint}")
                             return PhaseResult(name, True, f"started on {endpoint}")
-                        except:
+                        except Exception:
                             time.sleep(1)
                     
                     return PhaseResult(name, False, "", "")

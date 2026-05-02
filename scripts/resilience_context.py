@@ -127,7 +127,7 @@ class ResilienceContext:
             )
             elapsed = int((time.time() - start) * 1000)
             return elapsed if result.returncode == 0 else None
-        except:
+        except Exception:
             return None
     
     def _capture_cognitive(self) -> Dict[str, Any]:
@@ -146,7 +146,7 @@ class ResilienceContext:
                     try:
                         event = json.loads(line.strip())
                         recent_events.append(event)
-                    except:
+                    except Exception:
                         continue
             
             # 分析认知指标

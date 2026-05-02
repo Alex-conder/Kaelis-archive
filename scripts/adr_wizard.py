@@ -376,7 +376,7 @@ class ADRWizard:
                         'status': data['status'],
                         'created_at': data['created_at']
                     })
-            except:
+            except Exception:
                 pass
         
         return adrs
@@ -391,7 +391,7 @@ class ADRWizard:
         try:
             data = json.loads(json_path.read_text(encoding='utf-8'))
             return ADREntry(**data)
-        except:
+        except Exception:
             return None
     
     def update_status(self, adr_id: str, new_status: str) -> bool:

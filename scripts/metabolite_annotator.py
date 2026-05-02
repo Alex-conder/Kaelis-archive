@@ -45,7 +45,7 @@ def load_metabolite_cache() -> Dict:
         try:
             with open(METABOLITE_CACHE_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return BASE_METABOLITES.copy()
 
@@ -248,7 +248,7 @@ def get_annotation_stats() -> dict:
                     entry = json.loads(line)
                     if entry.get("status") == "pending":
                         stats["pending_lookups"] += 1
-                except:
+                except Exception:
                     pass
     
     return stats

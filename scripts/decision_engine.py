@@ -66,7 +66,7 @@ class DecisionContract:
         try:
             review_date = datetime.fromisoformat(self.review_after.replace('Z', '+00:00'))
             return datetime.now().astimezone() > review_date
-        except:
+        except Exception:
             return False
     
     def to_dict(self) -> dict:
@@ -174,7 +174,7 @@ class DecisionEngine:
         type_choice = input("\n选择类型 (1-7): ").strip()
         try:
             decision_type = types[int(type_choice) - 1][0]
-        except:
+        except Exception:
             decision_type = "architecture_pattern"
         
         # 描述
@@ -284,7 +284,7 @@ class DecisionEngine:
                     services.add('kaelis-api')
             scope['services'] = list(services)
             
-        except:
+        except Exception:
             pass
         
         return scope
@@ -371,7 +371,7 @@ class DecisionEngine:
                         suggestion="确保实现符合决策约束的模式"
                     ))
                     
-            except:
+            except Exception:
                 pass
         
         return violations
@@ -406,7 +406,7 @@ class DecisionEngine:
                             suggestion=constraint.get('auto_fix') or "移除禁止的模式"
                         ))
                         
-            except:
+            except Exception:
                 pass
         
         return violations
@@ -453,7 +453,7 @@ class DecisionEngine:
                         message=f"未匹配到模式: {pattern}",
                         file=file_path
                     ))
-            except:
+            except Exception:
                 pass
         
         return violations

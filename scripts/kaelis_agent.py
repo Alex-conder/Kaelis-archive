@@ -156,7 +156,7 @@ class KaelisAgentV4(FileSystemEventHandler):
         
         try:
             content = Path(filepath).read_text(encoding="utf-8")
-        except:
+        except Exception:
             return
         
         # ========== 迭代六：实时架构纠偏 ==========
@@ -366,7 +366,7 @@ def main():
             os.kill(pid, 0)
             print(f"[WARN] Agent already running (PID {pid})")
             return
-        except:
+        except Exception:
             PID_FILE.unlink()
     
     PID_FILE.write_text(str(os.getpid()), encoding="utf-8")

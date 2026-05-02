@@ -78,7 +78,7 @@ class EvolutionaryLifeboat:
         try:
             with open(filepath, "rb") as f:
                 return hashlib.sha256(f.read()).hexdigest()[:16]
-        except:
+        except Exception:
             return None
     
     def check_script_health(self, script_path: str) -> ScriptHealth:
@@ -319,7 +319,7 @@ class EvolutionaryLifeboat:
                         learned[method]["total"] += 1
                         if entry.get("success"):
                             learned[method]["success"] += 1
-                except:
+                except Exception:
                     continue
         
         return {
