@@ -29,6 +29,8 @@
 - **metabolomics/ + proteomics/ bare except 清理**：6x `except:` → `except Exception`
 - **api/routes/ bare except 清理**：`ai_native.py`、`approval.py`、`kg_flywheel_tools.py`、`kg_flywheel_memory.py`、`sync.py` 共 7x `except:` → `except Exception`
 - **services/ bare except 清理**：`kaelis_runtime/main.py` 1x `except:` → `except Exception`
+- **scripts/ bare except 清理**：`env_contract.py`、`build_electron.py`、`kaelis_daemon.py`、`guard_rules.py`、`diagnose-services.py`、`feedback_collector.py`、`kb_replay.py`、`knowledge_connector.py`、`sandbox_runner.py`、`slo_runtime.py`、`semantic_drift.py`、`adr_wizard.py`、`chaos_verify.py`、`decision_engine.py`、`decision_learner.py`、`kaelis_agent.py`、`kaelis_experience.py`、`kaelis_rescue.py`、`metabolite_annotator.py`、`metacognitive_monitor.py`、`resilience_context.py`、`weekly_review.py`、`atomic_executor.py`、`cognitive_navigator.py`、`cognitive_load_analyzer.py`、`debt_verify.py`、`debt_impact.py`、`fault_kb.py`、`context_aware_suggester.py`、`generate_ops_report.py` 共 ~62x `except:` → `except Exception`
+- **项目级 bare except 清零**：`core/`、`api/`、`tests/`、`services/`、`scripts/` 全部 `except:` 已替换为 `except Exception`
 - **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，消除测试输出噪音
 
 ### Documentation & Contracts
