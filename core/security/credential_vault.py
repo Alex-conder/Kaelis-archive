@@ -59,10 +59,15 @@ class CredentialVault:
             key = secrets.token_bytes(32)
             self._master_key_path.write_bytes(key)
             return key
-        # 使用机器特定信息生成稳定密钥（演示/开发环境）
-        machine_id = os.environ.get("COMPUTERNAME", "kaelis") + os.environ.get("USER", "default")
-        import hashlib
-        return hashlib.sha256(machine_id.encode()).digest()
+        # Fallback: 生成随机密钥并持久化到默认路径（避免可预测的 machine_id 哈希）
+        default_key_path = Path.home() / ".kaelis" / "vault.key"
+        default_key_path.parent.mkdir(parents=True, exist_ok=True)
+        if default_key_path.exists():
+            return default_key_path.read_bytes()[:32].ljust(32, b"\0")
+        import secrets
+        key = secrets.token_bytes(32)
+        default_key_path.write_bytes(key)
+        return key
 
     def _get_fernet(self):
         """基于派生密钥创建 Fernet 实例"""

@@ -279,7 +279,7 @@ class Neo4jUnavailableError(RuntimeError):
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASS = os.getenv("NEO4J_PASS", "password")
+NEO4J_PASS = os.getenv("NEO4J_PASSWORD", os.getenv("NEO4J_PASS", "password"))
 
 neo4j_driver = None
 neo4j_connection_status = {"connected": False, "error": None, "driver_type": "none"}

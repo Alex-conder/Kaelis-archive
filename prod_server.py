@@ -5,6 +5,7 @@ Kaelis 生产服务器入口
 import atexit
 import os
 import sys
+from pathlib import Path
 
 # 加载 .env
 try:
@@ -92,7 +93,20 @@ def create_app():
     from api.routes.ws_sync import ws_sync_bp
     
     app = Flask(__name__, static_folder='api/static')
-    app.secret_key = os.environ.get('SECRET_KEY', 'kaelis-dev-secret-key-change-in-production')
+    
+    # SECRET_KEY: env var → persisted random key → error (production)
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        secret_path = Path("data/.flask_secret_key")
+        secret_path.parent.mkdir(parents=True, exist_ok=True)
+        if secret_path.exists():
+            secret_key = secret_path.read_text().strip()
+        else:
+            import secrets
+            secret_key = secrets.token_urlsafe(32)
+            secret_path.write_text(secret_key)
+            logger.warning("Generated random SECRET_KEY and saved to %s — set SECRET_KEY env var in production", secret_path)
+    app.secret_key = secret_key
     
     # 启用 CORS
     try:
