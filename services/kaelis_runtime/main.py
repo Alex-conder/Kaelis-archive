@@ -195,7 +195,7 @@ class KaelisRuntimeService:
                         "availability": obj.get('indicators', {}).get('availability', {}).get('target', 0.99),
                         "latency_p95": int(obj.get('indicators', {}).get('latency', {}).get('p95', {}).get('target', '1000ms').replace('ms', ''))
                     }
-        except:
+        except Exception:
             pass
         
         return {"availability": 0.99, "latency_p95": 1000}
