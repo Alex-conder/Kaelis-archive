@@ -435,7 +435,7 @@ class EnvironmentContractEngine:
             result = sock.connect_ex(('localhost', port))
             sock.close()
             return result == 0
-        except:
+        except Exception:
             return False
     
     def _generate_report(self) -> Dict[str, Any]:
@@ -509,7 +509,7 @@ class EnvironmentContractEngine:
         try:
             import pkg_resources
             return {d.key: d.version for d in pkg_resources.working_set}
-        except:
+        except Exception:
             return {}
     
     def compare_snapshots(self, snapshot1: str, snapshot2: str) -> Dict[str, Any]:
