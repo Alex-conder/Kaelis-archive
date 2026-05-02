@@ -41,6 +41,12 @@ export KAELIS_WS_PORT=5001
 
 # 可选：CredentialVault 主密钥（不设置则自动生成并持久化到 ~/.kaelis/vault.key）
 export KAELIS_VAULT_KEY="your-vault-master-key"
+
+# 可选：Agent ID（用于权限系统中的身份识别，空字符串表示匿名）
+export KAELIS_AGENT_ID=""
+
+# 可选：基准测试模式（非空时启用中间件性能计时日志，仅用于开发/测试）
+# export BENCHMARK_MODE=1
 ```
 
 ### 3. 后端启动
