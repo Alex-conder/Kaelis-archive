@@ -43,7 +43,7 @@ class MetabolomicsVisualizer:
         if MATPLOTLIB_AVAILABLE:
             try:
                 plt.style.use(style)
-            except:
+            except Exception:
                 pass
         
         logger.info("MetabolomicsVisualizer initialized")

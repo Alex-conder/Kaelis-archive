@@ -357,7 +357,7 @@ class MetabolomicsAnalyzer:
                 else:
                     result = self.pca(X)
                     permuted_q2.append(result.r2x)
-            except:
+            except Exception:
                 permuted_q2.append(0)
         
         permuted_q2 = np.array(permuted_q2)

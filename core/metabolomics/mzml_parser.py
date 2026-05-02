@@ -268,7 +268,7 @@ class MZMLParser:
             elif accession in ['MS:1000016', 'MS:1000894']:  # scan start time
                 try:
                     spectrum_info['rt'] = float(value)
-                except:
+                except Exception:
                     pass
             
             # 极性

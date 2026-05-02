@@ -218,21 +218,21 @@ class MZIdentMLParser:
             if 'score' in name.lower() or acc in ['MS:1001172', 'MS:1001155', 'MS:1002052']:
                 try:
                     scores[name] = float(value)
-                except:
+                except Exception:
                     pass
             
             # Q-value (FDR)
             elif acc == 'MS:1002354' or 'q-value' in name.lower():
                 try:
                     q_value = float(value)
-                except:
+                except Exception:
                     pass
             
             # Posterior Error Probability
             elif acc == 'MS:1002355' or 'pep' in name.lower():
                 try:
                     pep = float(value)
-                except:
+                except Exception:
                     pass
         
         # 获取主要得分
