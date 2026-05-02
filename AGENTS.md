@@ -78,7 +78,9 @@ npm run electron:dev   # 窗口正常显示，无黑屏/404
 |------|------|--------|----------|
 | `KAELIS_WS_PORT` | WebSocket 端口 | `5001` | 读取后绑定，端口冲突由 OS 报错 |
 | `KAELIS_VAULT_KEY` | AES-256 密钥 | `None` | 回退到 `~/.kaelis/vault.key`，首次运行时生成随机值 |
+| `KAELIS_AGENT_ID` | Agent 身份标识 | `""` | 空字符串表示匿名，权限系统使用 |
 | `SECRET_KEY` | Flask session 密钥 | `None` | 回退到 `data/.flask_secret_key`，首次运行时生成随机值 |
+| `BENCHMARK_MODE` | 基准测试开关 | `None` | 非空时启用中间件性能计时日志 |
 | `NEO4J_URI` | 知识图谱地址 | `bolt://localhost:7687` | 连接失败时知识图谱功能降级 |
 | `NEO4J_PASSWORD` | 知识图谱密码 | `None` | 连接失败时知识图谱功能降级 |
 
