@@ -15,9 +15,79 @@ Kaelis 系统监控指标 (Prometheus)
 """
 
 import logging
-from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST
 
 logger = logging.getLogger(__name__)
+
+# prometheus_client is imported lazily inside _ensure_metrics() to avoid
+# import hangs on Windows+Python 3.14 (prometheus_client may block on
+# /proc reads or registry enumeration during import).
+
+
+class _NoOpMetric:
+    def __init__(self, *args, **kwargs): pass
+    def inc(self, *args, **kwargs): pass
+    def dec(self, *args, **kwargs): pass
+    def set(self, *args, **kwargs): pass
+    def observe(self, *args, **kwargs): pass
+    def time(self): return _NoOpContext()
+    def labels(self, *args, **kwargs): return self
+    def info(self, *args, **kwargs): pass
+    def collect(self, *args, **kwargs): return []
+
+
+class _NoOpContext:
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+
+
+def _load_prometheus():
+    """Try to import prometheus_client; return True if available."""
+    import threading
+    import importlib
+    result = [None]
+    def _try_import():
+        try:
+            mod = importlib.import_module('prometheus_client')
+            result[0] = mod
+        except Exception as e:
+            result[0] = e
+    t = threading.Thread(target=_try_import)
+    t.daemon = True
+    t.start()
+    t.join(timeout=2.0)
+    if t.is_alive():
+        logger.warning("prometheus_client import timed out — metrics disabled")
+        return False
+    if isinstance(result[0], Exception):
+        logger.warning("prometheus_client unavailable (%s) — metrics disabled", result[0])
+        return False
+    return True
+
+
+# Placeholders — replaced by real classes on first use
+Counter = Histogram = Gauge = Info = _NoOpMetric
+
+def generate_latest():
+    return b"# metrics disabled\n"
+
+CONTENT_TYPE_LATEST = "text/plain; charset=utf-8"
+
+_prom_loaded = False
+
+def _ensure_prometheus():
+    global Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST, _prom_loaded
+    if _prom_loaded:
+        return
+    _prom_loaded = True
+    if not _load_prometheus():
+        return
+    from prometheus_client import Counter as _Counter, Histogram as _Histogram, Gauge as _Gauge, Info as _Info, generate_latest as _generate_latest, CONTENT_TYPE_LATEST as _CONTENT_TYPE_LATEST
+    Counter = _Counter
+    Histogram = _Histogram
+    Gauge = _Gauge
+    Info = _Info
+    generate_latest = _generate_latest
+    CONTENT_TYPE_LATEST = _CONTENT_TYPE_LATEST
 
 
 class KgFlywheelMetrics:
@@ -173,11 +243,45 @@ class SystemMetrics:
         )
 
 
-# 全局指标实例
-KG_METRICS = KgFlywheelMetrics()
-MEMORY_METRICS = MemoryMetrics()
-API_METRICS = ApiMetrics()
-SYSTEM_METRICS = SystemMetrics()
+# 全局指标实例（懒加载以避免导入时阻塞）
+_KG_METRICS = None
+_MEMORY_METRICS = None
+_API_METRICS = None
+_SYSTEM_METRICS = None
+
+def _ensure_metrics():
+    global _KG_METRICS, _MEMORY_METRICS, _API_METRICS, _SYSTEM_METRICS
+    if _KG_METRICS is None:
+        _ensure_prometheus()
+        _KG_METRICS = KgFlywheelMetrics()
+        _MEMORY_METRICS = MemoryMetrics()
+        _API_METRICS = ApiMetrics()
+        _SYSTEM_METRICS = SystemMetrics()
+
+class _LazyMetricsProxy:
+    def __getattr__(self, name):
+        _ensure_metrics()
+        return getattr(_KG_METRICS, name)
+
+class _LazyMemoryProxy:
+    def __getattr__(self, name):
+        _ensure_metrics()
+        return getattr(_MEMORY_METRICS, name)
+
+class _LazyApiProxy:
+    def __getattr__(self, name):
+        _ensure_metrics()
+        return getattr(_API_METRICS, name)
+
+class _LazySystemProxy:
+    def __getattr__(self, name):
+        _ensure_metrics()
+        return getattr(_SYSTEM_METRICS, name)
+
+KG_METRICS = _LazyMetricsProxy()
+MEMORY_METRICS = _LazyMemoryProxy()
+API_METRICS = _LazyApiProxy()
+SYSTEM_METRICS = _LazySystemProxy()
 
 
 def track_api_latency(endpoint_name: str = "unknown"):
