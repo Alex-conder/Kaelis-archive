@@ -68,6 +68,9 @@ Kaelis v1.0.0 是首个生产就绪版本，交付了完整的四层记忆 AI Na
 | **pytest-cov 在 Python 3.14 间歇性损坏** | CI 已规避（使用 Python 3.12/3.13），本地开发建议使用 3.12 | 待上游修复 |
 | **Docker 构建本地未验证** | Dockerfile 存在，但本地 Docker Desktop 未运行，仅在 CI Ubuntu runner 中验证 | v1.0.1 |
 | **12 个自动生成的 stub 路由** | `api/routes/` 中 12 个蓝图返回 501，标记为未来迭代 | v1.1.0 |
+| **前端交互未手动验证** | i18n 语言切换、SettingsPage LLM 配置唯一入口、模型列表删除按钮未做人工交互确认 | v1.0.1 |
+| **Electron/VSCode 打包本地未验证** | `npm run electron:build` 和 `vsce package` 依赖 CI `publish.yml` 自动化，本地未执行 | v1.0.1 |
+| **GitHub Secrets 需管理员确认** | `PYPI_API_TOKEN`、`VSCE_PAT`、`GH_PAT` 需在仓库 Settings→Secrets 中确认已配置 | 发布前 |
 
 ---
 
