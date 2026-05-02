@@ -195,7 +195,7 @@ class MemoryScorer:
             return content
         try:
             return json.dumps(content, ensure_ascii=False)
-        except:
+        except Exception:
             return str(content)
 
 

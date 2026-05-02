@@ -320,7 +320,7 @@ class ActionPlayer:
                 )
                 if location:
                     return True
-            except:
+            except Exception:
                 pass
             
             time.sleep(0.5)

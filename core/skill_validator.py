@@ -221,7 +221,7 @@ class SkillValidator:
             try:
                 data = json.loads(content)
                 return self.validate_json(data)
-            except:
+            except Exception:
                 return self.validate_markdown(content)
     
     def get_stats(self) -> Dict[str, Any]:

@@ -140,7 +140,7 @@ class RuleBasedEvaluator(BaseEvaluator):
                 try:
                     if not bool(self.evaluator.eval(cond)):
                         failed.append(cond)
-                except:
+                except Exception:
                     failed.append(f"{cond}(无法评估)")
             return f"以下条件未满足: {'; '.join(failed)}"
         
@@ -274,7 +274,7 @@ class LLMBasedEvaluator(BaseEvaluator):
             match = re.search(brace_pattern, response)
             if match:
                 return json.loads(match.group())
-        except:
+        except Exception:
             pass
         
         # 如果都失败，返回默认值

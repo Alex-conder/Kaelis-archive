@@ -296,7 +296,7 @@ class SkillPatcher:
                 try:
                     params[param] = type_map[target_type](old)
                     return {"success": True, "old": old, "new": params[param]}
-                except:
+                except Exception:
                     return {"success": False, "error": f"Cannot convert {old} to {target_type}"}
             return {"success": True, "old": old, "new": old}
         
@@ -342,7 +342,7 @@ class SkillPatcher:
         response = self.llm_client.chat(prompt, temperature=0.2)
         try:
             return json.loads(str(response))
-        except:
+        except Exception:
             return None
     
     def _backup_skill(self, skill: Dict) -> str:

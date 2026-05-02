@@ -393,7 +393,7 @@ class MemoryConsolidator:
         if self.knowledge_retriever is not None:
             try:
                 stats["vector_store"] = "available"
-            except:
+            except Exception:
                 pass
         else:
             stats["vector_store"] = "not configured"
