@@ -24,7 +24,12 @@
 
 ### Monitoring & Hygiene
 - **bare except 清理**：`api/routes/monitoring.py` 3x `except:` → `except Exception as e` + `logger.debug`
+- **scripts/env_contract.py bare except 修复**：2x `except:` → `except Exception`
 - **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，消除测试输出噪音
+
+### Documentation & Contracts
+- **AGENTS.md 新增 C2 契约**：环境变量显式声明契约，要求所有 `os.environ.get()` 读取的变量必须在 `.env.example` 中声明并记录默认值
+- **.env.example 补全**：新增 `KAELIS_AGENT_ID`、`BENCHMARK_MODE` 声明，覆盖代码中所有 `os.environ.get()` 调用
 
 ### Known Limitations
 - Docker 构建需在 Docker Desktop 运行环境中验证（本地未启动）
