@@ -476,7 +476,7 @@ function PrivacySettings() {
       a.download = 'kaelis-export-' + new Date().toISOString().slice(0, 10) + '.json'
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e) {
+    } catch {
       alert(t('导出失败，请稍后重试'))
     } finally {
       setExporting(false)
@@ -489,7 +489,7 @@ function PrivacySettings() {
       await apiClient.post('/api/privacy/delete', { confirm: true, scope: 'all' })
       setShowDeleteConfirm(false)
       alert(t('个人数据已删除'))
-    } catch (e) {
+    } catch {
       alert(t('删除失败，请稍后重试'))
     } finally {
       setDeleting(false)
@@ -501,7 +501,7 @@ function PrivacySettings() {
     setSettings(next)
     try {
       await apiClient.post('/api/privacy/settings', { settings: { [key]: value } })
-    } catch (e) {
+    } catch {
       // silent fail
     }
   }
@@ -810,7 +810,7 @@ function LLMRouterSettings() {
       } else {
         setTestResults((prev) => ({ ...prev, [name]: { status: 'error', error: data.error || 'Unknown error' } }))
       }
-    } catch (e) {
+    } catch {
       setTestResults((prev) => ({ ...prev, [name]: { status: 'error', error: 'Request failed' } }))
     }
   }

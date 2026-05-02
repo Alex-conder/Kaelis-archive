@@ -36,7 +36,7 @@ export default function AnnualReportCard() {
       link.download = `kaelis-annual-report-${new Date().toISOString().slice(0, 10)}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
-    } catch (e) {
+    } catch {
       alert('导出失败，请稍后重试')
     } finally {
       setExporting(false)
