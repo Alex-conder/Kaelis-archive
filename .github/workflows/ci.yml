@@ -49,9 +49,9 @@ jobs:
           PYTHONIOENCODING: utf-8
           GRAPH_DB_TYPE: sqlite
 
-      - name: Check v0.4.0 core module coverage
+      - name: Check v1.0.0 core module coverage
         run: |
-          coverage report --fail-under=60 --include="core/workflow/workflow_engine.py,core/workflow/workflow_executor.py,core/workflow_monitoring.py,core/security/taint_tracker.py,core/security/api_proxy.py,core/network/ws_server.py,core/network/ws_manager.py,core/network/offline_queue.py,core/monitoring/scheduler.py"
+          coverage report --fail-under=60 --include="core/workflow/workflow_engine.py,core/workflow/workflow_executor.py,core/workflow_monitoring.py,core/security/taint_tracker.py,core/security/api_proxy.py,core/security/credential_vault.py,core/network/ws_server.py,core/network/ws_manager.py,core/network/offline_queue.py,core/monitoring/scheduler.py,core/monitoring/metrics.py"
 
       - name: Coverage diff gate
         run: |

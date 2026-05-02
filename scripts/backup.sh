@@ -33,6 +33,11 @@ if [ -f "$VAULT_PATH" ]; then
     cp "$VAULT_PATH" "$BACKUP_PATH/"
     echo "   ✅ vault.json"
 fi
+VAULT_KEY_PATH="$HOME/.kaelis/vault.key"
+if [ -f "$VAULT_KEY_PATH" ]; then
+    cp "$VAULT_KEY_PATH" "$BACKUP_PATH/"
+    echo "   ✅ vault.key"
+fi
 
 # 4. 备份用户自定义模型配置
 MODEL_DB_PATH="$HOME/.kaelis/llm_models.db"

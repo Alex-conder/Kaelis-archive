@@ -46,6 +46,11 @@ if (Test-Path $vaultPath) {
     Copy-Item $vaultPath -Destination $backupPath -Force
     Write-Host "   ✅ vault.json"
 }
+$vaultKeyPath = Join-Path $env:USERPROFILE ".kaelis\vault.key"
+if (Test-Path $vaultKeyPath) {
+    Copy-Item $vaultKeyPath -Destination $backupPath -Force
+    Write-Host "   ✅ vault.key"
+}
 
 # 4. 备份用户自定义模型配置
 $modelDbPath = Join-Path $env:USERPROFILE ".kaelis\llm_models.db"
