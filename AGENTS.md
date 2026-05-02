@@ -57,6 +57,42 @@ npm run electron:dev   # 窗口正常显示，无黑屏/404
 | L2 | Episodic | 永久，时间序列 |
 | L3 | Semantic | 知识图谱 |
 
+## 契约：环境变量显式声明（C2）
+
+> 来源：P0-B2 / P1 安全修复中 `KAELIS_WS_PORT`、`KAELIS_VAULT_KEY`、`SECRET_KEY` 缺省值行为不一致导致生产事故。
+
+### 核心约束
+
+所有通过 `os.environ.get()` 读取的环境变量，必须在 `.env.example` 中显式声明，并在 `AGENTS.md` 记录默认值与降级行为。
+
+### 规则
+
+1. **显式声明**：新增环境变量时同步更新 `.env.example`。
+2. **生产安全**：任何安全密钥（`SECRET_KEY`、`KAELIS_VAULT_KEY`）的默认值必须为 `None` 或抛出异常，禁止在生产环境使用随机回退。
+3. **路径记录**：默认值文件（如 `data/.flask_secret_key`、`~/.kaelis/vault.key`）的生成逻辑必须在日志中打印绝对路径。
+4. **禁止静默降级**：网络端口、数据库密码等配置缺省时必须 `raise` 或记录 `ERROR` 级别日志，不能静默使用固定值。
+
+### 当前环境变量清单
+
+| 变量 | 作用 | 默认值 | 降级行为 |
+|------|------|--------|----------|
+| `KAELIS_WS_PORT` | WebSocket 端口 | `5001` | 读取后绑定，端口冲突由 OS 报错 |
+| `KAELIS_VAULT_KEY` | AES-256 密钥 | `None` | 回退到 `~/.kaelis/vault.key`，首次运行时生成随机值 |
+| `SECRET_KEY` | Flask session 密钥 | `None` | 回退到 `data/.flask_secret_key`，首次运行时生成随机值 |
+| `NEO4J_URI` | 知识图谱地址 | `bolt://localhost:7687` | 连接失败时知识图谱功能降级 |
+| `NEO4J_PASSWORD` | 知识图谱密码 | `None` | 连接失败时知识图谱功能降级 |
+
+### 验证方式
+
+```bash
+# 1. 检查 .env.example 与代码中 os.environ.get() 调用是否一一对应
+grep -r "os.environ.get" core/ api/ prod_server.py | grep -v test
+cat .env.example
+
+# 2. 生产模式启动时必须配置安全密钥，否则退出码非 0
+KAELIS_ENV=production python prod_server.py  # 应报错或要求 KAELIS_VAULT_KEY
+```
+
 ---
 
 ## 契约：测试环境隔离（C1）
