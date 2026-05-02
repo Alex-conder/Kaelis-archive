@@ -211,7 +211,7 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
 
-      - name: Check bare except: pass
+      - name: "Check bare except: pass"
         shell: bash
         run: |
           count=$(grep -Pr "except\s*:\s*pass" core/ api/ scripts/ --include="*.py" | wc -l)
