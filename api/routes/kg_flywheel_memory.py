@@ -287,7 +287,7 @@ This is a knowledge graph flywheel session following the Extract → Query → I
                     "timestamp": data.get('timestamp'),
                     "status": data.get('summary', {}).get('status')
                 })
-            except:
+            except Exception:
                 pass
         
         return sorted(reports, key=lambda x: x['timestamp'] or '', reverse=True)

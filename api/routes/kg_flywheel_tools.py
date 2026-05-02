@@ -351,7 +351,7 @@ def get_neo4j_driver(force_reconnect=False, allow_mock=False):
             with driver.session() as session:
                 session.run("CREATE INDEX entity_name_idx IF NOT EXISTS FOR (n:Entity) ON (n.name)")
                 session.run("CREATE INDEX entity_type_idx IF NOT EXISTS FOR (n:Entity) ON (n.type)")
-        except:
+        except Exception:
             pass
         
         print(f"[KgFlywheel] Connected to Neo4j: {NEO4J_URI}")

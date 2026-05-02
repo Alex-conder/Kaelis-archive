@@ -191,7 +191,7 @@ def analyze_impact(symbol, file_path, change_type):
                             "file_path": str(py_file),
                             "line_number": 1
                         })
-        except:
+        except Exception:
             continue
     
     risk_level = "low"
@@ -237,7 +237,7 @@ def calculate_risk_score(file_path, content=None):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-        except:
+        except Exception:
             content = ""
     
     lines_changed = len(content.split('\n')) if content else 0
@@ -276,7 +276,7 @@ def calculate_risk_score(file_path, content=None):
                 faults = json.load(f)
                 file_faults = [f for f in faults if file_path in f.get('files', [])]
                 fault_score = min(15, len(file_faults) * 5)
-        except:
+        except Exception:
             pass
     dimensions.append({
         "name": "历史故障",

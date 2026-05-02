@@ -109,7 +109,7 @@ class ApprovalManager:
         if env_approvers:
             try:
                 return json.loads(env_approvers)
-            except:
+            except Exception:
                 pass
         
         return default_approvers

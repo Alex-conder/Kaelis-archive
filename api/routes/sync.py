@@ -354,7 +354,7 @@ def pull_workflows():
             try:
                 wf['nodes'] = json.loads(wf['nodes']) if wf.get('nodes') else []
                 wf['edges'] = json.loads(wf['edges']) if wf.get('edges') else []
-            except:
+            except Exception:
                 wf['nodes'] = []
                 wf['edges'] = []
         
