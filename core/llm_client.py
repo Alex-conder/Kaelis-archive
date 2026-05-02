@@ -11,6 +11,15 @@ from typing import Optional, Dict, Any
 logger = logging.getLogger(__name__)
 
 
+def _mask_key(key: Optional[str]) -> str:
+    """脱敏显示 API Key：前4后4，中间用 *** 替代"""
+    if not key:
+        return "<not set>"
+    if len(key) <= 8:
+        return "***"
+    return f"{key[:4]}***{key[-4:]}"
+
+
 class KaelisLLMClient:
     """
     统一的 LLM 客户端，兼容 DeepSeek / OpenAI API。
@@ -44,7 +53,7 @@ class KaelisLLMClient:
         try:
             from openai import OpenAI
             self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-            logger.info(f"LLM 客户端初始化完成: {self.model} @ {self.base_url}")
+            logger.info(f"LLM 客户端初始化完成: {self.model} @ {self.base_url} (key={_mask_key(self.api_key)})")
         except ImportError:
             logger.warning("openai 库未安装，尝试使用 requests 降级模式")
             self.client = None
