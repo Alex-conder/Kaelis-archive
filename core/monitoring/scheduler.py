@@ -121,6 +121,17 @@ class QualityScheduler:
                 )
                 logger.info(f"Weekly skill generation scheduled on {weekly_day} at {weekly_time}")
             
+            # 健康检查心跳任务（每 5 分钟）
+            self.scheduler.add_job(
+                self._run_health_check,
+                'interval',
+                minutes=5,
+                id='health_check_heartbeat',
+                replace_existing=True,
+                name='Health Check Heartbeat'
+            )
+            logger.info("Health check heartbeat scheduled every 5 minutes")
+            
             self.scheduler.start()
             logger.info("QualityScheduler started")
         except Exception as e:
@@ -212,6 +223,57 @@ class QualityScheduler:
                 
         except Exception as e:
             logger.error(f"Skill generation task failed: {e}")
+    
+    def _run_health_check(self):
+        """健康检查心跳任务：检查核心组件可用性并记录状态"""
+        try:
+            status = {
+                "timestamp": datetime.now().isoformat(),
+                "scheduler": "running" if self.scheduler and self.scheduler.running else "stopped",
+                "components": {}
+            }
+            
+            # 检查数据库可访问性
+            try:
+                import sqlite3
+                conn = sqlite3.connect(str(self.db_path))
+                conn.execute("SELECT 1")
+                conn.close()
+                status["components"]["graph_db"] = "healthy"
+            except Exception:
+                status["components"]["graph_db"] = "unhealthy"
+            
+            # 检查内存管理器
+            try:
+                from core.memory_manager_v2 import get_memory_manager
+                mm = get_memory_manager()
+                status["components"]["memory_manager"] = "healthy" if mm else "unhealthy"
+            except Exception:
+                status["components"]["memory_manager"] = "unhealthy"
+            
+            overall = "healthy" if all(v == "healthy" for v in status["components"].values()) else "degraded"
+            status["overall"] = overall
+            
+            if overall == "degraded":
+                logger.warning(f"Health check heartbeat: {overall} — {status['components']}")
+            else:
+                logger.debug(f"Health check heartbeat: {overall}")
+            
+            # 将健康状态存入 L2 记忆（保留最近 100 条）
+            try:
+                from core.memory_manager_v2 import get_memory_manager
+                mm = get_memory_manager()
+                if mm:
+                    mm.store("L2", "health_check", str(status), metadata={
+                        "source": "scheduler",
+                        "event_type": "health_check",
+                        "overall": overall
+                    })
+            except Exception:
+                pass
+                
+        except Exception as e:
+            logger.error(f"Health check heartbeat failed: {e}")
     
     def stop(self):
         """停止调度器"""
