@@ -91,7 +91,7 @@ def send_notification(title: str, message: str):
             "powershell", "-Command",
             f"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('{message}', '{title}')"
         ], capture_output=True, timeout=5)
-    except:
+    except Exception:
         pass
 
 def show_terminal_suggestion(filepath: str, message: str):
@@ -125,7 +125,7 @@ def analyze_file(filepath: str) -> list:
                     "priority": "high",
                     "source": "content"
                 })
-    except:
+    except Exception:
         pass
     
     return suggestions

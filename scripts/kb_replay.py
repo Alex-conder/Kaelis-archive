@@ -343,7 +343,7 @@ class KnowledgeBaseReplay:
                         total += 1
                         if entry.get("success"):
                             success += 1
-                except:
+                except Exception:
                     continue
         
         return {

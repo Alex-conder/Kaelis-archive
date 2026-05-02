@@ -56,7 +56,7 @@ def check_prerequisites():
     try:
         result = subprocess.run(["node", "--version"], capture_output=True, text=True)
         print_info(f"Node.js: {result.stdout.strip()}")
-    except:
+    except Exception:
         print_error("Node.js not found! Please install Node.js 16+")
         return False
     
@@ -64,7 +64,7 @@ def check_prerequisites():
     try:
         result = subprocess.run(["npm", "--version"], capture_output=True, text=True)
         print_info(f"npm: {result.stdout.strip()}")
-    except:
+    except Exception:
         print_error("npm not found!")
         return False
     

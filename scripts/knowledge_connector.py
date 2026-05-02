@@ -134,7 +134,7 @@ class KnowledgeConnector:
                 data = json.loads(line)
                 if data.get('id') == fault_id:
                     return data
-            except:
+            except Exception:
                 pass
         
         return None

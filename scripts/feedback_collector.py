@@ -144,7 +144,7 @@ def get_input_with_timeout(timeout: int) -> Optional[str]:
             if ready:
                 return sys.stdin.readline().strip()
             return None
-        except:
+        except Exception:
             # 回退到普通输入
             return input("> ")
 

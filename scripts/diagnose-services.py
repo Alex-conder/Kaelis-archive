@@ -28,7 +28,7 @@ def check_process(name, cmd_pattern):
         else:
             output = subprocess.check_output(['ps', 'aux'], text=True)
             return cmd_pattern in output
-    except:
+    except Exception:
         return False
 
 def main():

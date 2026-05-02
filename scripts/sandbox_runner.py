@@ -320,7 +320,7 @@ sys.exit(0 if results['steps_failed'] == 0 else 1)
                 timeout=5
             )
             return result.returncode == 0
-        except:
+        except Exception:
             return False
     
     def _run_docker_sandbox(self) -> bool:

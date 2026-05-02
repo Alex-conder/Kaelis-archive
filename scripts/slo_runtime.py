@@ -286,7 +286,7 @@ class SLORuntimeValidator:
                         event_time = datetime.fromisoformat(event['timestamp'])
                         if event_time > week_ago:
                             violations_this_week.append(event)
-                except:
+                except Exception:
                     pass
         
         # 按服务统计

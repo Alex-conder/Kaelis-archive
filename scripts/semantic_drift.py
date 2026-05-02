@@ -73,7 +73,7 @@ class SemanticDriftDetector:
             try:
                 data = json.loads(line)
                 samples.append(GoldenSample(**data))
-            except:
+            except Exception:
                 pass
         
         return samples
@@ -212,7 +212,7 @@ class SemanticDriftDetector:
         
         try:
             return json.loads(lines[-1])
-        except:
+        except Exception:
             return None
     
     def _save_result(self, result: EvaluationResult):

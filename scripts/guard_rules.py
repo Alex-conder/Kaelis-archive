@@ -57,7 +57,7 @@ class GuardRuleEngine:
             openapi_file = PROJECT_ROOT / "contracts" / "openapi.yaml"
             if openapi_file.exists():
                 return yaml.safe_load(openapi_file.read_text(encoding='utf-8'))
-        except:
+        except Exception:
             pass
         return {}
     
@@ -205,7 +205,7 @@ class GuardRuleEngine:
         
         try:
             tree = ast.parse(code)
-        except:
+        except Exception:
             return violations
         
         # 收集导入和调用
