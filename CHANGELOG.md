@@ -25,6 +25,7 @@
 ### Monitoring & Hygiene
 - **bare except 清理**：`api/routes/monitoring.py` 3x `except:` → `except Exception as e` + `logger.debug`
 - **scripts/env_contract.py bare except 修复**：2x `except:` → `except Exception`
+- **core/ bare except 清理**：`evaluators.py`、`memory_consolidator.py`、`memory_scorer.py`、`player.py`、`skill_patcher.py`、`skill_validator.py` 共 8x `except:` → `except Exception`
 - **ResourceWarning 根治**：`tests/conftest.py` 添加 `close_sqlite_connections` autouse fixture，消除测试输出噪音
 
 ### Documentation & Contracts
