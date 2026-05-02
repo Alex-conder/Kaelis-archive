@@ -2,7 +2,7 @@
   "name": "kaelis",
   "displayName": "Kaelis",
   "description": "Kaelis AI Agent — Your memory-enhanced coding companion",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "publisher": "kaelis",
   "engines": {
     "vscode": "^1.90.0"

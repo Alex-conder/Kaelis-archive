@@ -39,7 +39,7 @@ export async function checkHealth(baseUrl: string): Promise<'online' | 'offline'
     const res = await fetch(`${baseUrl}/api/health`, { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) return 'degraded';
-    const data = await res.json();
+    const data = await res.json() as { status: string };
     return data.status === 'healthy' ? 'online' : 'degraded';
   } catch {
     return 'offline';
