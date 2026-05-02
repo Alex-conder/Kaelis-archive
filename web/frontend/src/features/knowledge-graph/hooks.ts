@@ -14,7 +14,7 @@ async function fetchJSON(url: string, opts?: RequestInit) {
 export function useKGExtract() {
   return useMutation({
     mutationFn: (data: { text: string; domain?: string; min_confidence?: number }) =>
-      fetchJSON('/knowledge_graph/api/kg/extract', {
+      fetchJSON('/knowledge_graph/kg/extract', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -24,7 +24,7 @@ export function useKGExtract() {
 export function useKGQuery() {
   return useMutation({
     mutationFn: (data: { query: string; query_type?: string }) =>
-      fetchJSON('/knowledge_graph/api/kg/query', {
+      fetchJSON('/knowledge_graph/kg/query', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -39,7 +39,7 @@ export function useKGHistory(startTime?: string, endTime?: string, limit?: numbe
   const query = params.toString()
   return useQuery({
     queryKey: ['kg', 'history', startTime, endTime, limit],
-    queryFn: () => fetchJSON(`/knowledge_graph/api/kg/history${query ? '?' + query : ''}`),
+    queryFn: () => fetchJSON(`/knowledge_graph/kg/history${query ? '?' + query : ''}`),
     enabled: false,
   })
 }

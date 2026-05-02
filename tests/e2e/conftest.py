@@ -53,12 +53,21 @@ def e2e_app(e2e_temp_dir):
     # 创建必要的子目录
     os.makedirs("data/skills", exist_ok=True)
     
+    # 动态分配 WebSocket 端口，避免并行测试冲突
+    try:
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("", 0))
+            os.environ["KAELIS_WS_PORT"] = str(s.getsockname()[1])
+    except Exception:
+        os.environ["KAELIS_WS_PORT"] = "5001"
+    
     # 停止可能已运行的全局调度器，避免 "already running" 错误
     try:
         from core.monitoring.scheduler import get_quality_scheduler
         scheduler = get_quality_scheduler()
-        if scheduler._scheduler and scheduler._scheduler.running:
-            scheduler._scheduler.shutdown(wait=False)
+        if scheduler.scheduler and scheduler.scheduler.running:
+            scheduler.scheduler.shutdown(wait=False)
     except Exception:
         pass
     
@@ -71,6 +80,8 @@ def e2e_app(e2e_temp_dir):
         ("core.memory_consolidator", "_consolidator_instance"),
         ("core.semantic_pubsub", "_pubsub_instance"),
         ("core.shared_memory_space", "_sms_instance"),
+        ("core.monitoring.scheduler", "_scheduler_instance"),
+        ("core.network.ws_server", "_WsServerInstance"),
     ]
     for mod_name, attr_name in singleton_modules:
         try:

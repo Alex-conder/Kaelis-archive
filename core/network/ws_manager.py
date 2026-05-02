@@ -7,6 +7,7 @@ real-time bidirectional messaging across a user's devices.
 
 import json
 import logging
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -42,7 +43,7 @@ class WSConnectionManager:
         # device_id -> user_id (reverse lookup)
         self._device_to_user: Dict[str, str] = {}
         self._message_handlers: Dict[str, List[Callable]] = {}
-        self._lock = None  # initialized lazily for async safety
+        self._lock = threading.RLock()
 
     # ------------------------------------------------------------------ #
     # Lifecycle
@@ -59,17 +60,18 @@ class WSConnectionManager:
             capabilities=capabilities or [],
         )
 
-        if user_id not in self._connections:
-            self._connections[user_id] = {}
+        with self._lock:
+            if user_id not in self._connections:
+                self._connections[user_id] = {}
 
-        # Close existing connection from same device (reconnect)
-        if device_id in self._connections[user_id]:
-            old = self._connections[user_id][device_id]
-            logger.info("Replacing existing connection for device %s", device_id)
-            self._safe_close(old.websocket)
+            # Close existing connection from same device (reconnect)
+            if device_id in self._connections[user_id]:
+                old = self._connections[user_id][device_id]
+                logger.info("Replacing existing connection for device %s", device_id)
+                self._safe_close(old.websocket)
 
-        self._connections[user_id][device_id] = conn
-        self._device_to_user[device_id] = user_id
+            self._connections[user_id][device_id] = conn
+            self._device_to_user[device_id] = user_id
 
         logger.info("Registered device %s for user %s (platform=%s)", device_id, user_id, platform)
         return conn
@@ -79,17 +81,18 @@ class WSConnectionManager:
         Unregister a device connection. Returns user_id if found.
         Triggers offline notification to paired devices.
         """
-        user_id = self._device_to_user.pop(device_id, None)
-        if not user_id:
-            return None
+        with self._lock:
+            user_id = self._device_to_user.pop(device_id, None)
+            if not user_id:
+                return None
 
-        user_conns = self._connections.get(user_id, {})
-        conn = user_conns.pop(device_id, None)
-        if conn:
-            self._safe_close(conn.websocket)
+            user_conns = self._connections.get(user_id, {})
+            conn = user_conns.pop(device_id, None)
+            if conn:
+                self._safe_close(conn.websocket)
 
-        if not user_conns:
-            self._connections.pop(user_id, None)
+            if not user_conns:
+                self._connections.pop(user_id, None)
 
         logger.info("Unregistered device %s for user %s", device_id, user_id)
 
@@ -115,23 +118,25 @@ class WSConnectionManager:
 
     def get_user_devices(self, user_id: str) -> List[Dict[str, Any]]:
         """Return list of online devices for a user."""
-        devices = []
-        for device_id, conn in self._connections.get(user_id, {}).items():
-            devices.append({
-                "device_id": device_id,
-                "platform": conn.platform,
-                "capabilities": conn.capabilities,
-                "connected_at": conn.connected_at,
-                "last_ping": conn.last_ping,
-            })
-        return devices
+        with self._lock:
+            devices = []
+            for device_id, conn in self._connections.get(user_id, {}).items():
+                devices.append({
+                    "device_id": device_id,
+                    "platform": conn.platform,
+                    "capabilities": conn.capabilities,
+                    "connected_at": conn.connected_at,
+                    "last_ping": conn.last_ping,
+                })
+            return devices
 
     def get_device(self, device_id: str) -> Optional[WSDeviceConnection]:
         """Get a specific device connection."""
-        user_id = self._device_to_user.get(device_id)
-        if not user_id:
-            return None
-        return self._connections.get(user_id, {}).get(device_id)
+        with self._lock:
+            user_id = self._device_to_user.get(device_id)
+            if not user_id:
+                return None
+            return self._connections.get(user_id, {}).get(device_id)
 
     def is_device_online(self, device_id: str) -> bool:
         return device_id in self._device_to_user
@@ -164,8 +169,10 @@ class WSConnectionManager:
     async def broadcast_to_user(self, user_id: str, message: Dict[str, Any],
                                 exclude_device: Optional[str] = None) -> Dict[str, bool]:
         """Broadcast a message to all online devices of a user."""
+        with self._lock:
+            devices = list(self._connections.get(user_id, {}).items())
         results = {}
-        for device_id, conn in list(self._connections.get(user_id, {}).items()):
+        for device_id, conn in devices:
             if exclude_device and device_id == exclude_device:
                 continue
             results[device_id] = await self.send_to_device(device_id, message)
@@ -173,8 +180,10 @@ class WSConnectionManager:
 
     async def broadcast_to_all(self, message: Dict[str, Any]) -> Dict[str, Dict[str, bool]]:
         """Broadcast to all connected devices (admin/system use)."""
+        with self._lock:
+            users = list(self._connections.keys())
         results = {}
-        for user_id in self._connections:
+        for user_id in users:
             results[user_id] = await self.broadcast_to_user(user_id, message)
         return results
 
@@ -184,19 +193,26 @@ class WSConnectionManager:
 
     def update_ping(self, device_id: str):
         """Update last ping time for a device."""
-        conn = self.get_device(device_id)
-        if conn:
-            conn.last_ping = time.time()
+        with self._lock:
+            user_id = self._device_to_user.get(device_id)
+            if not user_id:
+                return
+            conn = self._connections.get(user_id, {}).get(device_id)
+            if conn:
+                conn.last_ping = time.time()
 
     def prune_stale(self, timeout: float = 120.0) -> List[str]:
         """Remove connections that haven't pinged within timeout seconds."""
         now = time.time()
         stale = []
-        for user_id, devices in list(self._connections.items()):
-            for device_id, conn in list(devices.items()):
-                if now - conn.last_ping > timeout:
-                    stale.append(device_id)
-                    self.unregister(device_id)
+        with self._lock:
+            for user_id, devices in list(self._connections.items()):
+                for device_id, conn in list(devices.items()):
+                    if now - conn.last_ping > timeout:
+                        stale.append(device_id)
+                        # unregister modifies _lock internally, call outside lock to avoid deadlock
+        for device_id in stale:
+            self.unregister(device_id)
         if stale:
             logger.info("Pruned %d stale connections: %s", len(stale), stale)
         return stale

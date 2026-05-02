@@ -302,7 +302,7 @@ def _persist_kg_extract(text: str, entities: list, relations: list):
         logger.warning("KG persist failed: %s", e)
 
 
-@bp.route('/api/kg/extract', methods=['POST'])
+@bp.route('/kg/extract', methods=['POST'])
 @validate_request(KGExtractRequest)
 @log_request
 def kgExtract():
@@ -358,7 +358,7 @@ def kgExtract():
     }), 200
 
 
-@bp.route('/api/kg/history', methods=['GET'])
+@bp.route('/kg/history', methods=['GET'])
 @log_request
 def kg_history():
     """Return historical KG entities and relations within a time range."""
@@ -419,7 +419,7 @@ def kg_history():
         }), 500
 
 
-@bp.route('/api/kg/query', methods=['POST'])
+@bp.route('/kg/query', methods=['POST'])
 @validate_request(KGQueryRequest)
 @log_request
 def kgQuery():

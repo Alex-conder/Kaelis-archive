@@ -13,6 +13,7 @@ Protocol:
 import asyncio
 import json
 import logging
+import os
 import queue as _queue
 import threading
 import time
@@ -45,7 +46,7 @@ def _on_trace_event(event: Dict[str, Any]):
 
 register_trace_callback(_on_trace_event)
 
-DEFAULT_WS_PORT = 5001
+DEFAULT_WS_PORT = int(os.environ.get("KAELIS_WS_PORT", "5001"))
 HEARTBEAT_INTERVAL = 30.0
 
 

@@ -57,10 +57,14 @@ class QualityScheduler:
             self.scheduler = None
     
     def start(self):
-        """启动调度器"""
+        """启动调度器（幂等：已运行则忽略）"""
         self._init_scheduler()
         
         if not self.scheduler:
+            return
+        
+        if self.scheduler.running:
+            logger.info("QualityScheduler already running, skipping start")
             return
         
         # 加载进化配置
@@ -121,6 +125,15 @@ class QualityScheduler:
             logger.info("QualityScheduler started")
         except Exception as e:
             logger.error(f"Failed to start scheduler: {e}")
+    
+    def stop(self):
+        """优雅停止调度器"""
+        if self.scheduler and self.scheduler.running:
+            try:
+                self.scheduler.shutdown(wait=False)
+                logger.info("QualityScheduler stopped")
+            except Exception as e:
+                logger.warning(f"Failed to stop scheduler: {e}")
     
     def _load_evolution_config(self) -> Dict[str, Any]:
         """加载进化调度配置"""
