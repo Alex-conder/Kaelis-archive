@@ -10,15 +10,6 @@ from flask import Blueprint, request, jsonify, current_app
 from pathlib import Path
 import json
 
-# 导入代谢组学模块
-try:
-    from core.metabolomics.workflow import MetabolomicsWorkflow, quick_analyze
-    from core.metabolomics.mzml_parser import get_file_summary
-    METABOLOMICS_AVAILABLE = True
-except ImportError as e:
-    METABOLOMICS_AVAILABLE = False
-    logging.warning(f"Metabolomics module not available: {e}")
-
 logger = logging.getLogger(__name__)
 
 # 创建 Blueprint
@@ -28,6 +19,33 @@ metabolomics_bp = Blueprint('metabolomics', __name__, url_prefix='/api/metabolom
 UPLOAD_DIR = Path("data/uploads/metabolomics")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+# 惰性导入代谢组学模块，避免 scipy/matplotlib 等重型库在启动时阻塞
+_metabolomics_loaded = False
+_metabolomics_available = False
+_MetabolomicsWorkflow = None
+_quick_analyze = None
+_get_file_summary = None
+
+
+def _ensure_metabolomics():
+    """延迟导入代谢组学模块"""
+    global _metabolomics_loaded, _metabolomics_available
+    global _MetabolomicsWorkflow, _quick_analyze, _get_file_summary
+    if _metabolomics_loaded:
+        return _metabolomics_available
+    _metabolomics_loaded = True
+    try:
+        from core.metabolomics.workflow import MetabolomicsWorkflow, quick_analyze
+        from core.metabolomics.mzml_parser import get_file_summary
+        _MetabolomicsWorkflow = MetabolomicsWorkflow
+        _quick_analyze = quick_analyze
+        _get_file_summary = get_file_summary
+        _metabolomics_available = True
+    except Exception as e:
+        logger.warning(f"Metabolomics module not available: {e}")
+        _metabolomics_available = False
+    return _metabolomics_available
+
 
 @metabolomics_bp.route('/status', methods=['GET'])
 def get_status():
@@ -35,7 +53,7 @@ def get_status():
     return jsonify({
         "success": True,
         "data": {
-            "available": METABOLOMICS_AVAILABLE,
+            "available": _ensure_metabolomics(),
             "upload_dir": str(UPLOAD_DIR),
             "supported_formats": [".mzML", ".mzml", ".mzXML"]
         }
@@ -50,7 +68,7 @@ def upload_file():
     Returns:
         上传的文件信息
     """
-    if not METABOLOMICS_AVAILABLE:
+    if not _ensure_metabolomics():
         return jsonify({
             "success": False,
             "error": "Metabolomics module not available"
@@ -64,30 +82,24 @@ def upload_file():
             }), 400
         
         file = request.files['file']
-        
         if file.filename == '':
             return jsonify({
                 "success": False,
-                "error": "No file selected"
+                "error": "Empty filename"
             }), 400
         
         # 保存文件
-        filename = file.filename
-        filepath = UPLOAD_DIR / filename
-        file.save(filepath)
+        filepath = UPLOAD_DIR / file.filename
+        file.save(str(filepath))
         
         # 获取文件摘要
-        try:
-            summary = get_file_summary(str(filepath))
-        except Exception as e:
-            summary = {"error": str(e)}
+        summary = _get_file_summary(str(filepath))
         
         return jsonify({
             "success": True,
             "data": {
-                "filename": filename,
+                "filename": file.filename,
                 "filepath": str(filepath),
-                "size_mb": round(filepath.stat().st_size / (1024*1024), 2),
                 "summary": summary
             }
         })
@@ -108,57 +120,40 @@ def analyze_file():
     Request Body:
         {
             "filepath": "文件路径",
-            "sample_name": "样本名称",
+            "sample_name": "样本名称（可选）",
             "detect_peaks": true,
             "max_spectra": 1000
         }
+    
+    Returns:
+        分析结果
     """
-    if not METABOLOMICS_AVAILABLE:
+    if not _ensure_metabolomics():
         return jsonify({
             "success": False,
             "error": "Metabolomics module not available"
         }), 503
     
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
+        filepath = data.get('filepath')
         
-        if not data or 'filepath' not in data:
-            return jsonify({
-                "success": False,
-                "error": "filepath is required"
-            }), 400
-        
-        filepath = data['filepath']
-        
-        # 安全检查：确保文件在允许目录内
-        if not str(filepath).startswith(str(UPLOAD_DIR)):
-            return jsonify({
-                "success": False,
-                "error": "Invalid filepath"
-            }), 403
-        
-        if not Path(filepath).exists():
+        if not filepath or not os.path.exists(filepath):
             return jsonify({
                 "success": False,
                 "error": "File not found"
             }), 404
         
-        # 执行分析
-        workflow = MetabolomicsWorkflow()
+        # 创建分析工作流
+        workflow = _MetabolomicsWorkflow()
         
+        # 分析文件
         result = workflow.analyze_file(
             filepath=filepath,
             sample_name=data.get('sample_name'),
             detect_peaks=data.get('detect_peaks', True),
             max_spectra=data.get('max_spectra')
         )
-        
-        # 转换numpy数组为列表
-        if hasattr(result.get('tic'), 'time'):
-            result['tic'] = {
-                'time': result['tic'].time.tolist()[:1000],  # 限制数据量
-                'intensity': result['tic'].intensity.tolist()[:1000]
-            }
         
         return jsonify({
             "success": True,
@@ -173,108 +168,97 @@ def analyze_file():
         }), 500
 
 
-@metabolomics_bp.route('/files', methods=['GET'])
-def list_files():
-    """列出已上传的文件"""
-    try:
-        files = []
-        
-        for filepath in UPLOAD_DIR.glob("*.mzML"):
-            files.append({
-                "filename": filepath.name,
-                "size_mb": round(filepath.stat().st_size / (1024*1024), 2),
-                "uploaded": filepath.stat().st_mtime
-            })
-        
-        # 按时间排序
-        files.sort(key=lambda x: x["uploaded"], reverse=True)
-        
-        return jsonify({
-            "success": True,
-            "data": {
-                "files": files,
-                "count": len(files)
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-
-@metabolomics_bp.route('/quick-test', methods=['GET'])
-def quick_test():
+@metabolomics_bp.route('/quick', methods=['POST'])
+def quick_analyze_endpoint():
     """
-    快速测试：分析本地已知的mzML文件
+    快速分析（简化版）
     
-    用于演示和测试。
+    Request Body:
+        {
+            "filepath": "文件路径"
+        }
+    
+    Returns:
+        简化分析结果
     """
-    if not METABOLOMICS_AVAILABLE:
+    if not _ensure_metabolomics():
         return jsonify({
             "success": False,
             "error": "Metabolomics module not available"
         }), 503
     
-    # 测试文件
-    test_file = r"D:\1250205_NEG_B44 (4).mzML"
-    
-    if not Path(test_file).exists():
-        return jsonify({
-            "success": False,
-            "error": f"Test file not found: {test_file}"
-        }), 404
-    
     try:
-        logger.info(f"Running quick test on: {test_file}")
+        data = request.get_json() or {}
+        filepath = data.get('filepath')
         
-        workflow = MetabolomicsWorkflow(use_evolution=False)
+        if not filepath or not os.path.exists(filepath):
+            return jsonify({
+                "success": False,
+                "error": "File not found"
+            }), 404
         
-        # 只解析前50个谱图（快速测试）
-        result = workflow.analyze_file(
-            filepath=test_file,
-            sample_name="Test_NEG_B44",
-            detect_peaks=True,
-            max_spectra=50
-        )
-        
-        # 简化输出
-        simplified = {
-            'sample_name': result['sample_name'],
-            'file_info': result['file_info'],
-            'n_peaks': len(result['peaks']),
-            'has_chromatogram_plot': bool(result.get('chromatogram_plot')),
-            'peaks_preview': result['peaks'][:5] if result['peaks'] else []
-        }
+        result = _quick_analyze(filepath)
         
         return jsonify({
             "success": True,
-            "data": simplified,
-            "message": "Quick test completed successfully"
+            "data": result
         })
         
     except Exception as e:
-        logger.error(f"Quick test failed: {e}")
+        logger.error(f"Quick analysis failed: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
 
 
-def register_metabolomics_routes(app):
-    """注册代谢组学路由到 Flask 应用"""
-    app.register_blueprint(metabolomics_bp)
-    logger.info("Metabolomics routes registered")
-
-
-if __name__ == "__main__":
-    from flask import Flask
+@metabolomics_bp.route('/compare', methods=['POST'])
+def compare_groups():
+    """
+    比较两组样本
     
-    app = Flask(__name__)
-    register_metabolomics_routes(app)
+    Request Body:
+        {
+            "feature_matrix": [...],
+            "feature_ids": [...],
+            "group_labels": [...],
+            "group_names": ["Group A", "Group B"],
+            "mz_values": [...],
+            "rt_values": [...]
+        }
     
-    print("Metabolomics routes registered:")
-    for rule in app.url_map.iter_rules():
-        if 'metabolomics' in str(rule):
-            print(f"  {rule}")
+    Returns:
+        比较分析结果
+    """
+    if not _ensure_metabolomics():
+        return jsonify({
+            "success": False,
+            "error": "Metabolomics module not available"
+        }), 503
+    
+    try:
+        data = request.get_json() or {}
+        
+        # 创建分析工作流
+        workflow = _MetabolomicsWorkflow(use_evolution=False)
+        
+        result = workflow.compare_groups(
+            feature_matrix=data.get('feature_matrix'),
+            feature_ids=data.get('feature_ids'),
+            group_labels=data.get('group_labels'),
+            group_names=data.get('group_names', ['Group A', 'Group B']),
+            mz_values=data.get('mz_values'),
+            rt_values=data.get('rt_values')
+        )
+        
+        return jsonify({
+            "success": True,
+            "data": result
+        })
+        
+    except Exception as e:
+        logger.error(f"Comparison failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500

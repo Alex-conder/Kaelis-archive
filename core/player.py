@@ -16,14 +16,27 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# 尝试导入 pyautogui
-try:
-    import pyautogui
-    PYAUTOGUI_AVAILABLE = True
-    pyautogui.FAILSAFE = True  # 将鼠标移到角落停止
-except ImportError:
-    PYAUTOGUI_AVAILABLE = False
-    logger.warning("pyautogui not installed, player functionality limited")
+# pyautogui 采用延迟导入，避免模块级导入在 headless/CI 环境阻塞
+_pyautogui_mod = None
+
+
+def _get_pyautogui():
+    """延迟导入并返回 pyautogui 模块"""
+    global _pyautogui_mod
+    if _pyautogui_mod is None:
+        import pyautogui
+        pyautogui.FAILSAFE = True
+        _pyautogui_mod = pyautogui
+    return _pyautogui_mod
+
+
+def _pyautogui_available() -> bool:
+    try:
+        _get_pyautogui()
+        return True
+    except ImportError:
+        return False
+
 
 try:
     from PIL import ImageGrab, Image
@@ -78,7 +91,7 @@ class ActionPlayer:
         Returns:
             bool: 是否成功完成
         """
-        if not PYAUTOGUI_AVAILABLE:
+        if not _pyautogui_available():
             logger.error("pyautogui not available, cannot play")
             return False
         
@@ -170,42 +183,46 @@ class ActionPlayer:
     
     def _execute_mouse_click(self, data: Dict[str, Any]) -> bool:
         """执行鼠标点击"""
+        pg = _get_pyautogui()
         x = data.get("x", 0)
         y = data.get("y", 0)
         button_str = data.get("button", "Button.left")
         pressed = data.get("pressed", True)
         
         # 解析按钮
-        button = getattr(pyautogui, button_str.split(".")[-1], pyautogui.left)
+        button = getattr(pg, button_str.split(".")[-1], pg.left)
         
         # 移动并点击
-        pyautogui.moveTo(x, y, duration=0.1)
+        pg.moveTo(x, y, duration=0.1)
         
         if pressed:
-            pyautogui.mouseDown(button=button)
-            pyautogui.mouseUp(button=button)
+            pg.mouseDown(button=button)
+            pg.mouseUp(button=button)
         
         logger.debug(f"Mouse click at ({x}, {y})")
         return True
     
     def _execute_mouse_move(self, data: Dict[str, Any]) -> bool:
         """执行鼠标移动"""
+        pg = _get_pyautogui()
         x = data.get("x", 0)
         y = data.get("y", 0)
         
-        pyautogui.moveTo(x, y, duration=0.1)
+        pg.moveTo(x, y, duration=0.1)
         return True
     
     def _execute_mouse_scroll(self, data: Dict[str, Any]) -> bool:
         """执行鼠标滚动"""
+        pg = _get_pyautogui()
         dy = data.get("dy", 0)
         dx = data.get("dx", 0)
         
-        pyautogui.scroll(int(dy), int(dx))
+        pg.scroll(int(dy), int(dx))
         return True
     
     def _execute_key_press(self, data: Dict[str, Any]) -> bool:
         """执行按键"""
+        pg = _get_pyautogui()
         key = data.get("key", "")
         
         if not key:
@@ -230,12 +247,12 @@ class ActionPlayer:
         }
         
         if key in special_keys:
-            pyautogui.press(special_keys[key])
+            pg.press(special_keys[key])
         elif len(key) == 1:
-            pyautogui.press(key)
+            pg.press(key)
         else:
             # 尝试直接写入
-            pyautogui.typewrite(key, interval=0.01)
+            pg.typewrite(key, interval=0.01)
         
         logger.debug(f"Key press: {key}")
         return True
@@ -263,20 +280,21 @@ class ActionPlayer:
         Returns:
             bool: 是否成功
         """
-        if not PYAUTOGUI_AVAILABLE or not PIL_AVAILABLE:
+        if not _pyautogui_available() or not PIL_AVAILABLE:
             logger.error("Required libraries not available")
             return False
         
+        pg = _get_pyautogui()
         for attempt in range(retries):
             try:
-                location = pyautogui.locateOnScreen(
+                location = pg.locateOnScreen(
                     image_path,
                     confidence=confidence
                 )
                 
                 if location:
-                    center = pyautogui.center(location)
-                    pyautogui.click(center)
+                    center = pg.center(location)
+                    pg.click(center)
                     logger.info(f"Clicked on image at {center}")
                     return True
                 else:
@@ -307,14 +325,15 @@ class ActionPlayer:
         Returns:
             bool: 是否找到
         """
-        if not PYAUTOGUI_AVAILABLE:
+        if not _pyautogui_available():
             return False
         
+        pg = _get_pyautogui()
         start_time = time.time()
         
         while time.time() - start_time < timeout:
             try:
-                location = pyautogui.locateOnScreen(
+                location = pg.locateOnScreen(
                     image_path,
                     confidence=confidence
                 )
@@ -426,7 +445,7 @@ if __name__ == "__main__":
     
     print("=== 测试操作播放器 ===")
     
-    if not PYAUTOGUI_AVAILABLE:
+    if not _pyautogui_available():
         print("❌ pyautogui not installed, skipping test")
         exit(0)
     

@@ -44,17 +44,20 @@ def get_dist_path():
 
 def create_app():
     """创建 Flask 应用（生产模式）"""
+    import os
+    _testing_mode = os.environ.get('KAELIS_TESTING', '').lower() in ('1', 'true', 'yes')
     
-    # 启动时健康检查
-    try:
-        from core.memory_health import run_startup_health_check
-        health_report = run_startup_health_check(db_dir="data")
-        if health_report["overall"] == "failed":
+    if not _testing_mode:
+        # 启动时健康检查（仅非测试模式）
+        try:
+            from core.memory_health import run_startup_health_check
+            health_report = run_startup_health_check(db_dir="data")
+            if health_report["overall"] == "failed":
+                import logging
+                logging.getLogger(__name__).warning("Memory subsystem health check FAILED - starting in degraded mode")
+        except Exception as e:
             import logging
-            logging.getLogger(__name__).warning("Memory subsystem health check FAILED - starting in degraded mode")
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Startup health check skipped: {e}")
+            logging.getLogger(__name__).warning(f"Startup health check skipped: {e}")
     
     from api.routes.evolve import evolve_bp
     from api.routes.skills import skills_bp
@@ -210,81 +213,82 @@ def create_app():
         import logging
         logging.getLogger(__name__).warning(f"Middleware not registered: {e}")
     
-    # FIX-1: 初始化线程本地连接池（优先）
-    try:
-        from core.database.connection_pool import init_pools_for_memory_manager
-        init_pools_for_memory_manager(db_dir="data")
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Thread-local DB pool not initialized: {e}")
-    
-    # B-3: 兼容旧连接池初始化
-    try:
-        from core.db_pool import init_pool_for_memory_manager
-        init_pool_for_memory_manager(db_dir="data")
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Legacy DB pool not initialized: {e}")
-    
-    # 启动自动化质检调度器
-    try:
-        from core.monitoring.scheduler import get_quality_scheduler
-        scheduler = get_quality_scheduler()
-        scheduler.start()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Quality scheduler not started: {e}")
-    
-    # 启动 Mesh 网络后台调度器（心跳 + Gossip）
-    try:
-        from core.mesh.scheduler import get_mesh_scheduler
-        mesh_scheduler = get_mesh_scheduler()
-        mesh_scheduler.start()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Mesh scheduler not started: {e}")
-    
-    # 启动 WebSocket 跨设备消息服务器
-    try:
-        from core.network.ws_server import get_ws_server
-        ws_server = get_ws_server()
-        ws_server.start_in_thread()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"WebSocket server not started: {e}")
-    
-    # 首次启动安全审计
-    try:
-        from core.security.install_auditor import InstallAuditor
-        auditor = InstallAuditor()
-        report = auditor.run_full_audit()
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"安装安全审计完成: {report.stats['total']} 项发现, 总体风险 {report.overall_level}")
-        if report.stats.get('critical', 0) > 0:
-            logger.error(f"发现 {report.stats['critical']} 项 CRITICAL 风险，请立即处理！")
-        elif report.stats.get('high', 0) > 0:
-            logger.warning(f"发现 {report.stats['high']} 项 HIGH 风险，建议修复后使用")
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"安装安全审计跳过: {e}")
-    
-    # 首次启动环境扫描与技能导入（审计通过后执行）
-    try:
-        from core.migration.smart_detector import scan_for_competitors
-        from core.skill_universal_adapter import UniversalSkillAdapter
-        competitors = scan_for_competitors()
-        if competitors:
+    if not _testing_mode:
+        # FIX-1: 初始化线程本地连接池（优先）
+        try:
+            from core.database.connection_pool import init_pools_for_memory_manager
+            init_pools_for_memory_manager(db_dir="data")
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Thread-local DB pool not initialized: {e}")
+        
+        # B-3: 兼容旧连接池初始化
+        try:
+            from core.db_pool import init_pool_for_memory_manager
+            init_pool_for_memory_manager(db_dir="data")
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Legacy DB pool not initialized: {e}")
+        
+        # 启动自动化质检调度器
+        try:
+            from core.monitoring.scheduler import get_quality_scheduler
+            scheduler = get_quality_scheduler()
+            scheduler.start()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Quality scheduler not started: {e}")
+        
+        # 启动 Mesh 网络后台调度器（心跳 + Gossip）
+        try:
+            from core.mesh.scheduler import get_mesh_scheduler
+            mesh_scheduler = get_mesh_scheduler()
+            mesh_scheduler.start()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Mesh scheduler not started: {e}")
+        
+        # 启动 WebSocket 跨设备消息服务器
+        try:
+            from core.network.ws_server import get_ws_server
+            ws_server = get_ws_server()
+            ws_server.start_in_thread()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"WebSocket server not started: {e}")
+        
+        # 首次启动安全审计
+        try:
+            from core.security.install_auditor import InstallAuditor
+            auditor = InstallAuditor()
+            report = auditor.run_full_audit()
             import logging
             logger = logging.getLogger(__name__)
-            logger.info(f"首次启动检测到 {len(competitors)} 个外部数据源，准备自动纳管...")
-            adapter = UniversalSkillAdapter()
-            for comp in competitors:
-                stats = adapter.batch_import(comp["path"])
-                logger.info(f"纳管完成 [{comp['name']}]: {stats['registered']}/{stats['recognized']} 技能已注册")
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"首次启动自动纳管跳过: {e}")
+            logger.info(f"安装安全审计完成: {report.stats['total']} 项发现, 总体风险 {report.overall_level}")
+            if report.stats.get('critical', 0) > 0:
+                logger.error(f"发现 {report.stats['critical']} 项 CRITICAL 风险，请立即处理！")
+            elif report.stats.get('high', 0) > 0:
+                logger.warning(f"发现 {report.stats['high']} 项 HIGH 风险，建议修复后使用")
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"安装安全审计跳过: {e}")
+        
+        # 首次启动环境扫描与技能导入（审计通过后执行）
+        try:
+            from core.migration.smart_detector import scan_for_competitors
+            from core.skill_universal_adapter import UniversalSkillAdapter
+            competitors = scan_for_competitors()
+            if competitors:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"首次启动检测到 {len(competitors)} 个外部数据源，准备自动纳管...")
+                adapter = UniversalSkillAdapter()
+                for comp in competitors:
+                    stats = adapter.batch_import(comp["path"])
+                    logger.info(f"纳管完成 [{comp['name']}]: {stats['registered']}/{stats['recognized']} 技能已注册")
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"首次启动自动纳管跳过: {e}")
     
     DIST_DIR = get_dist_path()
     has_react_frontend = os.path.exists(os.path.join(DIST_DIR, 'index.html'))

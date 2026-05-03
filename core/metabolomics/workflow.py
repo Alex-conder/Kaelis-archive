@@ -9,16 +9,39 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import numpy as np
 
-try:
-    from core.metabolomics.mzml_parser import MZMLParser, get_file_summary
-    from core.metabolomics.feature_detection import FeatureDetector
-    from core.metabolomics.statistical_analysis import MetabolomicsAnalyzer, DifferentialMetabolite
-    from core.metabolomics.visualization import MetabolomicsVisualizer
-except ImportError:
-    from .mzml_parser import MZMLParser, get_file_summary
-    from .feature_detection import FeatureDetector
-    from .statistical_analysis import MetabolomicsAnalyzer, DifferentialMetabolite
-    from .visualization import MetabolomicsVisualizer
+# 代谢组学子模块采用延迟导入，避免 scipy/matplotlib 等重型库在启动时阻塞
+
+def _import_mzml_parser():
+    try:
+        from core.metabolomics.mzml_parser import MZMLParser, get_file_summary
+        return MZMLParser, get_file_summary
+    except ImportError:
+        from .mzml_parser import MZMLParser, get_file_summary
+        return MZMLParser, get_file_summary
+
+def _import_feature_detection():
+    try:
+        from core.metabolomics.feature_detection import FeatureDetector
+        return FeatureDetector
+    except ImportError:
+        from .feature_detection import FeatureDetector
+        return FeatureDetector
+
+def _import_statistical_analysis():
+    try:
+        from core.metabolomics.statistical_analysis import MetabolomicsAnalyzer, DifferentialMetabolite
+        return MetabolomicsAnalyzer, DifferentialMetabolite
+    except ImportError:
+        from .statistical_analysis import MetabolomicsAnalyzer, DifferentialMetabolite
+        return MetabolomicsAnalyzer, DifferentialMetabolite
+
+def _import_visualization():
+    try:
+        from core.metabolomics.visualization import MetabolomicsVisualizer
+        return MetabolomicsVisualizer
+    except ImportError:
+        from .visualization import MetabolomicsVisualizer
+        return MetabolomicsVisualizer
 
 # 导入自进化引擎
 try:
@@ -45,9 +68,10 @@ class MetabolomicsWorkflow:
         mz_tolerance: float = 0.01
     ):
         self.parser = None
-        self.detector = FeatureDetector(min_peak_height=min_peak_height)
-        self.analyzer = MetabolomicsAnalyzer()
-        self.visualizer = MetabolomicsVisualizer()
+        self.detector = None
+        self.analyzer = None
+        self.visualizer = None
+        self._min_peak_height = min_peak_height
         
         self.rt_tolerance = rt_tolerance
         self.mz_tolerance = mz_tolerance
@@ -57,6 +81,24 @@ class MetabolomicsWorkflow:
         self.results = {}
         
         logger.info(f"MetabolomicsWorkflow initialized (evolution={self.use_evolution})")
+    
+    def _ensure_detector(self):
+        if self.detector is None:
+            FeatureDetector = _import_feature_detection()
+            self.detector = FeatureDetector(min_peak_height=self._min_peak_height)
+        return self.detector
+    
+    def _ensure_analyzer(self):
+        if self.analyzer is None:
+            MetabolomicsAnalyzer, _ = _import_statistical_analysis()
+            self.analyzer = MetabolomicsAnalyzer()
+        return self.analyzer
+    
+    def _ensure_visualizer(self):
+        if self.visualizer is None:
+            MetabolomicsVisualizer = _import_visualization()
+            self.visualizer = MetabolomicsVisualizer()
+        return self.visualizer
     
     def analyze_file(
         self,
@@ -82,6 +124,7 @@ class MetabolomicsWorkflow:
         logger.info(f"Analyzing file: {filepath}")
         
         # 解析文件
+        MZMLParser, _ = _import_mzml_parser()
         self.parser = MZMLParser(filepath)
         
         # 获取文件信息
@@ -101,11 +144,11 @@ class MetabolomicsWorkflow:
         
         # 峰检测
         if detect_peaks:
-            peaks = self.detector.detect_peaks(tic.time, tic.intensity)
+            peaks = self._ensure_detector().detect_peaks(tic.time, tic.intensity)
             result['peaks'] = [p.to_dict() for p in peaks]
             
             # 可视化
-            result['chromatogram_plot'] = self.visualizer.plot_chromatogram(
+            result['chromatogram_plot'] = self._ensure_visualizer().plot_chromatogram(
                 tic.time, tic.intensity, peaks=[p.to_dict() for p in peaks[:20]],
                 title=f"TIC - {sample_name}"
             )

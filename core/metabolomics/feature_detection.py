@@ -11,8 +11,6 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
-from scipy import signal
-from scipy.ndimage import gaussian_filter1d
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +97,9 @@ class FeatureDetector:
         Returns:
             List[Peak]: 检测到的峰列表
         """
+        from scipy.ndimage import gaussian_filter1d
+        from scipy import signal
+        
         # 平滑处理
         smoothed = gaussian_filter1d(intensity, sigma=2)
         

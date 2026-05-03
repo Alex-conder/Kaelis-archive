@@ -37,24 +37,28 @@ try:
 except ImportError:
     CHROMADB_AVAILABLE = False
 
-try:
-    from langchain_community.vectorstores import FAISS
-    from langchain_openai import OpenAIEmbeddings
-    FAISS_AVAILABLE = True
-except ImportError:
-    FAISS_AVAILABLE = False
-
-try:
-    from langchain_community.document_loaders import DirectoryLoader, TextLoader
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
-    LANGCHAIN_AVAILABLE = True
-except ImportError:
+# langchain 相关依赖采用延迟导入，避免模块级导入 transformers 等重型库导致启动超时
+def _faiss_available() -> bool:
     try:
-        from langchain.document_loaders import DirectoryLoader, TextLoader
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
-        LANGCHAIN_AVAILABLE = True
+        from langchain_community.vectorstores import FAISS  # noqa: F401
+        from langchain_openai import OpenAIEmbeddings  # noqa: F401
+        return True
     except ImportError:
-        LANGCHAIN_AVAILABLE = False
+        return False
+
+
+def _langchain_available() -> bool:
+    try:
+        from langchain_community.document_loaders import TextLoader  # noqa: F401
+        from langchain_text_splitters import RecursiveCharacterTextSplitter  # noqa: F401
+        return True
+    except ImportError:
+        try:
+            from langchain.document_loaders import TextLoader  # noqa: F401
+            from langchain.text_splitter import RecursiveCharacterTextSplitter  # noqa: F401
+            return True
+        except ImportError:
+            return False
 
 try:
     from diskcache import Cache
@@ -132,18 +136,20 @@ class LocalDocumentRetriever:
         self.faiss_store = None
         self.use_faiss = os.getenv("USE_FAISS", "false").lower() == "true"
         
-        if self.use_faiss and FAISS_AVAILABLE:
+        if self.use_faiss and _faiss_available():
             self._init_faiss()
         else:
             self._init_chromadb()
     
     def _init_faiss(self):
         """初始化 FAISS 向量存储"""
-        if not FAISS_AVAILABLE:
+        if not _faiss_available():
             logger.warning("FAISS not available, fallback to ChromaDB")
             self._init_chromadb()
             return
         try:
+            from langchain_community.vectorstores import FAISS
+            from langchain_openai import OpenAIEmbeddings
             faiss_dir = os.path.join(self.persist_dir, "faiss_index")
             os.makedirs(faiss_dir, exist_ok=True)
             
@@ -226,12 +232,13 @@ class LocalDocumentRetriever:
             logger.error(f"ChromaDB init failed: {e}")
     
     def index_documents(self, force_reindex: bool = False) -> int:
-        if not LANGCHAIN_AVAILABLE:
+        if not _langchain_available():
             return 0
         if not os.path.exists(self.doc_dir):
             return 0
         try:
             from langchain_community.document_loaders import TextLoader
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
             documents = []
             for root, _, files in os.walk(self.doc_dir):
                 for file in files:
@@ -256,7 +263,8 @@ class LocalDocumentRetriever:
             metadatas = [{"source": c.metadata.get("source", "")} for c in chunks]
             
             # FAISS 模式
-            if self.use_faiss and FAISS_AVAILABLE:
+            if self.use_faiss and _faiss_available():
+                from langchain_community.vectorstores import FAISS
                 self.faiss_store = FAISS.from_texts(
                     texts, self.embeddings, metadatas=metadatas
                 )

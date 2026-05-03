@@ -20,16 +20,15 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# 可选依赖：scikit-learn 用于聚类和 TF-IDF
-SKLEARN_AVAILABLE = False
-try:
-    from sklearn.cluster import KMeans
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-
-    SKLEARN_AVAILABLE = True
-except ImportError:
-    logger.warning("scikit-learn not available. Clustering will use fallback mode.")
+# 可选依赖：scikit-learn 用于聚类和 TF-IDF（延迟导入，避免启动阻塞）
+def _sklearn_available() -> bool:
+    try:
+        from sklearn.cluster import KMeans  # noqa: F401
+        from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: F401
+        from sklearn.metrics.pairwise import cosine_similarity  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 
 class MemoryInsightClusterer:
@@ -88,7 +87,7 @@ class MemoryInsightClusterer:
             k = max(2, min(5, int(math.sqrt(total / 2))))
 
         # 执行聚类
-        if SKLEARN_AVAILABLE and total >= k:
+        if _sklearn_available() and total >= k:
             clusters = self._sklearn_cluster(memories, k)
         else:
             clusters = self._fallback_keyword_cluster(memories, k)
@@ -115,7 +114,7 @@ class MemoryInsightClusterer:
                 for c in clusters
             ],
             "total_memories": total,
-            "method": "sklearn" if SKLEARN_AVAILABLE else "fallback",
+            "method": "sklearn" if _sklearn_available() else "fallback",
         }
 
     # ------------------------------------------------------------------ #
@@ -187,6 +186,9 @@ class MemoryInsightClusterer:
         self, memories: List[Dict], k: int
     ) -> List[Dict[str, Any]]:
         """使用 sklearn KMeans + TF-IDF 进行聚类。"""
+        from sklearn.cluster import KMeans
+        from sklearn.feature_extraction.text import TfidfVectorizer
+
         texts = [m["text"] for m in memories]
 
         # TF-IDF 向量化
@@ -285,6 +287,7 @@ class MemoryInsightClusterer:
             return []
 
         try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
             vectorizer = TfidfVectorizer(
                 max_features=100,
                 stop_words="english",
