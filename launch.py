@@ -145,6 +145,7 @@ def start_server():
         from api.routes.auth import auth_bp
         from api.routes.sync import sync_bp
         from api.routes.kg_flywheel_routes import kg_flywheel_bp
+        from api.routes.strategy_flywheel import strategy_flywheel_bp
         
         app = Flask(__name__, static_folder='api/static')
         app.secret_key = os.environ.get('SECRET_KEY', 'kaelis-dev-secret-key-change-in-production')
@@ -166,6 +167,7 @@ def start_server():
         app.register_blueprint(auth_bp)
         app.register_blueprint(sync_bp)
         app.register_blueprint(kg_flywheel_bp)
+        app.register_blueprint(strategy_flywheel_bp)
         
         from api.routes.approval import approval_bp
         from api.routes.monitoring import monitoring_bp

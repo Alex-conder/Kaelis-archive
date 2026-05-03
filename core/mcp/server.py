@@ -1129,6 +1129,130 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
         logger.warning("Failed to register A2A tools: %s", e)
 
     # ------------------------------------------------------------------ #
+    # Strategy Flywheel Tools
+    # ------------------------------------------------------------------ #
+    try:
+        from core.strategy_flywheel import FlywheelEngine
+
+        @mcp.tool("flywheel.scan")
+        def flywheel_scan(target_domain: str, user_id: str = "anonymous") -> str:
+            """雷达扫描：分析目标领域的技能需求和市场趋势。"""
+            try:
+                import asyncio
+                engine = FlywheelEngine(user_id=user_id, enable_memory=True)
+                response = asyncio.run(engine.scan_only(target_domain))
+                return json.dumps({
+                    "success": True,
+                    "reply": response.reply,
+                    "session_id": response.session_id,
+                    "ring_results": response.ring_results,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("flywheel.scan failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("flywheel.deconstruct")
+        def flywheel_deconstruct(target_skill: str, user_id: str = "anonymous") -> str:
+            """第一性原理拆解：将技能拆解为核心20%和可跳过80%。"""
+            try:
+                import asyncio
+                engine = FlywheelEngine(user_id=user_id, enable_memory=True)
+                response = asyncio.run(engine.deconstruct_only(target_skill))
+                return json.dumps({
+                    "success": True,
+                    "reply": response.reply,
+                    "session_id": response.session_id,
+                    "ring_results": response.ring_results,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("flywheel.deconstruct failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("flywheel.generate_plan")
+        def flywheel_generate_plan(
+            target_domain: str,
+            core_skills_json: str = "[]",
+            user_id: str = "anonymous",
+        ) -> str:
+            """生成90天实践计划。core_skills_json 为 JSON 字符串。"""
+            try:
+                import asyncio
+                core_skills = json.loads(core_skills_json) if core_skills_json else []
+                engine = FlywheelEngine(user_id=user_id, enable_memory=True)
+                response = asyncio.run(engine.generate_plan_only(core_skills, target_domain))
+                return json.dumps({
+                    "success": True,
+                    "reply": response.reply,
+                    "session_id": response.session_id,
+                    "ring_results": response.ring_results,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("flywheel.generate_plan failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("flywheel.monetize")
+        def flywheel_monetize(
+            target_domain: str,
+            skill_framework_json: str = "{}",
+            user_id: str = "anonymous",
+        ) -> str:
+            """设计变现路径。skill_framework_json 为 JSON 字符串。"""
+            try:
+                import asyncio
+                skill_framework = json.loads(skill_framework_json) if skill_framework_json else {}
+                engine = FlywheelEngine(user_id=user_id, enable_memory=True)
+                response = asyncio.run(engine.monetize_only(skill_framework, target_domain))
+                return json.dumps({
+                    "success": True,
+                    "reply": response.reply,
+                    "session_id": response.session_id,
+                    "ring_results": response.ring_results,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("flywheel.monetize failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("flywheel.full_cycle")
+        def flywheel_full_cycle(target_domain: str, user_id: str = "anonymous") -> str:
+            """执行完整战略飞轮闭环：雷达扫描→拆解→实践→变现。"""
+            try:
+                import asyncio
+                engine = FlywheelEngine(user_id=user_id, enable_memory=True)
+                response = asyncio.run(engine.full_cycle(target_domain))
+                return json.dumps({
+                    "success": True,
+                    "reply": response.reply,
+                    "session_id": response.session_id,
+                    "state": response.state.value,
+                    "data": response.data,
+                    "ring_results": response.ring_results,
+                    "tool_calls": response.tool_calls,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("flywheel.full_cycle failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        @mcp.tool("flywheel.troubleshoot")
+        def flywheel_troubleshoot(description: str, goal: str = "", user_id: str = "anonymous") -> str:
+            """卡壳诊断：根据用户描述生成追问引导。"""
+            try:
+                engine = FlywheelEngine(user_id=user_id)
+                questions = engine.troubleshoot(description, goal)
+                stuck_type = engine.troubleshooter.diagnose(description)
+                return json.dumps({
+                    "success": True,
+                    "stuck_type": stuck_type,
+                    "questions": questions,
+                }, ensure_ascii=False)
+            except Exception as e:
+                logger.exception("flywheel.troubleshoot failed")
+                return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+        logger.info("[MCP] Strategy Flywheel tools registered")
+    except Exception as e:
+        logger.warning("Failed to register Strategy Flywheel tools: %s", e)
+
+    # ------------------------------------------------------------------ #
     # OpenClaw Migration Tool (P22-004)
     # ------------------------------------------------------------------ #
     try:

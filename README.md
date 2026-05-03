@@ -281,6 +281,23 @@ recorder.save_recording()
 | `/api/recorder/recordings` | GET | 录制列表 |
 | `/api/recorder/play/<id>` | POST | 回放 |
 
+### 战略飞轮 API
+
+> 五步学习策略自动化：雷达扫描 → 第一性原理拆解 → 20/80实践 → 变现路径设计
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/strategy-flywheel/full-cycle` | POST | 执行完整飞轮闭环 |
+| `/api/strategy-flywheel/scan` | POST | 雷达扫描 |
+| `/api/strategy-flywheel/deconstruct` | POST | 第一性原理拆解 |
+| `/api/strategy-flywheel/generate-plan` | POST | 生成90天实践计划 |
+| `/api/strategy-flywheel/monetize` | POST | 设计变现路径 |
+| `/api/strategy-flywheel/troubleshoot` | POST | 卡壳诊断与追问引导 |
+| `/api/strategy-flywheel/profile` | POST | 创建用户学习画像 |
+| `/api/strategy-flywheel/feedback` | POST | 提交反馈 |
+
+📖 [查看战略飞轮完整指南](docs/strategy-flywheel-guide.md)
+
 ---
 
 ## 🏗️ 系统架构
@@ -332,7 +349,13 @@ Kaelis/
 │   ├── skill_manager.py           # 技能管理
 │   ├── recorder.py                # 屏幕录制
 │   ├── player.py                  # 操作回放
-│   └── memory_consolidator.py     # 记忆整合
+│   ├── memory_consolidator.py     # 记忆整合
+│   └── strategy_flywheel/         # 战略飞轮引擎
+│       ├── flywheel_engine.py     # 主编排器
+│       ├── radar.py               # 技能雷达扫描
+│       ├── meta_cognition.py      # 第一性原理拆解
+│       ├── practice_flywheel.py   # 20/80实践计划
+│       └── monetization.py        # 变现路径设计
 ├── api/                           # API层
 │   ├── routes/
 │   │   ├── evolve.py              # 自进化API

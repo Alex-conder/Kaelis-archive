@@ -13,6 +13,8 @@ import {
   Sunset,
   Moon,
   ThumbsDown,
+  Lightbulb,
+  Compass,
 } from 'lucide-react'
 
 interface DashboardData {
@@ -199,6 +201,80 @@ function ProactivePushCard() {
   )
 }
 
+// UX-15: 功能发现增强 — 本周推荐功能卡片
+function FeatureDiscoveryCard() {
+  const navigate = useNavigate()
+  const [dismissed, setDismissed] = useState(false)
+
+  const features = [
+    {
+      title: '试试每日洞察',
+      desc: 'Kaelis 会分析你的记忆，生成每日洞察报告',
+      path: '/insights',
+      icon: Lightbulb,
+      color: 'text-amber-400',
+      bg: 'from-amber-500/10 to-orange-500/10',
+      border: 'border-amber-500/20',
+    },
+    {
+      title: '探索知识图谱',
+      desc: '可视化你的记忆关系网络，发现隐藏连接',
+      path: '/knowledge-graph',
+      icon: Brain,
+      color: 'text-purple-400',
+      bg: 'from-purple-500/10 to-pink-500/10',
+      border: 'border-purple-500/20',
+    },
+    {
+      title: '规划你的成长路径',
+      desc: '使用战略飞轮发现高价值技能，制定90天计划',
+      path: '/strategy-flywheel',
+      icon: Compass,
+      color: 'text-emerald-400',
+      bg: 'from-emerald-500/10 to-teal-500/10',
+      border: 'border-emerald-500/20',
+    },
+  ]
+
+  // 根据日期轮换推荐
+  const dayIndex = new Date().getDay()
+  const feature = features[dayIndex % features.length]
+  const Icon = feature.icon
+
+  if (dismissed) return null
+
+  return (
+    <div className={`mb-5 bg-gradient-to-r ${feature.bg} border ${feature.border} rounded-xl p-4`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${feature.color}`} />
+          <h3 className="text-sm font-medium text-white">本周推荐功能</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDismissed(true)}
+            className="text-xs text-slate-500 hover:text-slate-300 px-2 py-1 rounded transition-colors"
+          >
+            忽略
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-300 font-medium">{feature.title}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{feature.desc}</p>
+        </div>
+        <button
+          onClick={() => navigate(feature.path)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--bg-card)] border ${feature.border} ${feature.color} hover:opacity-80 transition-opacity`}
+        >
+          立即尝试
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData>({
@@ -275,6 +351,9 @@ export default function DashboardPage() {
 
       {/* UX-11: 主动智能推送卡片 */}
       <ProactivePushCard />
+
+      {/* 功能发现增强：本周推荐 */}
+      <FeatureDiscoveryCard />
 
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

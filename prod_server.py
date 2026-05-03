@@ -67,6 +67,7 @@ def create_app():
     from api.routes.auth import auth_bp
     from api.routes.sync import sync_bp
     from api.routes.kg_flywheel_routes import kg_flywheel_bp
+    from api.routes.strategy_flywheel import strategy_flywheel_bp
     from api.routes.approval import approval_bp
     from api.routes.monitoring import monitoring_bp
     from api.routes.workflow_monitoring import workflow_monitoring_bp
@@ -126,6 +127,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(sync_bp)
     app.register_blueprint(kg_flywheel_bp)
+    app.register_blueprint(strategy_flywheel_bp)
     app.register_blueprint(approval_bp)
     app.register_blueprint(monitoring_bp)
     app.register_blueprint(workflow_monitoring_bp)

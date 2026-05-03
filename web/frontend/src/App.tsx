@@ -31,6 +31,9 @@ const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'))
 const DailyInsightPage = lazy(() => import('./pages/DailyInsightPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
+const StrategyFlywheelPage = lazy(() => import('./pages/StrategyFlywheelPage'))
+const LLMSettingsPage = lazy(() => import('./pages/LLMSettingsPage'))
+const ShortcutsPage = lazy(() => import('./pages/ShortcutsPage'))
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useAuthUser()
@@ -153,6 +156,9 @@ function App() {
                     <Route path="/insights" element={<DailyInsightPage />} />
                     <Route path="/monitoring" element={<MonitoringPage />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/strategy-flywheel" element={<StrategyFlywheelPage />} />
+                    <Route path="/llm-settings" element={<LLMSettingsPage />} />
+                    <Route path="/shortcuts" element={<ShortcutsPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
