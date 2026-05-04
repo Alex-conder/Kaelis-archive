@@ -32,6 +32,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --timeout=120 --retries=3
+          pip install pytest pytest-cov pytest-xdist
 
       - name: Run fast unit tests (parallel)
         run: |
@@ -128,9 +129,15 @@ jobs:
           node-version: '20'
 
       - name: Lint extension
+        shell: pwsh
         run: |
           cd extensions/chrome
-          if [ -f package.json ]; then npm install && npm run lint; else echo "No package.json, skipping npm steps"; fi
+          if (Test-Path package.json) {
+            npm install
+            npm run lint
+          } else {
+            Write-Host "No package.json, skipping extension lint"
+          }
 
       - name: Package Chrome extension
         shell: bash
