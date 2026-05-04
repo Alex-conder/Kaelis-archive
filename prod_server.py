@@ -69,7 +69,13 @@ def create_app():
     from api.routes.ai_native import ai_native_bp
     from api.routes.auth import auth_bp
     from api.routes.sync import sync_bp
-    from api.routes.kg_flywheel_routes import kg_flywheel_bp
+    # kg_flywheel 采用延迟导入，避免 neo4j/sqlite 连接在启动时阻塞
+    try:
+        from api.routes.kg_flywheel_routes import kg_flywheel_bp
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"kg_flywheel routes not loaded: {e}")
+        kg_flywheel_bp = None
     from api.routes.strategy_flywheel import strategy_flywheel_bp
     from api.routes.approval import approval_bp
     from api.routes.monitoring import monitoring_bp
@@ -93,7 +99,13 @@ def create_app():
     from api.routes.team import bp as team_bp
     from api.routes.observability import observability_bp
     from api.routes.workflow_engine import workflow_engine_bp
-    from api.routes.mesh import mesh_bp
+    # mesh 采用延迟导入，避免 zeroconf 在 Windows 上阻塞启动
+    try:
+        from api.routes.mesh import mesh_bp
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"mesh routes not loaded: {e}")
+        mesh_bp = None
     from api.routes.ws_sync import ws_sync_bp
     
     app = Flask(__name__, static_folder='api/static')
@@ -129,7 +141,8 @@ def create_app():
     app.register_blueprint(ai_native_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(sync_bp)
-    app.register_blueprint(kg_flywheel_bp)
+    if kg_flywheel_bp:
+        app.register_blueprint(kg_flywheel_bp)
     app.register_blueprint(strategy_flywheel_bp)
     app.register_blueprint(approval_bp)
     app.register_blueprint(monitoring_bp)
@@ -153,7 +166,8 @@ def create_app():
     app.register_blueprint(team_bp)
     app.register_blueprint(workflow_engine_bp)
     app.register_blueprint(observability_bp)
-    app.register_blueprint(mesh_bp)
+    if mesh_bp:
+        app.register_blueprint(mesh_bp)
     app.register_blueprint(ws_sync_bp)
     
     # Initialize OpenTelemetry tracing

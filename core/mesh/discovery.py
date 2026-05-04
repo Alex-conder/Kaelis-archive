@@ -16,18 +16,13 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-try:
-    from zeroconf import (
-        ServiceBrowser,
-        ServiceInfo,
-        Zeroconf,
-        IPVersion,
-    )
-    ZEROCONF_AVAILABLE = True
-except ImportError:
-    ZEROCONF_AVAILABLE = False
-    ServiceBrowser = None
-    ServiceInfo = None
+# zeroconf 采用延迟导入，避免 Windows 上网络初始化阻塞启动
+def _zeroconf_available() -> bool:
+    try:
+        from zeroconf import ServiceBrowser, ServiceInfo, Zeroconf, IPVersion  # noqa: F401
+        return True
+    except ImportError:
+        return False
     Zeroconf = None
     IPVersion = None
 

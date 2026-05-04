@@ -385,15 +385,8 @@ def get_neo4j_driver(force_reconnect=False, allow_mock=False):
     raise Neo4jUnavailableError(error_msg)
 
 
-# 启动时尝试初始化，失败则记录警告但不降级到 Mock
-try:
-    neo4j_driver = get_neo4j_driver()
-except Neo4jUnavailableError as e:
-    import logging
-    logging.getLogger(__name__).warning(
-        f"WARNING: Graph database is unavailable, graph features are DISABLED. {e}"
-    )
-    neo4j_driver = None
+# 延迟初始化：避免模块导入时连接数据库导致阻塞
+# neo4j_driver 在首次使用时通过 get_neo4j_driver() 连接
 
 
 @dataclass
@@ -537,7 +530,8 @@ async def extract_triples(text: str, source: str = "", user_id: str = None) -> D
         raise
     
     # 写入图数据库
-    with neo4j_driver.session() as session:
+    driver = get_neo4j_driver()
+    with driver.session() as session:
         for triple in triples:
             # MERGE 实体
             session.run(
@@ -694,7 +688,8 @@ def _mock_extract(text: str) -> List[Dict]:
 async def query_graph(query: str, parameters: Dict = None, user_id: str = None) -> Dict[str, Any]:
     """执行图谱查询"""
     try:
-        with neo4j_driver.session() as session:
+        driver = get_neo4j_driver()
+        with driver.session() as session:
             result = session.run(query, **(parameters or {}))
             data = result.data()
             
@@ -743,7 +738,8 @@ async def run_quality_check(check_type: str = "full", user_id: str = None) -> Di
     scores = {}
     
     # 获取图谱统计
-    with neo4j_driver.session() as session:
+    driver = get_neo4j_driver()
+    with driver.session() as session:
         # 实体数
         result = session.run("MATCH (n:Entity) RETURN count(n) as cnt").single()
         entity_count = result["cnt"] if result else 0
