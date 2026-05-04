@@ -19,6 +19,18 @@ metabolomics_bp = Blueprint('metabolomics', __name__, url_prefix='/api/metabolom
 UPLOAD_DIR = Path("data/uploads/metabolomics")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+
+def _is_safe_path(filepath: str) -> bool:
+    """安全检查：只允许访问 UPLOAD_DIR 下的文件"""
+    if not filepath:
+        return False
+    try:
+        requested = Path(filepath).resolve()
+        allowed = UPLOAD_DIR.resolve()
+        return str(requested).startswith(str(allowed))
+    except (OSError, ValueError):
+        return False
+
 # 惰性导入代谢组学模块，避免 scipy/matplotlib 等重型库在启动时阻塞
 _metabolomics_loaded = False
 _metabolomics_available = False
@@ -112,6 +124,36 @@ def upload_file():
         }), 500
 
 
+@metabolomics_bp.route('/files', methods=['GET'])
+def list_files():
+    """获取上传目录中的文件列表"""
+    if not _ensure_metabolomics():
+        return jsonify({
+            "success": False,
+            "error": "Metabolomics module not available"
+        }), 503
+    
+    try:
+        files = []
+        for f in UPLOAD_DIR.iterdir():
+            if f.is_file():
+                files.append({
+                    "name": f.name,
+                    "size": f.stat().st_size,
+                    "modified": f.stat().st_mtime
+                })
+        return jsonify({
+            "success": True,
+            "data": {"files": files}
+        })
+    except Exception as e:
+        logger.error(f"List files failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @metabolomics_bp.route('/analyze', methods=['POST'])
 def analyze_file():
     """
@@ -138,7 +180,14 @@ def analyze_file():
         data = request.get_json() or {}
         filepath = data.get('filepath')
         
-        if not filepath or not os.path.exists(filepath):
+        # 路径安全检查
+        if not _is_safe_path(filepath):
+            return jsonify({
+                "success": False,
+                "error": "Invalid or unsafe file path"
+            }), 403
+        
+        if not os.path.exists(filepath):
             return jsonify({
                 "success": False,
                 "error": "File not found"
@@ -191,7 +240,14 @@ def quick_analyze_endpoint():
         data = request.get_json() or {}
         filepath = data.get('filepath')
         
-        if not filepath or not os.path.exists(filepath):
+        # 路径安全检查
+        if not _is_safe_path(filepath):
+            return jsonify({
+                "success": False,
+                "error": "Invalid or unsafe file path"
+            }), 403
+        
+        if not os.path.exists(filepath):
             return jsonify({
                 "success": False,
                 "error": "File not found"

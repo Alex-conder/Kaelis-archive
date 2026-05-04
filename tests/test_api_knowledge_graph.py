@@ -16,7 +16,7 @@ class TestKnowledgeGraphAPI(FlaskAppTestBase):
         self.assertEqual(data['status'], 'healthy')
 
     def test_extract_entities(self):
-        resp = self.json_post('/api/knowledge_graph/api/kg/extract', {
+        resp = self.json_post('/api/knowledge_graph/kg/extract', {
             "text": "Kaelis is an AI agent framework. It supports Memory Systems and Knowledge Graphs.",
             "domain": "tech",
             "min_confidence": 0.6
@@ -28,7 +28,7 @@ class TestKnowledgeGraphAPI(FlaskAppTestBase):
         self.assertIn('relations', payload)
 
     def test_extract_empty_text(self):
-        resp = self.json_post('/api/knowledge_graph/api/kg/extract', {
+        resp = self.json_post('/api/knowledge_graph/kg/extract', {
             "text": ""
         })
         data = self.assert_json_success(resp)
@@ -36,7 +36,7 @@ class TestKnowledgeGraphAPI(FlaskAppTestBase):
         self.assertEqual(payload['entity_count'], 0)
 
     def test_query_kg(self):
-        resp = self.json_post('/api/knowledge_graph/api/kg/query', {
+        resp = self.json_post('/api/knowledge_graph/kg/query', {
             "query": "Find all AI frameworks",
             "query_type": "semantic"
         })
@@ -46,9 +46,10 @@ class TestKnowledgeGraphAPI(FlaskAppTestBase):
         self.assertEqual(payload['query_type'], "semantic")
 
     def test_extract_missing_text(self):
-        resp = self.client.post('/api/knowledge_graph/api/kg/extract',
+        resp = self.client.post('/api/knowledge_graph/kg/extract',
             data='',
-            content_type='application/json')
+            content_type='application/json',
+            headers={'X-Agent-ID': 'kaelis-core'})
         self.assertIn(resp.status_code, [400, 500])
 
 
