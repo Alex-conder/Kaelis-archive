@@ -77,8 +77,7 @@ function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
       components={{
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        code({ node: _node, inline, className, children, ...props }: any) {
+        code({ node: _node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean; node?: unknown }) {
           const match = /language-(\w+)/.exec(className || '')
           return !inline && match ? (
             <CodeBlock language={match[1]}>{String(children)}</CodeBlock>

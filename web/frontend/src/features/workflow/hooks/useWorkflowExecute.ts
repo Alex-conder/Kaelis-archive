@@ -8,14 +8,14 @@ interface ExecutionStatus {
   node_results: Record<string, {
     node_id: string
     status: string
-    output?: any
+    output?: unknown
     error?: string
   }>
 }
 
 function convertToSpec(def: WorkflowDefinition) {
   const nodes = def.nodes.map((n) => {
-    const data = n.data as any
+    const data = n.data as Record<string, unknown> & { definition?: { type?: string; name?: string }; config?: Record<string, unknown> }
     return {
       id: n.id,
       type: data.definition?.type === 'action' ? 'agent' :

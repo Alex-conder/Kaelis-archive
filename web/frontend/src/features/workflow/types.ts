@@ -18,7 +18,7 @@ export interface WorkflowNodeDefinition {
   }>
   config?: Record<string, {
     type: string
-    default?: any
+    default?: string | number | boolean | null
     options?: string[]
     min?: number
     max?: number
@@ -28,7 +28,7 @@ export interface WorkflowNodeDefinition {
 export interface WorkflowNodeData extends Record<string, unknown> {
   label: string
   definition: WorkflowNodeDefinition
-  config?: Record<string, any>
+  config?: Record<string, unknown>
 }
 
 export interface WorkflowEdgeData {

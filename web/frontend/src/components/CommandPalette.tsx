@@ -68,9 +68,9 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         body: JSON.stringify({ layer: 'L2', query: q, top_k: 3 }),
       })
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { data?: Array<{ key?: string; value?: unknown }> }
         const memories = data.data || []
-        memories.forEach((m: any, idx: number) => {
+        memories.forEach((m, idx: number) => {
           results.push({
             id: `mem-${idx}`,
             title: m.key || '记忆',
@@ -92,14 +92,14 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       const apiUrl = import.meta.env.VITE_API_URL || ''
       const res = await fetch(`${apiUrl}/api/skills/list`)
       if (res.ok) {
-        const data = await res.json()
-        const skills = (data.skills || []).filter((s: any) =>
+        const data = await res.json() as { skills?: Array<{ name?: string; description?: string }> }
+        const skills = (data.skills || []).filter((s) =>
           (s.name || '').toLowerCase().includes(lower)
         ).slice(0, 3)
-        skills.forEach((s: any, idx: number) => {
+        skills.forEach((s, idx: number) => {
           results.push({
             id: `skill-${idx}`,
-            title: s.name,
+            title: s.name || '技能',
             subtitle: s.description?.slice(0, 60) || '技能',
             icon: Zap,
             category: '技能',

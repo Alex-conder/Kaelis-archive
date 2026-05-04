@@ -33,7 +33,7 @@ describe('useMemorySearch', () => {
     ]
     vi.mocked(memoryApi.search).mockResolvedValueOnce({
       data: { data: mockData },
-    } as any)
+    } as never)
 
     const { result } = renderHook(() => useMemorySearch('L1', 'hello'), {
       wrapper: createWrapper(),
@@ -83,7 +83,7 @@ describe('useMemoryStats', () => {
     ]
     vi.mocked(memoryApi.stats).mockResolvedValueOnce({
       data: { layers: mockLayers },
-    } as any)
+    } as never)
 
     const { result } = renderHook(() => useMemoryStats(), {
       wrapper: createWrapper(),
@@ -108,7 +108,7 @@ describe('useProactivePush', () => {
     }
     vi.mocked(memoryApi.proactivePush).mockResolvedValueOnce({
       data: { data: mockBundle },
-    } as any)
+    } as never)
 
     const { result } = renderHook(() => useProactivePush('user1', 'python'), {
       wrapper: createWrapper(),

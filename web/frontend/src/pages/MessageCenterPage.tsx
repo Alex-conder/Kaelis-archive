@@ -191,7 +191,7 @@ export default function MessageCenterPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-slate-800/50">
-                  {allDevices.map((device: any) => (
+                  {allDevices.map((device: { device_id: string; platform?: string; display_name?: string; status?: string; last_seen?: string }) => (
                     <button
                       key={device.device_id}
                       onClick={() => setTargetDevice(device.device_id)}
@@ -202,7 +202,7 @@ export default function MessageCenterPage() {
                       }`}
                     >
                       <div className="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-                        {PLATFORM_ICONS[device.platform] || <Monitor className="w-4 h-4" />}
+                        {PLATFORM_ICONS[device.platform || ''] || <Monitor className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white truncate">

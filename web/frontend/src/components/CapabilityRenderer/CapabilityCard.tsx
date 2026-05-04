@@ -21,8 +21,8 @@ export default function CapabilityCard({ capability }: CapabilityCardProps) {
       const { executeCapability } = await import('@/features/capability/api')
       const res = await executeCapability(capability.id, params)
       return res
-    } catch (e: any) {
-      return { success: false, error: e.message }
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
     } finally {
       setExecuting(false)
     }

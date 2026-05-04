@@ -99,7 +99,7 @@ export default function ChatPage() {
   const playSound = (type: 'send' | 'receive') => {
     if (!soundEnabled) return
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const ctx = new (window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)()
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.connect(gain)
@@ -249,13 +249,13 @@ export default function ChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ layer: 'L2', query, top_k: 3 }),
       })
-      const data = await res.json()
+      const data = await res.json() as { data?: Array<{ key: string; value: unknown }> }
       const items = data.data || []
 
       const cardId = Math.random().toString(36).substring(2, 15)
       const cardContent = items.length
         ? `🔍 记忆搜索结果 (${items.length} 条):\n` +
-          items.map((item: any, i: number) =>
+          items.map((item, i: number) =>
             `${i + 1}. [${item.key}] ${JSON.stringify(item.value).slice(0, 80)}...`
           ).join('\n')
         : '🔍 未找到相关记忆'

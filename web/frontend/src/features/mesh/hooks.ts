@@ -19,7 +19,7 @@ export interface MeshSelf {
 export interface MeshStatus {
   self: MeshSelf
   peers: MeshPeer[]
-  discovered: any[]
+  discovered: MeshPeer[]
 }
 
 export interface MeshSchedulerStatus {
@@ -47,8 +47,8 @@ export function useMeshNetwork() {
       } else {
         setError(data.error || 'Failed to fetch mesh status')
       }
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e))
     } finally {
       setLoading(false)
     }
@@ -70,8 +70,8 @@ export function useMeshNetwork() {
       const data = await res.json()
       await fetchStatus()
       return data
-    } catch (e: any) {
-      return { success: false, error: e.message }
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
     }
   }, [fetchStatus])
 
@@ -85,8 +85,8 @@ export function useMeshNetwork() {
       const data = await res.json()
       await fetchStatus()
       return data
-    } catch (e: any) {
-      return { success: false, error: e.message }
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
     }
   }, [fetchStatus])
 

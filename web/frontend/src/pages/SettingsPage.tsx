@@ -467,7 +467,7 @@ function PrivacySettings() {
     }
   }
 
-  const handleUpdateSetting = async (key: string, value: any) => {
+  const handleUpdateSetting = async (key: string, value: unknown) => {
     const next = { ...settings, [key]: value }
     setSettings(next)
     try {

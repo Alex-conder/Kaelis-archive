@@ -136,7 +136,7 @@ export default function PrivacyPolicyPage() {
               </p>
               {previewResult.matched_rules?.length > 0 && (
                 <p className="mt-1 text-xs text-slate-500">
-                  Matched: {previewResult.matched_rules.map((r: any) => r.pattern).join(', ')}
+                  Matched: {previewResult.matched_rules.map((r: { pattern: string }) => r.pattern).join(', ')}
                 </p>
               )}
             </div>
@@ -164,7 +164,7 @@ export default function PrivacyPolicyPage() {
             </div>
           ) : (
             <div className="divide-y divide-slate-800/50">
-              {rules.map((rule: any) => (
+              {rules.map((rule: { id: string; match_type: string; pattern: string; privacy_level: string; priority: number }) => (
                 <div
                   key={rule.id}
                   className="flex items-center gap-4 px-5 py-3 hover:bg-slate-800/30 transition-colors"

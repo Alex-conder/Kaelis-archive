@@ -53,7 +53,17 @@ export default function AnnualReportCard() {
 
   if (!data) return null
 
-  const { stats, milestones, growth_index, report_period } = data
+  interface Milestone {
+    icon: string
+    title: string
+  }
+  interface AnnualReportData {
+    stats: { total_memories: number; days_active: number; skills_learned: number }
+    milestones: Milestone[]
+    growth_index: number
+    report_period: string
+  }
+  const { stats, milestones, growth_index, report_period } = data as AnnualReportData
 
   return (
     <div className="space-y-4">
@@ -132,7 +142,7 @@ export default function AnnualReportCard() {
 
         {/* 里程碑 */}
         <div className="relative space-y-2">
-          {milestones.map((m: any, i: number) => (
+          {milestones.map((m: Milestone, i: number) => (
             <div key={i} className="flex items-center gap-2 text-xs text-blue-200">
               <span className="text-blue-400">{ICON_MAP[m.icon] || <Rocket className="w-4 h-4" />}</span>
               {m.title}

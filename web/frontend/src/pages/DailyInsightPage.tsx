@@ -81,7 +81,7 @@ export default function DailyInsightPage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-800/50">
-                    {reports.map((r: any) => (
+                    {reports.map((r: { date: string; size: number }) => (
                       <button
                         key={r.date}
                         onClick={() => setSelectedDate(r.date)}

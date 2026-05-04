@@ -153,7 +153,7 @@ function CanvasInner({
         id: e.id,
         source: e.source,
         target: e.target,
-        label: (e.data as any)?.label,
+        label: (e.data as { label?: string } | undefined)?.label,
       })),
     }
     const blob = new Blob([JSON.stringify(workflow, null, 2)], { type: 'application/json' })
@@ -210,7 +210,7 @@ function CanvasInner({
         id: e.id,
         source: e.source,
         target: e.target,
-        label: (e.data as any)?.label,
+        label: (e.data as { label?: string } | undefined)?.label,
       })),
     }
     startExecution(workflow).catch((err) => {

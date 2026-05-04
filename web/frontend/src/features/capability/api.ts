@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/api/client'
-import type { AgentCapability } from './types'
+import type { AgentCapability, AgentCapabilityParameter } from './types'
 
 export async function listCapabilities(): Promise<AgentCapability[]> {
   // 通过 MCP Tool 列表获取后端能力
@@ -16,12 +16,20 @@ export async function listCapabilities(): Promise<AgentCapability[]> {
   return getStaticCapabilities()
 }
 
-function normalizeToolToCapability(tool: any): AgentCapability {
+interface MCPTool {
+  name?: string
+  id?: string
+  description?: string
+  parameters?: { properties?: Record<string, unknown> }
+  category?: string
+}
+
+function normalizeToolToCapability(tool: MCPTool): AgentCapability {
   return {
     id: tool.name || tool.id || 'unknown',
     name: tool.name || tool.id || 'Unknown Tool',
     description: tool.description || 'No description',
-    parameters: tool.parameters?.properties || {},
+    parameters: (tool.parameters?.properties as Record<string, AgentCapabilityParameter>) || {},
     visualization_type: 'form',
     category: tool.category || 'general',
   }

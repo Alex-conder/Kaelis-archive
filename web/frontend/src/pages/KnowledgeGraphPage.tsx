@@ -35,7 +35,10 @@ const nodeColor = (node: Node) => {
   }
 }
 
-function buildGraphNodes(entities: any[], relations: any[]) {
+interface KGEntity { text: string; type?: string; confidence?: number }
+interface KGRelation { source: string; target: string; relation: string; confidence?: number }
+
+function buildGraphNodes(entities: KGEntity[], relations: KGRelation[]) {
   const nodes: Node[] = entities.map((e, i) => ({
     id: `entity-${i}`,
     type: 'default',
@@ -120,12 +123,12 @@ export default function KnowledgeGraphPage() {
     const res = await history.refetch()
     const data = res.data?.data
     if (data?.entities?.length) {
-      const histEntities = data.entities.map((e: any) => ({
+      const histEntities = data.entities.map((e: { name: string; type?: string }) => ({
         text: e.name,
         type: e.type || 'entity',
         confidence: 0.7,
       }))
-      const histRelations = (data.relations || []).map((r: any) => ({
+      const histRelations = (data.relations || []).map((r: { source: string; target: string; relation: string }) => ({
         source: r.source,
         target: r.target,
         relation: r.relation,

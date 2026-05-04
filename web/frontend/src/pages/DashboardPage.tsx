@@ -145,8 +145,8 @@ function ProactivePushCard() {
           body: JSON.stringify({ context_type: 'dashboard', content_summary: '今日推荐' }),
         })
         if (res.ok) {
-          const data = await res.json()
-          const recs = (data.recommendations || []).slice(0, 3).map((r: any) => ({
+          const data = await res.json() as { recommendations?: Array<{ key: string; reason: string; relevance_score: number }> }
+          const recs = (data.recommendations || []).slice(0, 3).map((r) => ({
             title: r.key,
             subtitle: r.reason,
             tag: `相关度 ${(r.relevance_score * 100).toFixed(0)}%`,
