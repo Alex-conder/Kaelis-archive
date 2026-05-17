@@ -1,5 +1,3 @@
-import { vi } from 'vitest'
-
 /**
  * Mock WebSocket factory for testing.
  * Returns a mock WebSocket class that captures sent messages and
@@ -16,10 +14,10 @@ export function createMockWebSocket() {
 
     readyState = MockWebSocket.CONNECTING
     url: string
-    onopen: ((this: WebSocket, ev: Event) => void) | null = null
-    onmessage: ((this: WebSocket, ev: MessageEvent) => void) | null = null
-    onclose: ((this: WebSocket, ev: CloseEvent) => void) | null = null
-    onerror: ((this: WebSocket, ev: Event) => void) | null = null
+    onopen: ((ev: Event) => void) | null = null
+    onmessage: ((ev: MessageEvent) => void) | null = null
+    onclose: ((ev: CloseEvent) => void) | null = null
+    onerror: ((ev: Event) => void) | null = null
 
     sent: string[] = []
 

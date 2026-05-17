@@ -128,7 +128,10 @@ export function useWebSocket(options: {
         wsRef.current.close()
         wsRef.current = null
       }
-      handlersRef.current.clear()
+      // Note: we intentionally do NOT clear handlersRef here.
+      // Handlers are managed by callers via on/off; clearing them
+      // would break strict-mode double-run because the caller's
+      // useEffect may not re-run after our cleanup.
     }
   }, [userId, deviceId, platform, capabilities.join(',')])
 

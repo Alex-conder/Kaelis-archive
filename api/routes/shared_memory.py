@@ -25,6 +25,8 @@ Endpoints:
 import logging
 from flask import Blueprint, request, jsonify, g
 
+from core.network.realtime_publisher import publish_event
+
 logger = logging.getLogger(__name__)
 
 shared_memory_bp = Blueprint("shared_memory", __name__, url_prefix="/api/shared-memory")
@@ -233,15 +235,25 @@ def write_memory(space_id: str):
             return _error("key is required", 400)
 
         sms = _get_sms()
+        user_id = _get_user_id()
         result = sms.write_memory(
             space_id=space_id,
             key=key,
             value=data.get("value"),
-            user_id=_get_user_id(),
+            user_id=user_id,
             tags=data.get("tags"),
             metadata=data.get("metadata"),
             ttl_seconds=data.get("ttl_seconds"),
             expected_version=data.get("expected_version"),
+        )
+        # Push real-time invalidation to all user's devices
+        publish_event(
+            user_id=user_id,
+            event_type="invalidate",
+            payload={
+                "queryKey": ["shared-memory", "memories", space_id],
+                "prefix": "shared-memory",
+            },
         )
         return _success(data=result, message="Memory saved")
     except PermissionError as e:

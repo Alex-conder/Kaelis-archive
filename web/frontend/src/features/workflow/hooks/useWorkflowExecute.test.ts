@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useWorkflowExecute } from './useWorkflowExecute'
-import { createMockWebSocket, wait } from '@/test/test-utils'
+import { createMockWebSocket } from '@/test/test-utils'
 import type { WorkflowDefinition } from '../types'
 
 // Mock apiClient
@@ -22,7 +22,7 @@ describe('useWorkflowExecute', () => {
     id: 'wf-1',
     name: 'Test Workflow',
     nodes: [
-      { id: 'n1', type: 'action', position: { x: 0, y: 0 }, data: { definition: { type: 'action', name: 'echo' }, config: {} } },
+      { id: 'n1', type: 'action', position: { x: 0, y: 0 }, data: { label: 'echo', definition: { id: 'n1', type: 'action', name: 'echo', description: '', icon: '', category: '' }, config: {} } },
     ],
     edges: [],
   }

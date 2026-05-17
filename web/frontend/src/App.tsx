@@ -11,6 +11,7 @@ import ApprovalPanel from './components/ApprovalPanel'
 import JourneyBanner from './components/JourneyBanner'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useSessionRestore } from './hooks/useSessionRestore'
+import { useRealtimeSync } from './hooks/useRealtimeSync'
 import LoginPage from './pages/LoginPage'
 import ChatPage from './pages/ChatPage'
 
@@ -52,7 +53,9 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
-  useAuthUser() // triggers auth check on mount when token exists
+  const { data: user } = useAuthUser()
+  // Enable real-time state sync for authenticated users
+  useRealtimeSync({ userId: user?.id || 'anonymous' })
   return <>{children}</>
 }
 
