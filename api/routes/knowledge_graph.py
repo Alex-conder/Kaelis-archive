@@ -700,7 +700,6 @@ def kgQuery():
 # Health Check Endpoint
 # ============================================================================
 
-@bp.route('/health', methods=['GET'])
 @bp.route('/kg/trace-context/<trace_id>', methods=['GET'])
 @log_request
 def kg_trace_context(trace_id: str):
@@ -868,6 +867,7 @@ def kg_causal_intervene():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@bp.route('/health', methods=['GET'])
 def health_check():
     """
     Health check endpoint for this module.

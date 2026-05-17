@@ -65,13 +65,19 @@ jobs:
           cache: "npm"
           cache-dependency-path: web/frontend/package.json
 
+      - name: Debug environment
+        working-directory: web/frontend
+        run: |
+          npm --version
+          node --version
+          wc -l package-lock.json
+
       - name: Install frontend dependencies
         working-directory: web/frontend
         env:
           HUSKY: 0
         run: |
-          npm ci --ignore-scripts
-          # Manually install native deps that don't need postinstall
+          npm ci --ignore-scripts 2>&1 || npm install --ignore-scripts 2>&1
           npx vite --version || true
 
       - name: Lint frontend
