@@ -16,6 +16,7 @@ CounterfactualEngine - 反事实推理深化引擎
 
 import json
 import logging
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -249,13 +250,16 @@ class CounterfactualEngine:
 
 
 # ------------------------------------------------------------------
-# 单例
+# 单例（线程安全）
 # ------------------------------------------------------------------
 _counterfactual_instance: Optional[CounterfactualEngine] = None
+_counterfactual_lock = threading.Lock()
 
 
 def get_counterfactual_engine(use_llm: bool = False) -> CounterfactualEngine:
     global _counterfactual_instance
     if _counterfactual_instance is None:
-        _counterfactual_instance = CounterfactualEngine(use_llm=use_llm)
+        with _counterfactual_lock:
+            if _counterfactual_instance is None:
+                _counterfactual_instance = CounterfactualEngine(use_llm=use_llm)
     return _counterfactual_instance

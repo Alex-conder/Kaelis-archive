@@ -19,6 +19,7 @@ DecisionTraceEngine - 决策链路追踪引擎
 import json
 import logging
 import sqlite3
+import threading
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass, field, asdict
@@ -377,14 +378,17 @@ class DecisionTraceEngine:
 
 
 # ------------------------------------------------------------------
-# 单例
+# 单例（线程安全）
 # ------------------------------------------------------------------
 _trace_engine_instance: Optional[DecisionTraceEngine] = None
+_trace_engine_lock = threading.Lock()
 
 
 def get_trace_engine() -> DecisionTraceEngine:
-    """获取决策追踪引擎单例"""
+    """获取决策追踪引擎单例（线程安全）"""
     global _trace_engine_instance
     if _trace_engine_instance is None:
-        _trace_engine_instance = DecisionTraceEngine()
+        with _trace_engine_lock:
+            if _trace_engine_instance is None:
+                _trace_engine_instance = DecisionTraceEngine()
     return _trace_engine_instance

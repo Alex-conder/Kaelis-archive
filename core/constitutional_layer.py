@@ -21,6 +21,7 @@ ConstitutionalLayer - 宪法安全层
 import json
 import logging
 import re
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -314,14 +315,17 @@ class ConstitutionalLayer:
 
 
 # ------------------------------------------------------------------
-# 单例
+# 单例（线程安全）
 # ------------------------------------------------------------------
 _constitutional_layer_instance: Optional[ConstitutionalLayer] = None
+_constitutional_layer_lock = threading.Lock()
 
 
 def get_constitutional_layer() -> ConstitutionalLayer:
-    """获取宪法安全层单例"""
+    """获取宪法安全层单例（线程安全）"""
     global _constitutional_layer_instance
     if _constitutional_layer_instance is None:
-        _constitutional_layer_instance = ConstitutionalLayer()
+        with _constitutional_layer_lock:
+            if _constitutional_layer_instance is None:
+                _constitutional_layer_instance = ConstitutionalLayer()
     return _constitutional_layer_instance

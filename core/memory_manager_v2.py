@@ -15,6 +15,7 @@
 
 import json
 import logging
+import os
 import sqlite3
 import time
 from contextlib import contextmanager
@@ -38,11 +39,13 @@ try:
 except ImportError:
     POOL_AVAILABLE = False
 
+_DATA_DIR = os.environ.get("KAELIS_DATA_DIR", "data")
+
 LAYER_CONFIG = {
-    "L0": {"db": "data/kaelis_dev.db", "table": "memory_l0", "ttl_days": None, "immutable_keys": ["system_identity"]},
-    "L1": {"db": "data/kaelis_dev.db", "table": "memory_l1", "ttl_days": 7},
-    "L2": {"db": "data/kaelis_dev.db", "table": "memory_l2", "ttl_days": None},
-    "L3": {"db": "data/kaelis_graph.db", "table": None, "use_graph_driver": True},
+    "L0": {"db": f"{_DATA_DIR}/kaelis_dev.db", "table": "memory_l0", "ttl_days": None, "immutable_keys": ["system_identity"]},
+    "L1": {"db": f"{_DATA_DIR}/kaelis_dev.db", "table": "memory_l1", "ttl_days": 7},
+    "L2": {"db": f"{_DATA_DIR}/kaelis_dev.db", "table": "memory_l2", "ttl_days": None},
+    "L3": {"db": f"{_DATA_DIR}/kaelis_graph.db", "table": None, "use_graph_driver": True},
 }
 
 
