@@ -79,6 +79,46 @@ class VSCodeTool:
             logger.error(f"VSCode run_command failed: {e}")
             return {"success": False, "error": str(e)}
 
+    def read_file(self, file_path: str) -> Dict[str, Any]:
+        """读取文件内容"""
+        try:
+            full_path = os.path.join(self.workspace_path, file_path)
+            if not os.path.exists(full_path):
+                return {"success": False, "error": f"File not found: {file_path}"}
+            with open(full_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            return {
+                "success": True,
+                "action": "read_file",
+                "file": file_path,
+                "content": content,
+                "lines": content.count("\n") + 1,
+            }
+        except Exception as e:
+            logger.error(f"VSCode read_file failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    def list_files(self, directory: str = ".", pattern: str = "*") -> Dict[str, Any]:
+        """列出目录中的文件"""
+        try:
+            from pathlib import Path
+            target_dir = Path(self.workspace_path) / directory
+            if not target_dir.exists():
+                return {"success": False, "error": f"Directory not found: {directory}"}
+            files = sorted([str(p.relative_to(self.workspace_path)).replace("\\", "/")
+                           for p in target_dir.rglob(pattern) if p.is_file()])[:200]
+            return {
+                "success": True,
+                "action": "list_files",
+                "directory": directory,
+                "pattern": pattern,
+                "count": len(files),
+                "files": files,
+            }
+        except Exception as e:
+            logger.error(f"VSCode list_files failed: {e}")
+            return {"success": False, "error": str(e)}
+
 
 def get_vscode_tool(workspace_path: str = ".") -> VSCodeTool:
     return VSCodeTool(workspace_path)

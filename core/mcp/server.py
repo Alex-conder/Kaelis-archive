@@ -285,6 +285,70 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             }, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #
+    # VSCode Workspace Tools
+    # ------------------------------------------------------------------ #
+
+    @mcp.tool()
+    def vscode_open_file(file_path: str, line: int = 1) -> str:
+        """在 VSCode 中打开指定文件到指定行号。"""
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.open_file(file_path, line)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_open_file error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def vscode_write_file(file_path: str, content: str) -> str:
+        """写入内容到 VSCode 工作区中的文件（自动创建目录）。"""
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.write_file(file_path, content)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_write_file error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def vscode_run_command(command: str, timeout: int = 30) -> str:
+        """在 VSCode 工作区目录中执行终端命令。"""
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.run_command(command, timeout)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_run_command error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def vscode_read_file(file_path: str) -> str:
+        """读取 VSCode 工作区中的文件内容。"""
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.read_file(file_path)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_read_file error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def vscode_list_files(directory: str = ".", pattern: str = "*") -> str:
+        """列出 VSCode 工作区中指定目录的文件列表。"""
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.list_files(directory, pattern)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_list_files error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    # ------------------------------------------------------------------ #
     # Shared Memory Space Tools (Sprint 5-7)
     # ------------------------------------------------------------------ #
 
