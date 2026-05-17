@@ -162,8 +162,11 @@ jobs:
           docker run -d --name kaelis-test -p 5000:5000 \
             -e SECRET_KEY=test-secret \
             -e ONEKE_MOCK_MODE=true \
+            -e KAELIS_DATA_DIR=/tmp/kaelis \
             kaelis:test
-          sleep 5
-          curl -f http://localhost:5000/health || exit 1
+          sleep 10
+          docker logs kaelis-test --tail 50 || true
+          curl -v http://localhost:5000/health || true
+          curl -f http://localhost:5000/health
           docker stop kaelis-test
           docker rm kaelis-test
