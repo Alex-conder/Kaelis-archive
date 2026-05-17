@@ -10,10 +10,11 @@ Endpoints:
 
 import json
 import logging
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 
 from core.workflow.workflow_engine import WorkflowEngine, WorkflowSpec
 from core.workflow.workflow_executor import WorkflowExecutor
+from core.network.realtime_publisher import publish_event
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,19 @@ def execute_workflow():
         # Run in a new event loop for sync Flask context
         import asyncio
         result = asyncio.run(_executor.execute(spec, context))
+
+        # Push real-time status update to all user's devices
+        user_id = session.get('user_id') or request.args.get('user_id', 'anonymous')
+        publish_event(
+            user_id=user_id,
+            event_type="workflow_status",
+            payload={
+                "execution_id": result.execution_id,
+                "status": result.status,
+                "node_results": result.node_results,
+            },
+        )
+
         return jsonify({
             "success": True,
             "data": result.to_dict()
@@ -100,6 +114,19 @@ def get_execution_status(execution_id: str):
     result = _executor.get_execution(execution_id)
     if not result:
         return jsonify({"success": False, "error": "Execution not found"}), 404
+
+    # Push real-time status to all user's devices
+    user_id = session.get('user_id') or request.args.get('user_id', 'anonymous')
+    publish_event(
+        user_id=user_id,
+        event_type="workflow_status",
+        payload={
+            "execution_id": result.execution_id,
+            "status": result.status,
+            "node_results": result.node_results,
+        },
+    )
+
     return jsonify({"success": True, "data": result.to_dict()})
 
 

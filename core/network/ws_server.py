@@ -113,6 +113,10 @@ class KaelisWebSocketServer:
             self._server.close()
             await self._server.wait_closed()
 
+    def get_loop(self) -> Optional[asyncio.AbstractEventLoop]:
+        """Return the asyncio event loop the server is running on."""
+        return self._loop
+
     def stop(self):
         """Signal the server to shutdown."""
         if self._loop and self._shutdown_event:
