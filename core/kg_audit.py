@@ -537,6 +537,98 @@ class KGAuditEngine:
             recs.append("KG 状态良好，继续保持。")
         return recs
 
+    def get_timeline(self, granularity: str = "day") -> List[Dict[str, Any]]:
+        """
+        获取知识图谱的时间线演变数据。
+        granularity: 'day' | 'week' | 'month'
+        返回按时间窗口排序的累积统计和增量数据。
+        """
+        from datetime import datetime
+        import sqlite3
+
+        time_format = {
+            "day": "%Y-%m-%d",
+            "week": "%Y-W%W",
+            "month": "%Y-%m",
+        }.get(granularity, "%Y-%m-%d")
+
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+
+                # Entities timeline
+                entity_rows = conn.execute(
+                    """
+                    SELECT name, type, created_at FROM kg_entities
+                    WHERE created_at IS NOT NULL
+                    ORDER BY created_at ASC
+                    """
+                ).fetchall()
+
+                # Relations timeline
+                relation_rows = conn.execute(
+                    """
+                    SELECT source, target, relation, created_at FROM kg_relations
+                    WHERE created_at IS NOT NULL
+                    ORDER BY created_at ASC
+                    """
+                ).fetchall()
+
+            # Group by time window
+            from collections import defaultdict
+            windows = defaultdict(lambda: {"entities": [], "relations": []})
+
+            for r in entity_rows:
+                ts = r["created_at"]
+                if not ts:
+                    continue
+                try:
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    key = dt.strftime(time_format)
+                    windows[key]["entities"].append({
+                        "name": r["name"], "type": r["type"], "created_at": ts,
+                    })
+                except Exception:
+                    continue
+
+            for r in relation_rows:
+                ts = r["created_at"]
+                if not ts:
+                    continue
+                try:
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    key = dt.strftime(time_format)
+                    windows[key]["relations"].append({
+                        "source": r["source"], "target": r["target"],
+                        "relation": r["relation"], "created_at": ts,
+                    })
+                except Exception:
+                    continue
+
+            # Build cumulative timeline
+            timeline = []
+            cum_entities = 0
+            cum_relations = 0
+            for key in sorted(windows.keys()):
+                w = windows[key]
+                cum_entities += len(w["entities"])
+                cum_relations += len(w["relations"])
+                timeline.append({
+                    "period": key,
+                    "entity_delta": len(w["entities"]),
+                    "relation_delta": len(w["relations"]),
+                    "entity_cumulative": cum_entities,
+                    "relation_cumulative": cum_relations,
+                    "entities": w["entities"],
+                    "relations": w["relations"],
+                })
+
+            return timeline
+
+        except Exception as e:
+            logger.error(f"[KGAudit] get_timeline failed: {e}")
+            return []
+
 
 # ------------------------------------------------------------------
 # 单例

@@ -727,6 +727,35 @@ def kg_trace_context(trace_id: str):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@bp.route('/kg/timeline', methods=['GET'])
+@log_request
+def kg_timeline():
+    """
+    知识图谱时间线演变数据（Cognitive Map）。
+
+    Query params:
+        granularity: 'day' | 'week' | 'month' (default: day)
+    """
+    try:
+        from core.kg_audit import get_kg_audit_engine
+        engine = get_kg_audit_engine()
+        granularity = request.args.get('granularity', 'day')
+        if granularity not in ('day', 'week', 'month'):
+            granularity = 'day'
+        timeline = engine.get_timeline(granularity=granularity)
+        return jsonify({
+            "success": True,
+            "data": {
+                "granularity": granularity,
+                "periods": timeline,
+                "total_periods": len(timeline),
+            },
+        }), 200
+    except Exception as e:
+        logger.exception("KG timeline query failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 def health_check():
     """
     Health check endpoint for this module.
@@ -744,5 +773,6 @@ def health_check():
             {"path": "/api/kg/stats", "method": "GET"},
             {"path": "/api/kg/query", "method": "POST"},
             {"path": "/api/kg/trace-context/<trace_id>", "method": "GET"},
+            {"path": "/api/kg/timeline", "method": "GET"},
         ]
     }), 200

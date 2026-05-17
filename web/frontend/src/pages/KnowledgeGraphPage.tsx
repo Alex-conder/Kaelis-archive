@@ -25,7 +25,7 @@ import {
   Workflow,
   Eye,
 } from 'lucide-react'
-import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData } from '@/features/knowledge-graph/hooks'
+import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData, useKGTimeline } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
 const COMMUNITY_COLORS = [
@@ -116,12 +116,15 @@ export default function KnowledgeGraphPage() {
   const [traceId, setTraceId] = useState('')
   const [traceLoading, setTraceLoading] = useState(false)
   const [showSNA, setShowSNA] = useState(false)
+  const [showTimeline, setShowTimeline] = useState(false)
+  const [timelineGranularity, setTimelineGranularity] = useState<'day' | 'week' | 'month'>('day')
   const extract = useKGExtract()
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
   const history = useKGHistory(start, end, 200)
   const stats = useKGStats()
   const graphData = useKGGraphData()
+  const timeline = useKGTimeline(timelineGranularity)
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -222,7 +225,45 @@ export default function KnowledgeGraphPage() {
     setNodes(snaNodes)
     setEdges(snaEdges)
     setShowSNA(true)
+    setShowTimeline(false)
   }, [graphData, setNodes, setEdges])
+
+  const loadTimelineSnapshot = useCallback((periodIndex: number) => {
+    const periods = timeline.data?.data?.periods || []
+    const period = periods[periodIndex]
+    if (!period) return
+    const snapshotNodes: Node[] = period.entities.map((e: any, i: number) => ({
+      id: `tl-${i}`,
+      type: 'default',
+      position: { x: 100 + (i % 6) * 180, y: 100 + Math.floor(i / 6) * 140 },
+      data: { label: e.name, type: e.type, period: period.period },
+      style: {
+        background: '#1e293b',
+        border: '1px solid #334155',
+        color: '#e2e8f0',
+        borderRadius: 8,
+        padding: 8,
+        fontSize: 12,
+        width: 140,
+      },
+    }))
+    const nameSet = new Set(period.entities.map((e: any) => e.name))
+    const snapshotEdges: Edge[] = period.relations
+      .filter((r: any) => nameSet.has(r.source) && nameSet.has(r.target))
+      .map((r: any, i: number) => ({
+        id: `tl-edge-${i}`,
+        source: `tl-${period.entities.findIndex((e: any) => e.name === r.source)}`,
+        target: `tl-${period.entities.findIndex((e: any) => e.name === r.target)}`,
+        label: r.relation,
+        style: { stroke: '#475569', strokeWidth: 1.5 },
+        labelStyle: { fill: '#94a3b8', fontSize: 10 },
+        animated: true,
+      }))
+    setNodes(snapshotNodes)
+    setEdges(snapshotEdges)
+    setShowTimeline(true)
+    setShowSNA(false)
+  }, [timeline.data, setNodes, setEdges])
 
   const handleTraceHighlight = async () => {
     if (!traceId.trim()) return
@@ -401,6 +442,13 @@ export default function KnowledgeGraphPage() {
                 {graphData.isFetching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Network className="w-3 h-3" />}
                 SNA View
               </button>
+              <button
+                onClick={() => { setShowTimeline(true); setShowSNA(false); timeline.refetch() }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+              >
+                <Clock className="w-3 h-3" />
+                Timeline
+              </button>
               <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-0.5">
                 <button
                   onClick={() => setRenderer('xyflow')}
@@ -427,6 +475,58 @@ export default function KnowledgeGraphPage() {
               </div>
             </div>
           </div>
+
+          {/* Timeline Panel */}
+          {showTimeline && (
+            <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-300">Cognitive Map — Timeline Evolution</h3>
+                <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-0.5">
+                  {(['day', 'week', 'month'] as const).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => { setTimelineGranularity(g); timeline.refetch() }}
+                      className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${
+                        timelineGranularity === g ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {g.charAt(0).toUpperCase() + g.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {timeline.isLoading ? (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Loading timeline...
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {(timeline.data?.data?.periods || []).map((p: any, idx: number) => {
+                    const maxCum = Math.max(...(timeline.data?.data?.periods || []).map((pp: any) => pp.entity_cumulative), 1)
+                    return (
+                      <button
+                        key={p.period}
+                        onClick={() => loadTimelineSnapshot(idx)}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors text-left"
+                      >
+                        <span className="text-xs font-mono text-slate-400 w-24 shrink-0">{p.period}</span>
+                        <div className="flex-1 flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 rounded-full"
+                              style={{ width: `${(p.entity_cumulative / maxCum) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-400 w-16 text-right">+{p.entity_delta} E</span>
+                          <span className="text-xs text-slate-500 w-14 text-right">{p.relation_delta} R</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* SNA Stats Panel */}
           {showSNA && graphData.data?.data?.sna && (

@@ -57,3 +57,10 @@ export function useKGGraphData() {
     queryFn: () => fetchJSON('/knowledge_graph/kg/graph-data'),
   })
 }
+
+export function useKGTimeline(granularity: string = 'day') {
+  return useQuery({
+    queryKey: ['kg', 'timeline', granularity],
+    queryFn: () => fetchJSON(`/knowledge_graph/kg/timeline?granularity=${granularity}`),
+  })
+}
