@@ -3,11 +3,14 @@ KgFlywheel Agent 编排器
 知识图谱飞轮：提取-查询-质检 闭环智能体
 """
 import json
+import logging
 import re
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # MemoryStore 占位符（如需使用 core.memory_consolidator 可在此扩展）
 class MemoryStore:
@@ -55,6 +58,7 @@ class KgFlywheelAgent:
         self.state = AgentState.IDLE
         self.tools = tool_registry
         self.memory = MemoryStore(user_id=user_id, namespace=f"kg_{self.session_id}")
+        self._response_generator = None
     
     def _generate_session_id(self) -> str:
         return f"kg{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -110,21 +114,70 @@ class KgFlywheelAgent:
         - inspect: 质量检查
         - flywheel: 执行完整闭环
         """
+        # 初始化决策追踪
+        trace = None
+        try:
+            from core.decision_trace import get_trace_engine, TraceStepType
+            trace_engine = get_trace_engine()
+            trace = trace_engine.start_trace(
+                session_id=self.session_id,
+                user_id=self.user_id,
+                user_input=user_input,
+                metadata={"context": context or {}},
+            )
+        except Exception as e:
+            logger.debug(f"Trace init failed: {e}")
+            trace_engine = None
+            trace = None
+
         try:
             # Plan: 分析意图
             intent, confidence = self._analyze_intent(user_input)
+            if trace_engine and trace:
+                trace_engine.add_step(
+                    trace, TraceStepType.INTENT_ANALYSIS, status=__import__("core.decision_trace", fromlist=["TraceStatus"]).TraceStatus.COMPLETED,
+                    input_data={"text": user_input},
+                    output_data={"intent": intent, "confidence": confidence},
+                )
             
             # Execute: 根据意图执行
+            # 从 context 中读取抽取引擎配置（默认 llm）
+            extractor = (context or {}).get("extractor", "llm")
+            
             if intent == "extract":
-                result = await self._run_extraction(user_input)
+                result = await self._run_extraction(user_input, extractor=extractor, trace=trace, trace_engine=trace_engine)
             elif intent == "query":
-                result = await self._run_query(user_input)
+                result = await self._run_query(user_input, trace=trace, trace_engine=trace_engine)
             elif intent == "inspect":
-                result = await self._run_inspection()
+                result = await self._run_inspection(trace=trace, trace_engine=trace_engine)
             elif intent == "flywheel":
-                result = await self._run_flywheel(user_input)
+                result = await self._run_flywheel(user_input, extractor=extractor, trace=trace, trace_engine=trace_engine)
             else:
-                result = await self._run_general_chat(user_input)
+                # Phase 2: RAG 自动路由 — 当 general 意图时，优先尝试 Graph RAG
+                if confidence < 0.7:
+                    try:
+                        from core.rag_v3_engine import RAGv3Engine
+                        rag = RAGv3Engine(user_id=self.user_id)
+                        import asyncio
+                        loop = asyncio.new_event_loop()
+                        try:
+                            rag_result = loop.run_until_complete(rag.query(user_input, strategy="graph_rag"))
+                        finally:
+                            loop.close()
+                        result = FlywheelResponse(
+                            reply=rag_result.reply,
+                            session_id=self.session_id,
+                            state=__import__("api.routes.kg_flywheel_agent", fromlist=["AgentState"]).AgentState.COMPLETED,
+                            data={
+                                "rag_sources": [s for s in rag_result.sources],
+                                "rag_context": rag_result.rag_context.to_dict() if rag_result.rag_context else None,
+                            },
+                        )
+                    except Exception as rag_err:
+                        logger.debug(f"RAG auto-routing failed, fallback to general chat: {rag_err}")
+                        result = await self._run_general_chat(user_input, trace=trace, trace_engine=trace_engine)
+                else:
+                    result = await self._run_general_chat(user_input, trace=trace, trace_engine=trace_engine)
             
             # 注入策略信息到 data
             result.data["strategy"] = {
@@ -138,10 +191,38 @@ class KgFlywheelAgent:
             if user_info:
                 result.data["new_user_info"] = user_info
             
+            # 完成追踪
+            if trace_engine and trace:
+                trace_engine.complete_trace(
+                    trace,
+                    final_reply=result.reply,
+                    agent_state=result.state.value if hasattr(result.state, 'value') else str(result.state),
+                )
+                result.data["trace_id"] = trace.trace_id
+            
             return result
                 
         except Exception as e:
             self.state = AgentState.ERROR
+            if trace_engine and trace:
+                trace_engine.add_step(
+                    trace, TraceStepType.LLM_GENERATION, status=__import__("core.decision_trace", fromlist=["TraceStatus"]).TraceStatus.FAILED,
+                    error=str(e),
+                )
+                trace_engine.complete_trace(trace, final_reply=f"执行错误: {str(e)}", agent_state="error")
+                return FlywheelResponse(
+                    reply=f"执行错误: {str(e)}",
+                    session_id=self.session_id,
+                    state=self.state,
+                    data={
+                        "strategy": {
+                            "intent": "error",
+                            "confidence": 0.0,
+                            "agent_state": "error",
+                        },
+                        "trace_id": trace.trace_id,
+                    }
+                )
             return FlywheelResponse(
                 reply=f"执行错误: {str(e)}",
                 session_id=self.session_id,
@@ -182,15 +263,35 @@ class KgFlywheelAgent:
             
         return best_intent, best_score
     
-    async def _run_extraction(self, text: str) -> FlywheelResponse:
-        """Step 1: 提取知识三元组"""
+    async def _run_extraction(self, text: str, extractor: str = "llm", trace=None, trace_engine=None) -> FlywheelResponse:
+        """Step 1: 提取知识三元组
+        
+        Args:
+            text: 输入文本
+            extractor: 抽取引擎，可选 llm / oneke / hybrid
+            trace: 决策追踪对象
+            trace_engine: 决策追踪引擎
+        """
         self.state = AgentState.EXTRACTING
+        
+        if trace_engine and trace:
+            from core.decision_trace import TraceStepType, TraceStatus
+            tool_step = trace_engine.add_step(
+                trace, TraceStepType.TOOL_CALL, status=TraceStatus.STARTED,
+                input_data={"tool": "extract_triples", "text": text[:200], "extractor": extractor},
+            )
         
         result = await self.tools.call("extract_triples", {
             "text": text,
             "source": f"session_{self.session_id}",
-            "user_id": self.user_id
+            "user_id": self.user_id,
+            "extractor": extractor
         })
+        
+        if trace_engine and trace and hasattr(self, '_update_tool_step'):
+            from core.decision_trace import TraceStatus
+            tool_step.status = TraceStatus.COMPLETED.value
+            tool_step.output_data = {"triples_extracted": result.get("triples_extracted", 0)}
         
         # 保存到记忆
         self.memory.save({
@@ -233,7 +334,7 @@ class KgFlywheelAgent:
             tool_calls=["extract_triples"]
         )
     
-    async def _run_query(self, query_text: str) -> FlywheelResponse:
+    async def _run_query(self, query_text: str, trace=None, trace_engine=None) -> FlywheelResponse:
         """Step 2: 查询图谱"""
         self.state = AgentState.QUERYING
         
@@ -244,6 +345,14 @@ class KgFlywheelAgent:
             "query": cypher,
             "user_id": self.user_id
         })
+        
+        if trace_engine and trace:
+            from core.decision_trace import TraceStepType, TraceStatus
+            trace_engine.add_step(
+                trace, TraceStepType.KNOWLEDGE_GRAPH, status=TraceStatus.COMPLETED,
+                input_data={"query_text": query_text, "cypher": cypher},
+                output_data={"result_count": result.get("result_count", 0), "success": result.get("success", False)},
+            )
         
         self.memory.save({
             "type": "query",
@@ -295,7 +404,7 @@ class KgFlywheelAgent:
         # 默认
         return "MATCH (n:Entity) RETURN n LIMIT 10"
     
-    async def _run_inspection(self) -> FlywheelResponse:
+    async def _run_inspection(self, trace=None, trace_engine=None) -> FlywheelResponse:
         """Step 3: 质量检查"""
         self.state = AgentState.INSPECTING
         
@@ -303,6 +412,14 @@ class KgFlywheelAgent:
             "check_type": "full",
             "user_id": self.user_id
         })
+        
+        if trace_engine and trace:
+            from core.decision_trace import TraceStepType, TraceStatus
+            trace_engine.add_step(
+                trace, TraceStepType.SAFETY_REVIEW, status=TraceStatus.COMPLETED,
+                input_data={"check_type": "full"},
+                output_data={"overall_score": result.get("summary", {}).get("overall_score", 0)},
+            )
         
         self.memory.save({
             "type": "inspection",
@@ -341,10 +458,14 @@ class KgFlywheelAgent:
             tool_calls=["run_quality_check"]
         )
     
-    async def _run_flywheel(self, text: str) -> FlywheelResponse:
+    async def _run_flywheel(self, text: str, extractor: str = "llm", trace=None, trace_engine=None) -> FlywheelResponse:
         """
         执行完整飞轮闭环
         Extract → Query → Inspect
+        
+        Args:
+            text: 输入文本
+            extractor: 抽取引擎，可选 llm / oneke / hybrid
         """
         reply_parts = ["🔄 知识图谱飞轮 - 完整闭环执行", "=" * 40, ""]
         all_results = {}
@@ -352,7 +473,7 @@ class KgFlywheelAgent:
         # 1. Extract
         reply_parts.append("📥 Step 1: 知识提取")
         reply_parts.append("-" * 20)
-        extract_resp = await self._run_extraction(text)
+        extract_resp = await self._run_extraction(text, extractor=extractor)
         reply_parts.append(extract_resp.reply)
         all_results["extraction"] = extract_resp.data
         reply_parts.append("")
@@ -387,14 +508,62 @@ class KgFlywheelAgent:
             tool_calls=["extract_triples", "query_graph", "run_quality_check"]
         )
     
-    async def _run_general_chat(self, text: str) -> FlywheelResponse:
-        """通用对话"""
+    async def _run_general_chat(self, text: str, trace=None, trace_engine=None) -> FlywheelResponse:
+        """通用对话 - 使用 ResponseGenerator 进行记忆增强回复"""
+        try:
+            from core.response_generator import ResponseGenerator
+            if not hasattr(self, '_response_generator') or self._response_generator is None:
+                self._response_generator = ResponseGenerator(
+                    user_id=self.user_id,
+                    use_external_knowledge=False,  # 默认关闭外部检索，减少延迟
+                    use_smart_router=False,
+                )
+            result = await self._response_generator.generate_async(
+                user_query=text,
+                session_id=self.session_id,
+                context={"session_id": self.session_id, "agent_state": "general_chat", "trace": trace, "trace_engine": trace_engine},
+            )
+
+            # 如果 LLM 生成失败且返回的是错误占位回复，回退到硬编码欢迎语
+            if result.get("error"):
+                logger.warning(f"ResponseGenerator returned error, fallback to welcome: {result['error']}")
+                return self._fallback_welcome()
+
+            resp_data = {
+                "memory_context": result.get("memory_context", {}),
+                "conflicts_detected": result.get("conflicts_detected", 0),
+                "model_used": result.get("model_used"),
+                "prompt_tokens": result.get("prompt_tokens"),
+                "sections_included": result.get("sections_included", []),
+                "sections_truncated": result.get("sections_truncated", []),
+                "elapsed_ms": result.get("elapsed_ms"),
+            }
+            if result.get("trace_id"):
+                resp_data["trace_id"] = result["trace_id"]
+            if result.get("safety_check"):
+                resp_data["safety_check"] = result["safety_check"]
+            if result.get("memory_explanation"):
+                resp_data["memory_explanation"] = result["memory_explanation"]
+
+            return FlywheelResponse(
+                reply=result["reply"],
+                session_id=self.session_id,
+                state=AgentState.COMPLETED,
+                data=resp_data,
+                tool_calls=[],
+            )
+        except Exception as e:
+            logger.warning(f"ResponseGenerator failed in general_chat, fallback to welcome: {e}")
+            return self._fallback_welcome()
+
+    def _fallback_welcome(self) -> FlywheelResponse:
+        """降级欢迎语"""
         reply = """🤖 我是知识图谱飞轮助手，支持以下功能：
 
 1️⃣ **知识提取** - 从文本中抽取实体关系
    例: "提取：阿里巴巴由马云创立"
 
-2️⃣ **图谱查询** - 查询已构建的知识图谱  
+2️⃣ **图谱查询** - 查询已构建的知识图谱
    例: "查询马云的所有关系"
 
 3️⃣ **质量检查** - 评估图谱完整性/一致性
@@ -404,13 +573,12 @@ class KgFlywheelAgent:
    例: "执行飞轮：分析这段文本"
 
 请告诉我您想做什么？"""
-        
         return FlywheelResponse(
             reply=reply,
             session_id=self.session_id,
             state=AgentState.COMPLETED,
             data={},
-            tool_calls=[]
+            tool_calls=[],
         )
 
 

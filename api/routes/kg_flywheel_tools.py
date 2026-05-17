@@ -493,29 +493,48 @@ except ImportError:
         "required": ["text"]
     }
 )
-async def extract_triples(text: str, source: str = "", user_id: str = None) -> Dict[str, Any]:
+async def extract_triples(text: str, source: str = "", user_id: str = None, extractor: str = "llm") -> Dict[str, Any]:
     """
     提取知识三元组
     
-    优先使用 DeepSeek LLM 进行 NER 和关系抽取，
-    LLM 不可用时回退到正则模拟。
+    支持多引擎抽取：
+    - llm: 使用 DeepSeek LLM（默认）
+    - oneke: 使用 OneKE 结构化抽取（需配置模型）
+    - hybrid: 先尝试 OneKE，失败时回退到 LLM
+    
+    抽取结果同时写入 Neo4j 和 NebulaGraph（后者为可选补充存储）。
     """
     import time
     start_time = time.time()
     task_id = str(uuid.uuid4())[:8]
     
+    triples: List[Dict] = []
+    used_extractor = extractor
+    
     try:
-        # 尝试使用 LLM 提取
-        triples = _llm_extract(text)
-        
-        # LLM 失败时回退到模拟提取
-        if not triples:
-            triples = _mock_extract(text)
+        if extractor == "oneke":
+            triples = _oneke_extract(text)
+            if not triples:
+                used_extractor = "oneke_fallback_mock"
+                triples = _mock_extract(text)
+        elif extractor == "hybrid":
+            triples = _oneke_extract(text)
+            if not triples:
+                triples = _llm_extract(text)
+                used_extractor = "llm"
+            else:
+                used_extractor = "oneke"
+        else:
+            # 默认 llm
+            triples = _llm_extract(text)
+            if not triples:
+                triples = _mock_extract(text)
+                used_extractor = "mock"
         
         # 监控埋点
         try:
             from core.monitoring.metrics import KG_METRICS
-            KG_METRICS.extraction_total.labels(status='success').inc()
+            KG_METRICS.extraction_total.labels(status='success', extractor=used_extractor).inc()
             KG_METRICS.extraction_duration.observe(time.time() - start_time)
         except Exception:
             pass
@@ -523,17 +542,16 @@ async def extract_triples(text: str, source: str = "", user_id: str = None) -> D
         # 监控埋点 - 失败
         try:
             from core.monitoring.metrics import KG_METRICS
-            KG_METRICS.extraction_total.labels(status='failed').inc()
+            KG_METRICS.extraction_total.labels(status='failed', extractor=extractor).inc()
             KG_METRICS.extraction_duration.observe(time.time() - start_time)
         except Exception:
             pass
         raise
     
-    # 写入图数据库
+    # 写入 Neo4j（主存储）
     driver = get_neo4j_driver()
     with driver.session() as session:
         for triple in triples:
-            # MERGE 实体
             session.run(
                 "MERGE (s:Entity {name: $subject, type: $subj_type})",
                 subject=triple["subject"],
@@ -544,7 +562,6 @@ async def extract_triples(text: str, source: str = "", user_id: str = None) -> D
                 object=triple["object"],
                 obj_type=triple.get("obj_type", "Unknown")
             )
-            # 创建关系
             session.run(
                 """MATCH (s:Entity {name: $subject}), (o:Entity {name: $object})
                    MERGE (s)-[r:RELATES {type: $predicate, confidence: $conf}]->(o)
@@ -557,11 +574,45 @@ async def extract_triples(text: str, source: str = "", user_id: str = None) -> D
                 timestamp=datetime.now().isoformat()
             )
     
+    # 同步写入 NebulaGraph（补充存储，失败不阻断）
+    nebula_result = _store_to_nebula(triples, source=source)
+    
+    # 记录 KG 审计溯源信息（可解释性）
+    kg_audit_result = {"recorded": 0, "failed": 0}
+    try:
+        from core.kg_audit import get_kg_audit_engine
+        audit_engine = get_kg_audit_engine()
+        for triple in triples:
+            success = audit_engine.record_triple(
+                subject=triple["subject"],
+                predicate=triple["predicate"],
+                object=triple["object"],
+                extractor=used_extractor,
+                confidence=triple.get("confidence", 0.8),
+                source_text=text[:500] if 'text' in dir() else source,
+                source_document=source,
+                user_id=user_id or "anonymous",
+                metadata={
+                    "task_id": task_id,
+                    "subj_type": triple.get("subj_type"),
+                    "obj_type": triple.get("obj_type"),
+                },
+            )
+            if success:
+                kg_audit_result["recorded"] += 1
+            else:
+                kg_audit_result["failed"] += 1
+    except Exception as e:
+        logger.debug(f"KG audit recording skipped: {e}")
+    
     return {
         "task_id": task_id,
         "triples_extracted": len(triples),
         "triples": triples,
         "source": source,
+        "extractor_used": used_extractor,
+        "nebula_sync": nebula_result,
+        "kg_audit": kg_audit_result,
         "timestamp": datetime.now().isoformat()
     }
 
@@ -669,6 +720,74 @@ def _mock_extract(text: str) -> List[Dict]:
         })
     
     return triples
+
+
+def _oneke_extract(text: str, schema: Optional[Dict] = None) -> List[Dict]:
+    """
+    使用 OneKE 进行结构化知识抽取。
+    与 LLM-based 抽取相比，OneKE 在限定 schema 下精度更高。
+    
+    Returns:
+        与 _llm_extract 兼容的三元组格式列表。
+    """
+    try:
+        from core.oneke_extractor import get_oneke_extractor
+        extractor = get_oneke_extractor()
+        if extractor is None:
+            return []
+        
+        raw_triples = extractor.extract(text, schema=schema)
+        # 转换为与现有代码兼容的格式 (subject/predicate/object)
+        triples = []
+        for t in raw_triples:
+            triples.append({
+                "subject": t.get("head", ""),
+                "predicate": t.get("relation", ""),
+                "object": t.get("tail", ""),
+                "confidence": 0.9,  # OneKE 通常置信度较高
+                "subj_type": t.get("head_type", "Concept"),
+                "obj_type": t.get("tail_type", "Concept")
+            })
+        return triples
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"OneKE extract failed: {e}")
+        return []
+
+
+def _store_to_nebula(triples: List[Dict], source: str = "") -> Dict[str, Any]:
+    """
+    将三元组同步写入 NebulaGraph（作为 Neo4j 的补充存储）。
+    失败时记录日志但不阻断主流程。
+    
+    Returns:
+        {"inserted": int, "failed": int}
+    """
+    result = {"inserted": 0, "failed": 0}
+    try:
+        from core.nebula_storage import get_nebula_storage
+        storage = get_nebula_storage()
+        if storage is None:
+            return result
+        
+        for t in triples:
+            head = str(t.get("subject", ""))
+            tail = str(t.get("object", ""))
+            relation = str(t.get("predicate", "RELATES"))
+            if not head or not tail:
+                result["failed"] += 1
+                continue
+            try:
+                storage.upsert_vertex("Entity", head, {"name": head})
+                storage.upsert_vertex("Entity", tail, {"name": tail})
+                storage.upsert_edge(relation, head, tail)
+                result["inserted"] += 1
+            except Exception:
+                result["failed"] += 1
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).debug(f"NebulaGraph store skipped: {e}")
+    return result
 
 
 @monitor_query
