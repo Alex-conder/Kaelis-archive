@@ -15,7 +15,7 @@ RUN npm run build
 # ============================================================
 # Stage 2: Python 依赖安装
 # ============================================================
-FROM python:3.11-slim AS python-builder
+FROM python:3.11 AS python-builder
 
 WORKDIR /app
 
@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     libffi-dev \
     libgomp1 \
+    libblas-dev \
+    liblapack-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -35,6 +37,11 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 FROM python:3.11-slim
 
 WORKDIR /app
+
+# 安装运行时依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
 # 复制前端构建产物
 COPY --from=frontend-builder /app/web/frontend/dist /app/web/frontend/dist
