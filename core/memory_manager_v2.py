@@ -281,6 +281,24 @@ class FourLayerMemoryManager:
             if layer == "L2":
                 self._fallback_jsonl_backup(key, value, metadata, now)
             return False
+        
+        # Phase 2: Mesh 记忆同步 — L2/L3 写入成功后广播到其他节点
+        if layer in ("L2", "L3") and result:
+            try:
+                from core.mesh.transport import get_mesh_transport
+                transport = get_mesh_transport()
+                for session in transport.list_sessions():
+                    if session.get("status") == "active":
+                        try:
+                            transport.invoke_remote(
+                                session["kni"],
+                                "sync_memory",
+                                {"layer": layer, "key": key, "value": value, "user_id": user_id, "metadata": metadata}
+                            )
+                        except Exception:
+                            pass
+            except Exception as mesh_err:
+                logger.debug(f"Mesh sync broadcast skipped: {mesh_err}")
     
     def _write_l0(self, key: str, value: Any, metadata: Dict, now: str, user_id: str = "anonymous", privacy_level: str = "private") -> bool:
         """L0: 系统元数据，覆盖写"""

@@ -14,6 +14,12 @@ import subprocess
 import logging
 from pathlib import Path
 
+# WebSocket 实时推送（Phase 1）
+try:
+    from flask_socketio import SocketIO
+except ImportError:
+    SocketIO = None
+
 # 加载 .env 环境变量（必须在其他导入之前）
 try:
     from dotenv import load_dotenv
@@ -122,6 +128,59 @@ def get_dist_path():
     return os.path.join(base_path, 'web', 'frontend', 'dist')
 
 
+_socketio_instance = None
+
+def _start_health_patrol_scheduler(socketio=None):
+    """启动 APScheduler 定时健康巡检"""
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from core.health_patrol import get_health_patrol_engine
+        from core.notification_engine import get_notification_engine
+
+        scheduler = BackgroundScheduler()
+        patrol_engine = get_health_patrol_engine()
+        notif_engine = get_notification_engine()
+
+        def _patrol_job():
+            try:
+                report = patrol_engine.run_patrol()
+                logger.info(f"[Patrol] Completed {report.patrol_id}, alerts={len(report.alerts)}")
+                # 将告警转为通知
+                for alert in report.alerts:
+                    notif_engine.send_notification(
+                        category="patrol_alert",
+                        severity=alert.severity,
+                        title=f"[{alert.severity.upper()}] {alert.alert_type}",
+                        message=alert.message,
+                        source_id=alert.alert_id,
+                        metadata={
+                            "metric_value": alert.metric_value,
+                            "threshold": alert.threshold,
+                            "patrol_id": alert.patrol_id,
+                        },
+                    )
+                    # WebSocket 实时推送（Phase 1）
+                    if socketio:
+                        try:
+                            socketio.emit('notification', {
+                                'category': 'patrol_alert',
+                                'severity': alert.severity,
+                                'title': f"[{alert.severity.upper()}] {alert.alert_type}",
+                                'message': alert.message,
+                                'source_id': alert.alert_id,
+                            }, namespace='/notifications')
+                        except Exception as se:
+                            logger.warning(f"[Patrol] SocketIO emit failed: {se}")
+            except Exception as e:
+                logger.error(f"[Patrol] Scheduled job failed: {e}")
+
+        # 每 6 小时执行一次
+        scheduler.add_job(_patrol_job, 'interval', hours=6, id='health_patrol', replace_existing=True)
+        scheduler.start()
+    except Exception as e:
+        logger.warning(f"[Patrol] Scheduler init failed: {e}")
+
+
 def start_server():
     """启动服务"""
     logger.info("[START] Launching Kaelis services...")
@@ -176,6 +235,64 @@ def start_server():
         app.register_blueprint(monitoring_bp)
         app.register_blueprint(workflow_monitoring_bp)
         
+        # 注册 NebulaGraph 与 OneKE 路由（v2 架构复用）
+        try:
+            from api.routes.nebula_graph import nebula_bp
+            from api.routes.oneke_extraction import oneke_bp
+            app.register_blueprint(nebula_bp)
+            app.register_blueprint(oneke_bp)
+            logger.info("NebulaGraph & OneKE routes registered")
+        except Exception as e:
+            logger.warning(f"NebulaGraph/OneKE routes not registered: {e}")
+        
+        # 注册可插拔 Pipeline 路由
+        try:
+            from api.routes.kg_pipeline import pipeline_bp
+            app.register_blueprint(pipeline_bp)
+            logger.info("Pipeline routes registered")
+        except Exception as e:
+            logger.warning(f"Pipeline routes not registered: {e}")
+        
+        # 注册可解释性路由
+        try:
+            from api.routes.explainability import explainability_bp
+            app.register_blueprint(explainability_bp)
+            logger.info("Explainability routes registered")
+        except Exception as e:
+            logger.warning(f"Explainability routes not registered: {e}")
+        
+        # 注册通知中心路由
+        try:
+            from api.routes.notifications import notifications_bp
+            app.register_blueprint(notifications_bp)
+            logger.info("Notifications routes registered")
+        except Exception as e:
+            logger.warning(f"Notifications routes not registered: {e}")
+        
+        # 注册 RAG v3 路由
+        try:
+            from api.routes.rag_v3 import rag_v3_bp
+            app.register_blueprint(rag_v3_bp)
+            logger.info("RAG v3 routes registered")
+        except Exception as e:
+            logger.warning(f"RAG v3 routes not registered: {e}")
+        
+        # 注册性能指标路由（Phase 3）
+        try:
+            from api.routes.metrics import metrics_bp
+            app.register_blueprint(metrics_bp)
+            logger.info("Metrics routes registered")
+        except Exception as e:
+            logger.warning(f"Metrics routes not registered: {e}")
+        
+        # 注册 Swarm 路由（Phase 2）
+        try:
+            from api.routes.swarm import swarm_bp
+            app.register_blueprint(swarm_bp)
+            logger.info("Swarm routes registered")
+        except Exception as e:
+            logger.warning(f"Swarm routes not registered: {e}")
+        
         # 注册 API 中间件
         try:
             from core.middleware import register_middleware
@@ -189,6 +306,30 @@ def start_server():
             init_pool_for_memory_manager(db_dir="data")
         except Exception as e:
             logger.warning(f"DB pool not initialized: {e}")
+        
+        # 初始化 Socket.IO 实时推送（Phase 1）
+        socketio = None
+        if SocketIO is not None:
+            try:
+                socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+                global _socketio_instance
+                _socketio_instance = socketio
+                # 注册通知命名空间
+                try:
+                    from api.socketio.notifications import NotificationsNamespace
+                    socketio.on_namespace(NotificationsNamespace('/notifications'))
+                    logger.info("Socket.IO notifications namespace registered")
+                except Exception as se:
+                    logger.warning(f"Socket.IO namespace registration failed: {se}")
+            except Exception as se:
+                logger.warning(f"Socket.IO init failed: {se}")
+        
+        # 启动定时健康巡检（APScheduler）
+        try:
+            _start_health_patrol_scheduler(socketio)
+            logger.info("Health patrol scheduler started")
+        except Exception as e:
+            logger.warning(f"Health patrol scheduler not started: {e}")
         
         # 启动自动化质检调度器
         try:
@@ -276,7 +417,10 @@ def start_server():
             }
         
         use_reloader = '--no-reload' not in sys.argv
-        app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=use_reloader)
+        if socketio is not None:
+            socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=use_reloader)
+        else:
+            app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=use_reloader)
         
     except Exception as e:
         logger.error(f"[FAIL] Launch failed: {e}")
