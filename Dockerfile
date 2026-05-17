@@ -8,7 +8,7 @@ FROM node:20 AS frontend-builder
 
 WORKDIR /app/web/frontend
 COPY web/frontend/package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY web/frontend/ ./
 RUN npm run build
 
@@ -21,7 +21,9 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    g++ \
     libffi-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
