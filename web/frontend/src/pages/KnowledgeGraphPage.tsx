@@ -26,7 +26,7 @@ import {
   Eye,
   Rocket,
 } from 'lucide-react'
-import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData, useKGTimeline, useKGOrchestrate } from '@/features/knowledge-graph/hooks'
+import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData, useKGTimeline, useKGOrchestrate, useKGCausalDiscover, useKGCausalIntervene } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
 const COMMUNITY_COLORS = [
@@ -122,6 +122,9 @@ export default function KnowledgeGraphPage() {
   const [orchestrateTask, setOrchestrateTask] = useState('')
   const [orchestrateEntity, setOrchestrateEntity] = useState('')
   const [orchestrateResult, setOrchestrateResult] = useState<any>(null)
+  const [causalGraph, setCausalGraph] = useState<any>(null)
+  const [causalIntervention, setCausalIntervention] = useState<any>(null)
+  const [selectedCausalNode, setSelectedCausalNode] = useState('')
   const extract = useKGExtract()
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
@@ -130,6 +133,8 @@ export default function KnowledgeGraphPage() {
   const graphData = useKGGraphData()
   const timeline = useKGTimeline(timelineGranularity)
   const orchestrate = useKGOrchestrate()
+  const causalDiscover = useKGCausalDiscover()
+  const causalIntervene = useKGCausalIntervene()
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -201,6 +206,26 @@ export default function KnowledgeGraphPage() {
       setOrchestrateResult(res.data)
       setShowSNA(false)
       setShowTimeline(false)
+    }
+  }
+
+  const handleCausalDiscover = async () => {
+    const res = await causalDiscover.mutateAsync({})
+    if (res?.data) {
+      setCausalGraph(res.data)
+      setSelectedCausalNode('')
+      setCausalIntervention(null)
+    }
+  }
+
+  const handleCausalIntervene = async () => {
+    if (!selectedCausalNode) return
+    const res = await causalIntervene.mutateAsync({
+      target_node: selectedCausalNode,
+      intervention_type: 'remove',
+    })
+    if (res?.data) {
+      setCausalIntervention(res.data)
     }
   }
 
@@ -619,6 +644,81 @@ export default function KnowledgeGraphPage() {
                 <span className="w-4 h-4 rounded border border-slate-500" />
                 Size ∝ Degree Centrality
               </span>
+            </div>
+          )}
+        </div>
+
+        {/* Causal Graph Panel */}
+        <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-sm font-semibold text-slate-300">Causal Graph</h3>
+            <span className="text-xs text-slate-500 ml-2">Discover DAG + simulate interventions</span>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={handleCausalDiscover}
+              disabled={causalDiscover.isPending}
+              className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-sm font-medium transition-colors"
+            >
+              {causalDiscover.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Discover DAG'}
+            </button>
+            {causalGraph?.nodes?.length > 0 && (
+              <select
+                value={selectedCausalNode}
+                onChange={(e) => setSelectedCausalNode(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500"
+              >
+                <option value="">Select node to intervene</option>
+                {causalGraph.nodes.map((n: string) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            )}
+            {selectedCausalNode && (
+              <button
+                onClick={handleCausalIntervene}
+                disabled={causalIntervene.isPending}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white text-sm font-medium transition-colors"
+              >
+                {causalIntervene.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Simulate Remove'}
+              </button>
+            )}
+          </div>
+          {causalGraph && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="px-2 py-0.5 rounded bg-slate-800 font-mono text-cyan-300">{causalGraph.method}</span>
+                <span>{causalGraph.nodes?.length} nodes · {causalGraph.edges?.length} edges</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {causalGraph.edges?.map((e: any, i: number) => (
+                  <span key={i} className="px-2 py-0.5 rounded bg-slate-800 text-xs text-slate-400">
+                    {e.source} <span className="text-cyan-500">→</span> {e.target}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {causalIntervention && (
+            <div className="rounded-lg bg-slate-800/60 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-rose-400 font-semibold">Intervention: {causalIntervention.intervention_type}</span>
+                <span className="text-slate-500">on</span>
+                <span className="text-white font-mono">{causalIntervention.target_node}</span>
+              </div>
+              <div className="text-xs text-slate-400">
+                Cascade depth: <span className="text-white">{causalIntervention.cascade_depth}</span>
+                {' · '}Affected: <span className="text-rose-400">{causalIntervention.affected_nodes?.length}</span>
+                {' · '}Unaffected: <span className="text-emerald-400">{causalIntervention.unaffected_nodes?.length}</span>
+              </div>
+              {causalIntervention.affected_nodes?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {causalIntervention.affected_nodes.map((n: string) => (
+                    <span key={n} className="px-1.5 py-0.5 rounded bg-rose-900/40 text-xs text-rose-300">{n}</span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

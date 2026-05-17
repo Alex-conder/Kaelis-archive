@@ -74,3 +74,23 @@ export function useKGOrchestrate() {
       }),
   })
 }
+
+export function useKGCausalDiscover() {
+  return useMutation({
+    mutationFn: (data?: { min_edge_count?: number; alpha?: number }) =>
+      fetchJSON('/knowledge_graph/kg/causal/discover', {
+        method: 'POST',
+        body: JSON.stringify(data || {}),
+      }),
+  })
+}
+
+export function useKGCausalIntervene() {
+  return useMutation({
+    mutationFn: (data: { target_node: string; intervention_type?: string }) =>
+      fetchJSON('/knowledge_graph/kg/causal/intervene', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  })
+}

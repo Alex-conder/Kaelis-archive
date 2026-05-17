@@ -812,6 +812,62 @@ def kg_orchestrate():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@bp.route('/kg/causal/discover', methods=['POST'])
+@log_request
+def kg_causal_discover():
+    """
+    因果发现：从 KG 关系中发现因果 DAG。
+
+    Body:
+        {
+            "min_edge_count": 2,   // optional
+            "alpha": 0.05          // optional
+        }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        from core.kg_causal import get_kg_causal_engine
+        engine = get_kg_causal_engine()
+        result = engine.discover(
+            min_edge_count=data.get("min_edge_count", 2),
+            alpha=data.get("alpha", 0.05),
+        )
+        return jsonify({"success": True, "data": result.to_dict()}), 200
+    except Exception as e:
+        logger.exception("KG causal discover failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route('/kg/causal/intervene', methods=['POST'])
+@log_request
+def kg_causal_intervene():
+    """
+    干预模拟：对指定实体做 do-calculus 干预并预测影响范围。
+
+    Body:
+        {
+            "target_node": "GraphRAG",
+            "intervention_type": "remove"   // "remove" | "strengthen" | "modify"
+        }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        target_node = data.get("target_node", "")
+        if not target_node:
+            return jsonify({"success": False, "error": "target_node is required"}), 400
+
+        from core.kg_causal import get_kg_causal_engine
+        engine = get_kg_causal_engine()
+        result = engine.intervene(
+            target_node=target_node,
+            intervention_type=data.get("intervention_type", "remove"),
+        )
+        return jsonify({"success": True, "data": result.to_dict()}), 200
+    except Exception as e:
+        logger.exception("KG causal intervene failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 def health_check():
     """
     Health check endpoint for this module.
@@ -831,5 +887,7 @@ def health_check():
             {"path": "/api/kg/trace-context/<trace_id>", "method": "GET"},
             {"path": "/api/kg/timeline", "method": "GET"},
             {"path": "/api/kg/orchestrate", "method": "POST"},
+            {"path": "/api/kg/causal/discover", "method": "POST"},
+            {"path": "/api/kg/causal/intervene", "method": "POST"},
         ]
     }), 200
