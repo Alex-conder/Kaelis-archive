@@ -282,8 +282,7 @@ def _persist_kg_extract(text: str, entities: list, relations: list):
     mm = get_memory_manager()
     db_path = mm._get_db_path("L3")
     try:
-        conn = sqlite3.connect(db_path)
-        try:
+        with sqlite3.connect(db_path) as conn:
             now = datetime.now(timezone.utc).isoformat()
             for e in entities:
                 conn.execute(
@@ -296,10 +295,85 @@ def _persist_kg_extract(text: str, entities: list, relations: list):
                     (r["source"], r["target"], r["relation"], text[:200], now)
                 )
             conn.commit()
-        finally:
-            conn.close()
     except Exception as e:
         logger.warning("KG persist failed: %s", e)
+
+
+def _llm_extract(text: str, domain: str = "general") -> tuple[list, list] | None:
+    """Use LLM to extract entities and relations. Returns (entities, relations) or None on failure."""
+    try:
+        from core.llm_client import KaelisLLMClient
+        client = KaelisLLMClient()
+        system_prompt = (
+            "You are a knowledge graph extraction assistant. "
+            "Extract entities and relations from the user's text. "
+            "Respond ONLY with valid JSON in this exact format:\n"
+            '{"entities":[{"text":"entity name","type":"entity type"}],'
+            '"relations":[{"source":"entity1","target":"entity2","relation":"relation type"}]}\n'
+            "If no entities or relations are found, return empty arrays."
+        )
+        prompt = f"Domain: {domain}\n\nText:\n{text}"
+        response = client.chat(prompt, system_prompt=system_prompt, temperature=0.3)
+
+        import json, re
+        # Try to extract JSON from markdown code block or raw text
+        match = re.search(r'```(?:json)?\s*([\s\S]*?)```', response)
+        json_str = match.group(1).strip() if match else response.strip()
+        data = json.loads(json_str)
+
+        entities = [
+            {"text": e["text"], "type": e.get("type", "entity"), "confidence": round(min(0.95, 0.7 + len(e["text"]) * 0.01), 2)}
+            for e in data.get("entities", [])
+            if e.get("text")
+        ]
+        relations = [
+            {"source": r["source"], "target": r["target"], "relation": r["relation"], "confidence": 0.75}
+            for r in data.get("relations", [])
+            if r.get("source") and r.get("target") and r.get("relation")
+        ]
+        logger.info("LLM KG extraction succeeded: %d entities, %d relations", len(entities), len(relations))
+        return entities, relations
+    except Exception as e:
+        logger.warning("LLM KG extraction failed, will fallback to regex: %s", e)
+        return None
+
+
+def _regex_extract(text: str, min_confidence: float = 0.5) -> tuple[list, list]:
+    """Fallback regex-based entity and relation extraction."""
+    import re
+    entities = []
+    # English capitalized phrases
+    for match in re.finditer(r'\b[A-Z][a-zA-Z\s]{1,20}[a-zA-Z]\b', text):
+        ent = match.group(0).strip()
+        if len(ent) > 2:
+            entities.append({
+                "text": ent, "type": "entity",
+                "confidence": round(min(0.95, max(min_confidence, 0.5 + len(ent) * 0.01)), 2)
+            })
+    # Chinese named entities (nouns/phrases 2-10 chars)
+    for match in re.finditer(r'[\u4e00-\u9fff]{2,10}', text):
+        ent = match.group(0)
+        if len(ent) >= 2:
+            entities.append({
+                "text": ent, "type": "entity",
+                "confidence": round(min(0.95, max(min_confidence, 0.5 + len(ent) * 0.02)), 2)
+            })
+    # Deduplicate
+    seen = set()
+    unique_entities = []
+    for e in entities:
+        key = e["text"].lower()
+        if key not in seen:
+            seen.add(key)
+            unique_entities.append(e)
+
+    relations = []
+    for i in range(len(unique_entities) - 1):
+        relations.append({
+            "source": unique_entities[i]["text"], "target": unique_entities[i + 1]["text"],
+            "relation": "related_to", "confidence": 0.6
+        })
+    return unique_entities, relations
 
 
 @bp.route('/kg/extract', methods=['POST'])
@@ -311,36 +385,14 @@ def kgExtract():
     domain = data.domain or "general"
     min_confidence = data.min_confidence if data.min_confidence is not None else 0.5
 
-    # Simple keyword-based entity extraction
-    import re
-    entities = []
-    # Extract capitalized phrases as potential entities
-    for match in re.finditer(r'\b[A-Z][a-zA-Z\s]{1,20}[a-zA-Z]\b', text):
-        ent = match.group(0).strip()
-        if len(ent) > 2:
-            entities.append({
-                "text": ent,
-                "type": "entity",
-                "confidence": round(min(0.95, max(min_confidence, 0.5 + len(ent) * 0.01)), 2)
-            })
-    # Deduplicate
-    seen = set()
-    unique_entities = []
-    for e in entities:
-        key = e["text"].lower()
-        if key not in seen:
-            seen.add(key)
-            unique_entities.append(e)
-
-    # Simple relation extraction based on proximity
-    relations = []
-    for i in range(len(unique_entities) - 1):
-        relations.append({
-            "source": unique_entities[i]["text"],
-            "target": unique_entities[i + 1]["text"],
-            "relation": "related_to",
-            "confidence": 0.6
-        })
+    # Try LLM extraction first, fallback to regex
+    llm_result = _llm_extract(text, domain)
+    if llm_result:
+        unique_entities, relations = llm_result
+        method = "llm"
+    else:
+        unique_entities, relations = _regex_extract(text, min_confidence)
+        method = "regex"
 
     # Persist to database
     _persist_kg_extract(text, unique_entities, relations)
@@ -349,6 +401,7 @@ def kgExtract():
         "success": True,
         "data": {
             "domain": domain,
+            "method": method,
             "entities": unique_entities[:20],
             "relations": relations[:10],
             "entity_count": len(unique_entities),
@@ -419,6 +472,45 @@ def kg_history():
         }), 500
 
 
+@bp.route('/kg/stats', methods=['GET'])
+def kg_stats():
+    """Return knowledge graph statistics."""
+    import sqlite3
+    from core.memory_manager_v2 import get_memory_manager
+    mm = get_memory_manager()
+    db_path = mm._get_db_path("L3")
+
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            entity_count = conn.execute("SELECT COUNT(*) FROM kg_entities").fetchone()[0]
+            relation_count = conn.execute("SELECT COUNT(*) FROM kg_relations").fetchone()[0]
+            latest_entity = conn.execute(
+                "SELECT MAX(created_at) FROM kg_entities"
+            ).fetchone()[0]
+            latest_relation = conn.execute(
+                "SELECT MAX(created_at) FROM kg_relations"
+            ).fetchone()[0]
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "entity_count": entity_count,
+                "relation_count": relation_count,
+                "latest_entity_at": latest_entity,
+                "latest_relation_at": latest_relation,
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        logger.exception("KG stats query failed")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 500
+
+
 @bp.route('/kg/query', methods=['POST'])
 @validate_request(KGQueryRequest)
 @log_request
@@ -455,10 +547,9 @@ def health_check():
         "module": "knowledge_graph",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "endpoints": [
-            
             {"path": "/api/kg/extract", "method": "POST"},
-            
+            {"path": "/api/kg/history", "method": "GET"},
+            {"path": "/api/kg/stats", "method": "GET"},
             {"path": "/api/kg/query", "method": "POST"},
-            
         ]
     }), 200

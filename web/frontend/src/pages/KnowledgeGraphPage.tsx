@@ -24,7 +24,7 @@ import {
   Network,
   Workflow,
 } from 'lucide-react'
-import { useKGExtract, useKGQuery, useKGHistory } from '@/features/knowledge-graph/hooks'
+import { useKGExtract, useKGQuery, useKGHistory, useKGStats } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
 const nodeColor = (node: Node) => {
@@ -106,6 +106,7 @@ export default function KnowledgeGraphPage() {
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
   const history = useKGHistory(start, end, 200)
+  const stats = useKGStats()
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -179,6 +180,30 @@ export default function KnowledgeGraphPage() {
               <h1 className="text-xl font-bold text-white">{t('knowledgeGraph_title')}</h1>
               <p className="text-sm text-slate-500">{t('knowledgeGraph_subtitle')}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Stats Panel */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4">
+            <p className="text-xs text-slate-500 mb-1">Entities</p>
+            <p className="text-2xl font-bold text-white">
+              {stats.data?.data?.entity_count ?? '-'}
+            </p>
+          </div>
+          <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4">
+            <p className="text-xs text-slate-500 mb-1">Relations</p>
+            <p className="text-2xl font-bold text-white">
+              {stats.data?.data?.relation_count ?? '-'}
+            </p>
+          </div>
+          <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-4">
+            <p className="text-xs text-slate-500 mb-1">Last Update</p>
+            <p className="text-sm font-medium text-white truncate">
+              {stats.data?.data?.latest_entity_at
+                ? new Date(stats.data.data.latest_entity_at).toLocaleString()
+                : '-'}
+            </p>
           </div>
         </div>
 

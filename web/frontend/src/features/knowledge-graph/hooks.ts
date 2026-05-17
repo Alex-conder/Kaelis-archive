@@ -43,3 +43,10 @@ export function useKGHistory(startTime?: string, endTime?: string, limit?: numbe
     enabled: false,
   })
 }
+
+export function useKGStats() {
+  return useQuery({
+    queryKey: ['kg', 'stats'],
+    queryFn: () => fetchJSON('/knowledge_graph/kg/stats'),
+  })
+}
