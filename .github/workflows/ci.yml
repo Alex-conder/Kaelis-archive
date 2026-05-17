@@ -147,8 +147,15 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t kaelis:test .
+          docker build --progress=plain -t kaelis:test . 2>&1 | tee docker-build.log
           docker images kaelis:test
+
+      - name: Upload Docker build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-build-logs
+          path: docker-build.log
 
       - name: Test Docker image health
         run: |
