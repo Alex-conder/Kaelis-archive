@@ -1,4 +1,37 @@
 import { useState } from 'react'
+
+// ----------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------
+interface StepSummary {
+  type: string
+  status: 'completed' | 'failed' | 'pending'
+  duration_ms: number
+}
+
+interface Trace {
+  trace_id: string
+  step_count: number
+  total_duration_ms: number
+  agent_state: string
+  step_summary?: StepSummary[]
+  user_input?: string
+}
+
+interface TrendBucket {
+  bucket_start: string
+  total: number
+  blocked: number
+}
+
+interface PatrolReport {
+  patrol_id: string
+  duration_ms: number
+  kg_health_score?: number
+  tool_failure_rate?: number
+  safety_block_rate?: number
+  alerts_count: number
+}
 import {
   useTraceList,
   useKGAuditRecent,
@@ -84,7 +117,7 @@ function TraceAuditSection() {
     <Card title="决策 Trace 审计" icon={BrainCircuit}>
       <div className="space-y-2 max-h-80 overflow-y-auto">
         {traces.length === 0 && <p className="text-sm text-slate-500">暂无 Trace 记录</p>}
-        {traces.map((t: any) => (
+        {traces.map((t: Trace) => (
           <div key={t.trace_id} className="text-xs">
             <button
               onClick={() => setExpandedTrace(expandedTrace === t.trace_id ? null : t.trace_id)}
@@ -98,7 +131,7 @@ function TraceAuditSection() {
             </button>
             {expandedTrace === t.trace_id && (
               <div className="ml-5 mt-1 space-y-1 border-l border-slate-800 pl-3">
-                {t.step_summary?.map((s: any, i: number) => (
+                {t.step_summary?.map((s: StepSummary, i: number) => (
                   <div key={i} className="flex items-center gap-2 py-0.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'completed' ? 'bg-emerald-500' : s.status === 'failed' ? 'bg-red-500' : 'bg-amber-500'}`} />
                     <span className="text-slate-400 capitalize">{s.type.replace(/_/g, ' ')}</span>
@@ -236,7 +269,7 @@ function SafetySection() {
           <div>
             <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wider">拦截趋势(7d)</p>
             <div className="flex items-end gap-1 h-16">
-              {trend.trend.map((bucket: any, i: number) => {
+              {trend.trend.map((bucket: TrendBucket, i: number) => {
                 const h = bucket.total > 0 ? (bucket.blocked / bucket.total) * 100 : 0
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group">
@@ -349,7 +382,7 @@ function PatrolSection() {
     >
       <div className="space-y-2">
         {reports.length === 0 && <p className="text-sm text-slate-500">暂无巡检记录</p>}
-        {reports.map((r: any) => (
+        {reports.map((r: PatrolReport) => (
           <div key={r.patrol_id} className="text-xs bg-slate-800/30 rounded p-2 space-y-1">
             <div className="flex items-center justify-between">
               <code className="text-blue-400 font-mono">{r.patrol_id.slice(0, 12)}...</code>

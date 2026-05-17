@@ -49,6 +49,10 @@ export default defineConfig({
           i18n: ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
           // 截图工具（大库）
           capture: ['html2canvas'],
+          // 图可视化
+          graph: ['@xyflow/react'],
+          // 状态管理
+          state: ['zustand'],
         },
       },
     },
