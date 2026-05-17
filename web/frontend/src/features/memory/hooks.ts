@@ -225,7 +225,8 @@ export function useSpaceEvents(spaceId: string, enabled: boolean) {
       }>
     },
     enabled: !!spaceId && enabled,
-    refetchInterval: enabled ? 3000 : false,
+    // WebSocket realtime_sync handles instant invalidation; polling is fallback only
+    refetchInterval: enabled ? 30000 : false,
   })
 }
 
@@ -248,6 +249,6 @@ export function useMemberStatus(spaceId: string) {
       }>
     },
     enabled: !!spaceId,
-    refetchInterval: 30000, // refresh every 30s
+    refetchInterval: 60000, // refresh every 60s (presence is not realtime-critical)
   })
 }

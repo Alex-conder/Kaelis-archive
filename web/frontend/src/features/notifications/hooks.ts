@@ -15,7 +15,8 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: () => fetchJSON('/notifications/unread-count'),
-    refetchInterval: 10000,
+    // WebSocket realtime_sync handles instant invalidation; polling is fallback only
+    refetchInterval: 30000,
   })
 }
 
@@ -23,7 +24,8 @@ export function useNotifications(isRead?: boolean, limit = 20) {
   return useQuery({
     queryKey: ['notifications', 'list', isRead, limit],
     queryFn: () => fetchJSON(`/notifications?limit=${limit}${isRead !== undefined ? `&is_read=${isRead}` : ''}`),
-    refetchInterval: 15000,
+    // WebSocket realtime_sync handles instant invalidation; polling is fallback only
+    refetchInterval: 30000,
   })
 }
 
