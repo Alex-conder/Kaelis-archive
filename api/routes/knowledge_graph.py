@@ -637,6 +637,32 @@ def kgQuery():
 # ============================================================================
 
 @bp.route('/health', methods=['GET'])
+@bp.route('/kg/trace-context/<trace_id>', methods=['GET'])
+@log_request
+def kg_trace_context(trace_id: str):
+    """
+    将决策追踪（DecisionTrace）投影到知识图谱上下文。
+
+    返回该 trace 中 MEMORY_RETRIEVAL / KNOWLEDGE_GRAPH 步骤激活的实体名列表，
+    以及 SAFETY_REVIEW 中被拦截的路径信息。
+    """
+    try:
+        from core.decision_trace import get_trace_engine
+        engine = get_trace_engine()
+        context = engine.get_trace_kg_context(trace_id)
+
+        if context["trace_summary"] is None:
+            return jsonify({"success": False, "error": "Trace not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "data": context,
+        }), 200
+    except Exception as e:
+        logger.exception("KG trace context query failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 def health_check():
     """
     Health check endpoint for this module.
@@ -653,5 +679,6 @@ def health_check():
             {"path": "/api/kg/history", "method": "GET"},
             {"path": "/api/kg/stats", "method": "GET"},
             {"path": "/api/kg/query", "method": "POST"},
+            {"path": "/api/kg/trace-context/<trace_id>", "method": "GET"},
         ]
     }), 200

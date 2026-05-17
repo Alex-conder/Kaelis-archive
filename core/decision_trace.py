@@ -114,7 +114,9 @@ class DecisionTraceEngine:
     """
 
     def __init__(self, db_path: Optional[str] = None):
-        self.db_path = db_path or str(Path("data/kaelis_graph.db").resolve())
+        import os
+        data_dir = os.environ.get("KAELIS_DATA_DIR", "data")
+        self.db_path = db_path or str(Path(data_dir) / "kaelis_graph.db")
         self._init_db()
 
     def _init_db(self):
@@ -374,6 +376,78 @@ class DecisionTraceEngine:
                 }
                 for s in trace.steps
             ],
+        }
+
+    def get_trace_kg_context(self, trace_id: str) -> Dict[str, Any]:
+        """
+        将决策追踪映射到知识图谱上下文。
+
+        返回:
+            {
+                "activated_nodes": ["entity_name", ...],  # MEMORY_RETRIEVAL / KNOWLEDGE_GRAPH 步骤中引用的实体
+                "blocked_paths": [{"source": "", "target": "", "reason": ""}],  # SAFETY_REVIEW 拦截信息
+                "trace_summary": {...}
+            }
+        """
+        trace = self.get_trace(trace_id)
+        if not trace:
+            return {"activated_nodes": [], "blocked_paths": [], "trace_summary": None}
+
+        activated_nodes: List[str] = []
+        blocked_paths: List[Dict[str, Any]] = []
+
+        for step in trace.steps:
+            # 从记忆检索步骤提取实体/关键词
+            if step.step_type == TraceStepType.MEMORY_RETRIEVAL.value:
+                output = step.output_data or {}
+                memories = output.get("memories", output.get("results", []))
+                for mem in memories:
+                    if isinstance(mem, dict):
+                        key = mem.get("key") or mem.get("name") or mem.get("memory_key")
+                        if key:
+                            activated_nodes.append(str(key))
+                    elif isinstance(mem, str):
+                        activated_nodes.append(mem)
+                # 也提取 query 中的实体
+                query = step.input_data.get("query", "")
+                if query:
+                    activated_nodes.append(str(query))
+
+            # 从 KG 步骤提取实体
+            elif step.step_type == TraceStepType.KNOWLEDGE_GRAPH.value:
+                output = step.output_data or {}
+                entities = output.get("entities", output.get("kg_entities", []))
+                for e in entities:
+                    if isinstance(e, dict):
+                        name = e.get("name") or e.get("entity")
+                        if name:
+                            activated_nodes.append(str(name))
+                    elif isinstance(e, str):
+                        activated_nodes.append(e)
+
+            # 从安全审查步骤提取拦截信息
+            elif step.step_type == TraceStepType.SAFETY_REVIEW.value:
+                output = step.output_data or {}
+                if output.get("overall_level") == "blocked":
+                    blocked_paths.append({
+                        "source": "user_input",
+                        "target": "final_reply",
+                        "reason": output.get("refusal_reason", "Safety blocked"),
+                        "principles": output.get("triggered_principles", []),
+                    })
+
+        # Deduplicate while preserving order
+        seen = set()
+        unique_nodes = []
+        for n in activated_nodes:
+            if n not in seen:
+                seen.add(n)
+                unique_nodes.append(n)
+
+        return {
+            "activated_nodes": unique_nodes,
+            "blocked_paths": blocked_paths,
+            "trace_summary": self.get_trace_summary(trace_id),
         }
 
 

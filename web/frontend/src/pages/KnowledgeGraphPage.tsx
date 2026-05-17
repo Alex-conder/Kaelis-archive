@@ -23,6 +23,7 @@ import {
   Clock,
   Network,
   Workflow,
+  Eye,
 } from 'lucide-react'
 import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
@@ -102,6 +103,8 @@ export default function KnowledgeGraphPage() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[])
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
   const [renderer, setRenderer] = useState<'xyflow' | 'g6'>('xyflow')
+  const [traceId, setTraceId] = useState('')
+  const [traceLoading, setTraceLoading] = useState(false)
   const extract = useKGExtract()
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
@@ -166,6 +169,59 @@ export default function KnowledgeGraphPage() {
   const handleQuery = async () => {
     if (!queryText.trim()) return
     await query.mutateAsync({ query: queryText, query_type: 'semantic' })
+  }
+
+  const handleTraceHighlight = async () => {
+    if (!traceId.trim()) return
+    setTraceLoading(true)
+    try {
+      const res = await fetch(`/api/kg/trace-context/${encodeURIComponent(traceId)}`)
+      const data = await res.json()
+      if (data.success) {
+        const activated = new Set(data.data.activated_nodes as string[])
+        const blocked = data.data.blocked_paths as Array<{ source: string; target: string; reason: string }>
+
+        setNodes((prev) =>
+          prev.map((n) => {
+            const name = (n.data?.label as string) || ''
+            const isActivated = activated.has(name) || Array.from(activated).some((a) => name.includes(a) || (a as string).includes(name))
+            return {
+              ...n,
+              style: {
+                ...(n.style || {}),
+                border: isActivated ? '2px solid #f59e0b' : '1px solid #334155',
+                boxShadow: isActivated ? '0 0 16px #f59e0b66' : undefined,
+              },
+            }
+          })
+        )
+
+        setEdges((prev) =>
+          prev.map((e) => {
+            const srcLabel = nodes.find((n) => n.id === e.source)?.data?.label as string || ''
+            const tgtLabel = nodes.find((n) => n.id === e.target)?.data?.label as string || ''
+            const isBlocked = blocked.some(
+              (bp) =>
+                (bp.source === srcLabel && bp.target === tgtLabel) ||
+                (bp.source === 'user_input' && bp.target === 'final_reply')
+            )
+            return {
+              ...e,
+              style: {
+                ...(e.style || {}),
+                stroke: isBlocked ? '#ef4444' : '#475569',
+                strokeDasharray: isBlocked ? '5,5' : undefined,
+                strokeWidth: isBlocked ? 2.5 : 1.5,
+              },
+            }
+          })
+        )
+      }
+    } catch (err) {
+      console.error('Trace highlight failed:', err)
+    } finally {
+      setTraceLoading(false)
+    }
   }
 
   return (
@@ -336,6 +392,42 @@ export default function KnowledgeGraphPage() {
                 edges={graphData.data?.data?.edges || g6Edges}
               />
             )}
+          </div>
+        </div>
+
+        {/* Trace Explainability Panel */}
+        <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-amber-400" />
+            <h3 className="text-sm font-semibold text-slate-300">Explainability Overlay</h3>
+            <span className="text-xs text-slate-500 ml-2">Project DecisionTrace onto KG</span>
+          </div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={traceId}
+              onChange={(e) => setTraceId(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleTraceHighlight()}
+              placeholder="Enter trace_id (e.g. trc_abc123...)"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
+            />
+            <button
+              onClick={handleTraceHighlight}
+              disabled={traceLoading || !traceId.trim()}
+              className="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            >
+              {traceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="flex gap-4 text-xs text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm border-2 border-amber-500 bg-amber-500/20" />
+              Activated Nodes
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-8 h-0.5 border-b-2 border-dashed border-red-500" />
+              Blocked Paths
+            </span>
           </div>
         </div>
 
