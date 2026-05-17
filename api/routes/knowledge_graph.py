@@ -565,21 +565,73 @@ def kg_stats():
 @validate_request(KGQueryRequest)
 @log_request
 def kgQuery():
+    """Query KG entities and relations by keyword (semantic fallback to SQLite)."""
+    import sqlite3
+    from core.memory_manager_v2 import get_memory_manager
+
     data = g.validated_data
-    query = data.query or ""
+    query = (data.query or "").strip()
     query_type = data.query_type or "semantic"
 
-    return jsonify({
-        "success": True,
-        "data": {
-            "query": query,
-            "query_type": query_type,
-            "results": [],
-            "result_count": 0,
-            "note": "Knowledge graph query requires a configured graph store."
-        },
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }), 200
+    if not query:
+        return jsonify({
+            "success": False,
+            "error": "Query text is required"
+        }), 400
+
+    mm = get_memory_manager()
+    db_path = mm._get_db_path("L3")
+
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            # Keyword search on entities (name LIKE) and relations (source/target LIKE)
+            like_pattern = f"%{query}%"
+            entities = conn.execute(
+                "SELECT name, type, source, created_at FROM kg_entities WHERE name LIKE ? OR type LIKE ? OR source LIKE ? ORDER BY created_at DESC LIMIT 50",
+                (like_pattern, like_pattern, like_pattern)
+            ).fetchall()
+
+            relations = conn.execute(
+                "SELECT source, target, relation, created_at FROM kg_relations WHERE source LIKE ? OR target LIKE ? OR relation LIKE ? ORDER BY created_at DESC LIMIT 50",
+                (like_pattern, like_pattern, like_pattern)
+            ).fetchall()
+
+            results = []
+            for r in entities:
+                results.append({
+                    "type": "entity",
+                    "name": r["name"],
+                    "entity_type": r["type"],
+                    "source": r["source"],
+                    "created_at": r["created_at"],
+                })
+            for r in relations:
+                results.append({
+                    "type": "relation",
+                    "source": r["source"],
+                    "target": r["target"],
+                    "relation": r["relation"],
+                    "created_at": r["created_at"],
+                })
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "query": query,
+                "query_type": query_type,
+                "results": results,
+                "result_count": len(results),
+                "note": "Keyword search against SQLite KG store."
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        logger.exception("KG query failed")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 # ============================================================================
 # Health Check Endpoint
 # ============================================================================

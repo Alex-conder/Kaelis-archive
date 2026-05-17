@@ -109,37 +109,34 @@ def _update_dynamic_gauges():
         
         db_path = Path("data/kaelis_graph.db")
         if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.execute("SELECT COUNT(*) FROM kg_entities")
-            KG_METRICS.update_entity_count(cursor.fetchone()[0])
-            cursor = conn.execute("SELECT COUNT(*) FROM kg_triples")
-            KG_METRICS.update_triple_count(cursor.fetchone()[0])
-            conn.close()
+            with sqlite3.connect(str(db_path)) as conn:
+                cursor = conn.execute("SELECT COUNT(*) FROM kg_entities")
+                KG_METRICS.update_entity_count(cursor.fetchone()[0])
+                cursor = conn.execute("SELECT COUNT(*) FROM kg_triples")
+                KG_METRICS.update_triple_count(cursor.fetchone()[0])
         
         # 更新四层记忆计数
         db_path = Path("data/kaelis_dev.db")
         if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            for layer, table in [("L0", "memory_l0"), ("L1", "memory_l1"), ("L2", "memory_l2")]:
-                try:
-                    cursor = conn.execute(f"SELECT COUNT(*) FROM {table}")
-                    MEMORY_METRICS.memory_layer_count.labels(layer=layer).set(cursor.fetchone()[0])
-                except Exception as e:
-                    logger.debug("Failed to count %s: %s", table, e)
-            conn.close()
+            with sqlite3.connect(str(db_path)) as conn:
+                for layer, table in [("L0", "memory_l0"), ("L1", "memory_l1"), ("L2", "memory_l2")]:
+                    try:
+                        cursor = conn.execute(f"SELECT COUNT(*) FROM {table}")
+                        MEMORY_METRICS.memory_layer_count.labels(layer=layer).set(cursor.fetchone()[0])
+                    except Exception as e:
+                        logger.debug("Failed to count %s: %s", table, e)
         
         # 更新 L3 计数
         db_path = Path("data/kaelis_graph.db")
         if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            try:
-                cursor = conn.execute("SELECT COUNT(*) FROM kg_entities")
-                MEMORY_METRICS.memory_layer_count.labels(layer='L3_entities').set(cursor.fetchone()[0])
-                cursor = conn.execute("SELECT COUNT(*) FROM kg_triples")
-                MEMORY_METRICS.memory_layer_count.labels(layer='L3_triples').set(cursor.fetchone()[0])
-            except Exception as e:
-                logger.debug("Failed to count kg_entities/kg_triples: %s", e)
-            conn.close()
+            with sqlite3.connect(str(db_path)) as conn:
+                try:
+                    cursor = conn.execute("SELECT COUNT(*) FROM kg_entities")
+                    MEMORY_METRICS.memory_layer_count.labels(layer='L3_entities').set(cursor.fetchone()[0])
+                    cursor = conn.execute("SELECT COUNT(*) FROM kg_triples")
+                    MEMORY_METRICS.memory_layer_count.labels(layer='L3_triples').set(cursor.fetchone()[0])
+                except Exception as e:
+                    logger.debug("Failed to count kg_entities/kg_triples: %s", e)
         
         # 更新运行时间
         SYSTEM_METRICS.uptime_seconds.set(time.time() - _start_time)

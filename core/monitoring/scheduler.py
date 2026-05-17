@@ -236,9 +236,8 @@ class QualityScheduler:
             # 检查数据库可访问性
             try:
                 import sqlite3
-                conn = sqlite3.connect(str(self.db_path))
-                conn.execute("SELECT 1")
-                conn.close()
+                with sqlite3.connect(str(self.db_path)) as conn:
+                    conn.execute("SELECT 1")
                 status["components"]["graph_db"] = "healthy"
             except Exception:
                 status["components"]["graph_db"] = "unhealthy"
