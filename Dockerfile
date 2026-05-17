@@ -1,39 +1,58 @@
-# Kaelis Production Docker Image
-# Usage:
-#   docker build -t kaelis/kaelis:v0.4.0 .
-#   docker run -p 5000:5000 --env-file .env kaelis/kaelis:v0.4.0
+# Kaelis 全栈 Docker 镜像
+# 多阶段构建：Node 构建前端 → Python 构建后端 → 生产镜像
 
-FROM python:3.13-slim
+# ============================================================
+# Stage 1: 前端构建
+# ============================================================
+FROM node:20 AS frontend-builder
 
-LABEL maintainer="Kaelis Team <team@kaelis.ai>"
-LABEL version="1.0.0"
-LABEL description="Kaelis AI Agent Operating System"
+WORKDIR /app/web/frontend
+COPY web/frontend/package*.json ./
+RUN npm ci
+COPY web/frontend/ ./
+RUN npm run build
+
+# ============================================================
+# Stage 2: Python 依赖安装
+# ============================================================
+FROM python:3.11-slim AS python-builder
 
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    build-essential \
-    libsqlite3-dev \
+    gcc \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copy application code
+# ============================================================
+# Stage 3: 生产镜像
+# ============================================================
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 复制前端构建产物
+COPY --from=frontend-builder /app/web/frontend/dist /app/web/frontend/dist
+
+# 复制 Python 依赖
+COPY --from=python-builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# 复制应用代码
 COPY . .
 
-# Create data directory
-RUN mkdir -p data
+# 环境变量默认值
+ENV FLASK_ENV=production
+ENV PYTHONUNBUFFERED=1
+ENV ONEKE_MOCK_MODE=false
 
-# Expose Flask port
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
+
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health', timeout=5)" || exit 1
-
-# Run production server
-CMD ["python", "prod_server.py"]
+CMD ["python", "launch.py"]
