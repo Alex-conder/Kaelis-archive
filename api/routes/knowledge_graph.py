@@ -472,6 +472,56 @@ def kg_history():
         }), 500
 
 
+@bp.route('/kg/graph-data', methods=['GET'])
+def kg_graph_data():
+    """Return all KG entities and relations in G6-compatible format."""
+    import sqlite3
+    from core.memory_manager_v2 import get_memory_manager
+    mm = get_memory_manager()
+    db_path = mm._get_db_path("L3")
+
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            entity_rows = conn.execute(
+                "SELECT name, type, created_at FROM kg_entities ORDER BY created_at DESC LIMIT 200"
+            ).fetchall()
+            relation_rows = conn.execute(
+                "SELECT source, target, relation, created_at FROM kg_relations ORDER BY created_at DESC LIMIT 200"
+            ).fetchall()
+
+        nodes = [
+            {"id": f"e-{i}", "name": r["name"], "type": r["type"] or "entity"}
+            for i, r in enumerate(entity_rows)
+        ]
+        # Build entity name -> node id mapping for edge resolution
+        name_to_id = {r["name"]: f"e-{i}" for i, r in enumerate(entity_rows)}
+        edges = []
+        for i, r in enumerate(relation_rows):
+            src_id = name_to_id.get(r["source"])
+            tgt_id = name_to_id.get(r["target"])
+            if src_id and tgt_id:
+                edges.append({
+                    "id": f"r-{i}",
+                    "source": src_id,
+                    "target": tgt_id,
+                    "relation": r["relation"],
+                })
+
+        return jsonify({
+            "success": True,
+            "data": {"nodes": nodes, "edges": edges},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        logger.exception("KG graph data query failed")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 500
+
+
 @bp.route('/kg/stats', methods=['GET'])
 def kg_stats():
     """Return knowledge graph statistics."""

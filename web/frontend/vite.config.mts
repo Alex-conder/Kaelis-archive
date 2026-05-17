@@ -36,7 +36,6 @@ export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
-      external: ['@antv/g6'],
       output: {
         manualChunks: {
           // FIX-3: 框架核心抽离

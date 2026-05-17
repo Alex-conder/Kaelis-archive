@@ -24,7 +24,7 @@ import {
   Network,
   Workflow,
 } from 'lucide-react'
-import { useKGExtract, useKGQuery, useKGHistory, useKGStats } from '@/features/knowledge-graph/hooks'
+import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
 const nodeColor = (node: Node) => {
@@ -107,6 +107,7 @@ export default function KnowledgeGraphPage() {
   const { start, end } = getTimeRangeParams(timeRange)
   const history = useKGHistory(start, end, 200)
   const stats = useKGStats()
+  const graphData = useKGGraphData()
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -330,7 +331,10 @@ export default function KnowledgeGraphPage() {
                 <Background color="#334155" gap={16} size={1} />
               </ReactFlow>
             ) : (
-              <NebulaGraphG6 nodes={g6Nodes} edges={g6Edges} />
+              <NebulaGraphG6
+                nodes={graphData.data?.data?.nodes || g6Nodes}
+                edges={graphData.data?.data?.edges || g6Edges}
+              />
             )}
           </div>
         </div>

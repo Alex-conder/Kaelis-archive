@@ -50,3 +50,10 @@ export function useKGStats() {
     queryFn: () => fetchJSON('/knowledge_graph/kg/stats'),
   })
 }
+
+export function useKGGraphData() {
+  return useQuery({
+    queryKey: ['kg', 'graph-data'],
+    queryFn: () => fetchJSON('/knowledge_graph/kg/graph-data'),
+  })
+}
