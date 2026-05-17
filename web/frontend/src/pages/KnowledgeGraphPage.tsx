@@ -24,8 +24,9 @@ import {
   Network,
   Workflow,
   Eye,
+  Rocket,
 } from 'lucide-react'
-import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData, useKGTimeline } from '@/features/knowledge-graph/hooks'
+import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData, useKGTimeline, useKGOrchestrate } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
 const COMMUNITY_COLORS = [
@@ -118,6 +119,9 @@ export default function KnowledgeGraphPage() {
   const [showSNA, setShowSNA] = useState(false)
   const [showTimeline, setShowTimeline] = useState(false)
   const [timelineGranularity, setTimelineGranularity] = useState<'day' | 'week' | 'month'>('day')
+  const [orchestrateTask, setOrchestrateTask] = useState('')
+  const [orchestrateEntity, setOrchestrateEntity] = useState('')
+  const [orchestrateResult, setOrchestrateResult] = useState<any>(null)
   const extract = useKGExtract()
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
@@ -125,6 +129,7 @@ export default function KnowledgeGraphPage() {
   const stats = useKGStats()
   const graphData = useKGGraphData()
   const timeline = useKGTimeline(timelineGranularity)
+  const orchestrate = useKGOrchestrate()
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -183,6 +188,20 @@ export default function KnowledgeGraphPage() {
   const handleQuery = async () => {
     if (!queryText.trim()) return
     await query.mutateAsync({ query: queryText, query_type: 'semantic' })
+  }
+
+  const handleOrchestrate = async () => {
+    if (!orchestrateTask.trim()) return
+    const res = await orchestrate.mutateAsync({
+      task_description: orchestrateTask,
+      start_entity: orchestrateEntity || undefined,
+      max_depth: 2,
+    })
+    if (res?.data) {
+      setOrchestrateResult(res.data)
+      setShowSNA(false)
+      setShowTimeline(false)
+    }
   }
 
   const loadSNA = useCallback(async () => {
@@ -638,6 +657,69 @@ export default function KnowledgeGraphPage() {
               Blocked Paths
             </span>
           </div>
+        </div>
+
+        {/* Orchestrate Panel */}
+        <div className="rounded-xl bg-slate-900/60 border border-slate-800 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Rocket className="w-4 h-4 text-violet-400" />
+            <h3 className="text-sm font-semibold text-slate-300">Dynamic Orchestration</h3>
+            <span className="text-xs text-slate-500 ml-2">KG graph-walk → task decomposition → agent delegation</span>
+          </div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={orchestrateTask}
+              onChange={(e) => setOrchestrateTask(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleOrchestrate()}
+              placeholder="Describe a task (e.g. 'Analyze GraphRAG architecture')"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500"
+            />
+            <input
+              type="text"
+              value={orchestrateEntity}
+              onChange={(e) => setOrchestrateEntity(e.target.value)}
+              placeholder="Start entity (optional)"
+              className="w-40 px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500"
+            />
+            <button
+              onClick={handleOrchestrate}
+              disabled={orchestrate.isPending || !orchestrateTask.trim()}
+              className="px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            >
+              {orchestrate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+            </button>
+          </div>
+          {orchestrateResult && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <span className="px-2 py-0.5 rounded bg-slate-800 text-violet-300 font-mono">{orchestrateResult.plan_id}</span>
+                <span className={`px-2 py-0.5 rounded text-white ${orchestrateResult.status === 'completed' ? 'bg-emerald-600' : orchestrateResult.status === 'failed' ? 'bg-red-600' : 'bg-amber-600'}`}>
+                  {orchestrateResult.status}
+                </span>
+                <span>{orchestrateResult.subgraph_summary?.node_count} nodes · {orchestrateResult.subgraph_summary?.edge_count} edges</span>
+              </div>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {orchestrateResult.subtasks?.map((st: any) => (
+                  <div key={st.step} className="flex items-center gap-2 text-xs text-slate-400 px-2 py-1 rounded bg-slate-800/40">
+                    <span className="text-violet-400 font-mono w-6">#{st.step}</span>
+                    <span className="flex-1 truncate">{st.description}</span>
+                    <span className="text-slate-500">→ {st.target_entity}</span>
+                  </div>
+                ))}
+              </div>
+              {orchestrateResult.results?.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {orchestrateResult.results.map((r: any, i: number) => (
+                    <div key={i} className="px-2 py-1 rounded bg-slate-800/60 text-xs">
+                      <span className={`inline-block w-2 h-2 rounded-full mr-1 ${r.status === 'completed' ? 'bg-emerald-500' : r.status === 'failed' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                      <span className="text-slate-400">{r.target}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Query Panel */}

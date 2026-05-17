@@ -64,3 +64,13 @@ export function useKGTimeline(granularity: string = 'day') {
     queryFn: () => fetchJSON(`/knowledge_graph/kg/timeline?granularity=${granularity}`),
   })
 }
+
+export function useKGOrchestrate() {
+  return useMutation({
+    mutationFn: (data: { task_description: string; start_entity?: string; max_depth?: number }) =>
+      fetchJSON('/knowledge_graph/kg/orchestrate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  })
+}

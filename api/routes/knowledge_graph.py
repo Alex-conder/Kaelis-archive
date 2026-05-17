@@ -756,6 +756,62 @@ def kg_timeline():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@bp.route('/kg/orchestrate', methods=['POST'])
+@log_request
+def kg_orchestrate():
+    """
+    动态编排：基于知识图谱图遍历的任务分解与委托。
+
+    Body:
+        {
+            "task_description": "Analyze GraphRAG architecture",
+            "start_entity": "GraphRAG",     // optional, defaults to first entity
+            "max_depth": 2                  // optional
+        }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        task_description = data.get("task_description", "")
+        if not task_description:
+            return jsonify({"success": False, "error": "task_description is required"}), 400
+
+        start_entity = data.get("start_entity", "")
+        max_depth = data.get("max_depth", 2)
+
+        from core.kg_orchestrator import get_kg_orchestrator
+        orchestrator = get_kg_orchestrator()
+
+        # If no start_entity provided, pick the first entity from KG
+        if not start_entity:
+            mm = get_memory_manager()
+            db_path = mm._get_db_path("L3")
+            with sqlite3.connect(db_path) as conn:
+                row = conn.execute(
+                    "SELECT name FROM kg_entities ORDER BY created_at DESC LIMIT 1"
+                ).fetchone()
+                if row:
+                    start_entity = row[0]
+                else:
+                    return jsonify({"success": False, "error": "No entities in KG"}), 404
+
+        # Run async plan execution synchronously for Flask compatibility
+        import asyncio
+        plan = asyncio.run(orchestrator.execute_plan(
+            task_description=task_description,
+            start_entity=start_entity,
+            max_depth=max_depth,
+        ))
+
+        return jsonify({
+            "success": True,
+            "data": plan.to_dict(),
+        }), 200
+
+    except Exception as e:
+        logger.exception("KG orchestrate failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 def health_check():
     """
     Health check endpoint for this module.
@@ -774,5 +830,6 @@ def health_check():
             {"path": "/api/kg/query", "method": "POST"},
             {"path": "/api/kg/trace-context/<trace_id>", "method": "GET"},
             {"path": "/api/kg/timeline", "method": "GET"},
+            {"path": "/api/kg/orchestrate", "method": "POST"},
         ]
     }), 200
