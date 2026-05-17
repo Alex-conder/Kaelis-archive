@@ -103,11 +103,13 @@ def health_detailed():
 def _update_dynamic_gauges():
     """更新动态仪表盘数据"""
     try:
+        import os
+        data_dir = os.environ.get("KAELIS_DATA_DIR", "data")
         # 更新 KG 计数
         import sqlite3
         from pathlib import Path
         
-        db_path = Path("data/kaelis_graph.db")
+        db_path = Path(data_dir) / "kaelis_graph.db"
         if db_path.exists():
             with sqlite3.connect(str(db_path)) as conn:
                 cursor = conn.execute("SELECT COUNT(*) FROM kg_entities")
@@ -116,7 +118,7 @@ def _update_dynamic_gauges():
                 KG_METRICS.update_triple_count(cursor.fetchone()[0])
         
         # 更新四层记忆计数
-        db_path = Path("data/kaelis_dev.db")
+        db_path = Path(data_dir) / "kaelis_dev.db"
         if db_path.exists():
             with sqlite3.connect(str(db_path)) as conn:
                 for layer, table in [("L0", "memory_l0"), ("L1", "memory_l1"), ("L2", "memory_l2")]:
@@ -127,7 +129,7 @@ def _update_dynamic_gauges():
                         logger.debug("Failed to count %s: %s", table, e)
         
         # 更新 L3 计数
-        db_path = Path("data/kaelis_graph.db")
+        db_path = Path(data_dir) / "kaelis_graph.db"
         if db_path.exists():
             with sqlite3.connect(str(db_path)) as conn:
                 try:

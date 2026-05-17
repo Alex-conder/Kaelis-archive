@@ -22,6 +22,7 @@ Shared Memory Space Module
 
 import json
 import logging
+import os
 import sqlite3
 import time
 import uuid
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ==============================================================================
 
-DEFAULT_DB_DIR = "data"
+DEFAULT_DB_DIR = os.environ.get("KAELIS_DATA_DIR", "data")
 VALID_ROLES = {"owner", "admin", "writer", "reader"}
 ROLE_HIERARCHY = {"owner": 4, "admin": 3, "writer": 2, "reader": 1}
 

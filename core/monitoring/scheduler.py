@@ -36,7 +36,9 @@ class QualityScheduler:
     """
     
     def __init__(self, db_path: str = None):
-        self.db_path = Path(db_path) if db_path else Path("data/kaelis_graph.db")
+        import os
+        data_dir = os.environ.get("KAELIS_DATA_DIR", "data")
+        self.db_path = Path(db_path) if db_path else Path(data_dir) / "kaelis_graph.db"
         self.scheduler = None
         self._initialized = False
     

@@ -71,7 +71,9 @@ class SafetyAuditEngine:
     """
 
     def __init__(self, db_path: Optional[str] = None):
-        self.db_path = db_path or str(Path("data/kaelis_graph.db").resolve())
+        import os
+        data_dir = os.environ.get("KAELIS_DATA_DIR", "data")
+        self.db_path = db_path or str(Path(data_dir) / "kaelis_graph.db")
         self._init_db()
 
     def _init_db(self):
