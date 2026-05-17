@@ -371,6 +371,108 @@ class VSCodeTool:
             logger.error(f"VSCode list_files failed: {e}")
             return {"success": False, "error": str(e)}
 
+    # ------------------------------------------------------------------ #
+    # Git Operations (Security-hardened)
+    # ------------------------------------------------------------------ #
+
+    def _run_git(self, args: list, timeout: int = 30) -> Dict[str, Any]:
+        """Run a git subcommand with safety checks."""
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                capture_output=True,
+                text=True,
+                cwd=self.workspace_path,
+                timeout=timeout,
+            )
+            return {
+                "success": result.returncode == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode,
+            }
+        except subprocess.TimeoutExpired:
+            return {"success": False, "error": f"Git command timed out after {timeout}s"}
+        except Exception as e:
+            logger.error(f"Git command failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    def git_status(self) -> Dict[str, Any]:
+        """Show git working tree status."""
+        result = self._run_git(["status", "--short", "--branch"])
+        result["action"] = "git_status"
+        # Parse status into structured data
+        if result["success"]:
+            files = []
+            branch = ""
+            for line in result["stdout"].splitlines():
+                if line.startswith("##"):
+                    branch = line[3:].strip()
+                elif len(line) >= 2:
+                    files.append({
+                        "status": line[:2].strip(),
+                        "path": line[3:].strip(),
+                    })
+            result["branch"] = branch
+            result["files"] = files
+            result["count"] = len(files)
+        return result
+
+    def git_diff(self, file_path: Optional[str] = None, staged: bool = False) -> Dict[str, Any]:
+        """
+        Show git diff.
+
+        Args:
+            file_path: Optional specific file to diff.
+            staged: Show diff for staged changes.
+        """
+        args = ["diff"]
+        if staged:
+            args.append("--staged")
+        if file_path:
+            ok, msg = self._safe_path(file_path, "read")
+            if not ok:
+                return {"success": False, "error": msg}
+            args.append(file_path)
+        result = self._run_git(args)
+        result["action"] = "git_diff"
+        return result
+
+    def git_commit(self, message: str, allow_empty: bool = False) -> Dict[str, Any]:
+        """
+        Commit staged changes.
+
+        Security guards:
+        - Rejects empty messages
+        - Rejects messages containing shell metacharacters
+        - Rejects --amend, --no-edit, --fixup flags injected via message
+        """
+        if not message or not message.strip():
+            return {"success": False, "error": "Commit message is required"}
+
+        msg = message.strip()
+
+        # Prevent shell injection via commit message
+        dangerous = {";", "&", "|", "<", ">", "`", "$", "(", ")", "\n"}
+        for ch in dangerous:
+            if ch in msg:
+                return {"success": False, "error": f"Commit message contains forbidden character: {ch!r}"}
+
+        # Prevent flag injection
+        flag_injection = {"--amend", "--no-edit", "--fixup", "--squash", "--reuse-message", "--reedit-message"}
+        lower_msg = msg.lower()
+        for flag in flag_injection:
+            if flag in lower_msg:
+                return {"success": False, "error": f"Commit message contains forbidden flag: {flag}"}
+
+        args = ["commit", "-m", msg]
+        if allow_empty:
+            args.append("--allow-empty")
+
+        result = self._run_git(args)
+        result["action"] = "git_commit"
+        return result
+
 
 def get_vscode_tool(workspace_path: str = ".") -> VSCodeTool:
     return VSCodeTool(workspace_path)

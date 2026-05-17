@@ -349,6 +349,58 @@ def create_mcp_server(name: str = "Kaelis") -> Any:
             return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #
+    # Git Tools (P1)
+    # ------------------------------------------------------------------ #
+
+    @mcp.tool()
+    def vscode_git_status() -> str:
+        """查看 VSCode 工作区的 Git 状态（分支、修改文件列表）。"""
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.git_status()
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_git_status error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def vscode_git_diff(file_path: str = "", staged: bool = False) -> str:
+        """
+        查看 VSCode 工作区的 Git diff。
+
+        Args:
+            file_path: 可选，指定文件路径查看该文件的 diff；留空查看全部。
+            staged: 是否查看已暂存（staged）的变更。
+        """
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.git_diff(file_path or None, staged)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_git_diff error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool()
+    def vscode_git_commit(message: str, allow_empty: bool = False) -> str:
+        """
+        将暂存区的变更提交到 Git 仓库。
+
+        Args:
+            message: 提交信息（必填）。
+            allow_empty: 是否允许空提交（默认 False）。
+        """
+        try:
+            from core.mcp.tools.vscode_tool import get_vscode_tool
+            tool = get_vscode_tool()
+            result = tool.git_commit(message, allow_empty)
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"vscode_git_commit error: {e}")
+            return json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+
+    # ------------------------------------------------------------------ #
     # Shared Memory Space Tools (Sprint 5-7)
     # ------------------------------------------------------------------ #
 
