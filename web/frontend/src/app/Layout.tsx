@@ -22,8 +22,14 @@ import {
   Target,
   BookOpen,
   Keyboard,
+  Eye,
+  BarChart3,
+  Users,
+  Dna,
 } from 'lucide-react'
 import { useLogout } from '@/features/auth/hooks'
+import NotificationBell from '@/components/NotificationBell'
+import { Menu } from 'lucide-react'
 
 // ======================================================================
 // 导航配置 — 按功能分组，降低认知负荷
@@ -86,6 +92,10 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/mesh', label: 'Mesh', icon: Network, description: '连接多台设备，跨端同步记忆' },
       { path: '/monitoring', label: 'Monitoring', icon: Monitor, description: '系统性能监控与日志' },
+      { path: '/explainability', label: 'Explainability', icon: Eye, description: '可解释性仪表板与审计' },
+      { path: '/rag-demo', label: 'RAG Lab', icon: BarChart3, description: 'RAG v3 策略实验室' },
+      { path: '/swarm', label: 'Swarm', icon: Users, description: '多Agent协作任务分配' },
+      { path: '/evolve', label: 'Evolve', icon: Dna, description: '自举开发与代码进化' },
       { path: '/files', label: 'Files', icon: FolderOpen, description: '文件管理与文档处理' },
       { path: '/tools', label: 'Tools', icon: Wrench, description: '工具管理与 MCP 配置' },
       { path: '/llm-settings', label: 'LLM Settings', icon: Zap, description: '模型路由与 LLM 配置' },
@@ -116,6 +126,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const logout = useLogout()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // 初始化展开状态：核心组默认展开，其他折叠
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -137,8 +148,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-[#0B1120]">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-60 bg-[#0f172a] border-r border-slate-800 flex flex-col">
+      <aside className={`bg-[#0f172a] border-r border-slate-800 flex flex-col fixed lg:static inset-y-0 left-0 z-50 transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } w-60`}>
         {/* Logo */}
         <div className="px-4 py-5 flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -221,7 +242,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden relative">
+        {/* Mobile Header — Hamburger + Notification */}
+        <div className="flex items-center justify-between px-4 py-2 lg:hidden border-b border-slate-800 bg-[#0f172a]">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <NotificationBell />
+        </div>
+        {/* Desktop Notification */}
+        <div className="absolute top-3 right-4 z-40 hidden lg:block">
+          <NotificationBell />
+        </div>
         {children}
       </main>
     </div>

@@ -4,6 +4,7 @@ import { chatApi } from '@/features/chat/api'
 import type { Message } from '@/shared/api/types'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import SuggestedReplies from '@/components/SuggestedReplies'
+import ExplainabilityPanel from '@/components/ExplainabilityPanel'
 
 import {
   Send,
@@ -21,6 +22,9 @@ import {
   BrainCircuit,
   ChevronDown,
   ChevronUp,
+  Database,
+  GitBranch,
+  Users,
 } from 'lucide-react'
 
 // UX-12: Agent 推理过程折叠面板
@@ -90,6 +94,8 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setLocalError] = useState<string | null>(null)
+  const [ragMode, setRagMode] = useState<string | null>(null)
+  const [swarmMode, setSwarmMode] = useState(false)
   const soundEnabled = (() => {
     return localStorage.getItem('kaelis_sound_enabled') !== 'false'
   })()
@@ -159,6 +165,20 @@ export default function ChatPage() {
     addUserMessage(sessionId, content)
     setIsLoading(true)
     playSound('send')
+
+    // Swarm mode (Phase 2)
+    if (swarmMode) {
+      await handleSwarmQuery(sessionId, content)
+      setIsLoading(false)
+      return
+    }
+
+    // RAG v3 mode
+    if (ragMode) {
+      await handleRagQuery(sessionId, content, ragMode)
+      setIsLoading(false)
+      return
+    }
 
     const assistantId = Math.random().toString(36).substring(2, 15)
 
@@ -270,6 +290,77 @@ export default function ChatPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Memory search failed'
       setLocalError(errorMsg)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSwarmQuery = async (sessionId: string, task: string) => {
+    try {
+      const res = await fetch('/api/swarm/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task, subagents: [], context: '' }),
+      })
+      const data = await res.json() as { results?: Array<Record<string, unknown>> }
+      const results = data.results || []
+
+      const resultText = results.length
+        ? `🐝 Swarm 执行结果 (${results.length} 个子任务):\n` +
+          results.map((r, i) => `${i + 1}. [${r.subagent_name || 'Agent'}] ${String(r.status)}`).join('\n')
+        : '🐝 Swarm 执行完成（无子任务）'
+
+      addAssistantMessage(sessionId, {
+        id: Math.random().toString(36).substring(2, 15),
+        role: 'assistant',
+        content: resultText,
+        timestamp: new Date().toISOString(),
+        isStreaming: false,
+        strategy: { intent: 'swarm', confidence: 1.0, agent_state: 'completed' },
+      })
+      playSound('receive')
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Swarm query failed'
+      setLocalError(errorMsg)
+      setError(sessionId, '', errorMsg)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRagQuery = async (sessionId: string, query: string, strategy: string) => {
+    try {
+      const res = await fetch('/api/rag/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, strategy, use_external: false }),
+      })
+      const data = await res.json() as { answer?: string; confidence?: number; sources?: Array<{ layer: string; key: string; score: number }>; latency_ms?: number }
+
+      const answer = data.answer || '（RAG 未返回内容）'
+      const confidence = data.confidence || 0
+      const sources = data.sources || []
+      const latency = data.latency_ms || 0
+
+      const sourceText = sources.length
+        ? '\n\n📚 引用来源：\n' + sources.map((s, i) => `${i + 1}. [${s.layer}] ${s.key} · 相关度 ${Math.round(s.score * 100)}%`).join('\n')
+        : ''
+
+      const metaText = `\n\n---\n🧠 策略：${strategy} · 置信度 ${Math.round(confidence * 100)}% · 耗时 ${latency}ms`
+
+      addAssistantMessage(sessionId, {
+        id: Math.random().toString(36).substring(2, 15),
+        role: 'assistant',
+        content: answer + sourceText + metaText,
+        timestamp: new Date().toISOString(),
+        isStreaming: false,
+        strategy: { intent: strategy, confidence, agent_state: 'rag' },
+      })
+      playSound('receive')
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'RAG query failed'
+      setLocalError(errorMsg)
+      setError(sessionId, '', errorMsg)
     } finally {
       setIsLoading(false)
     }
@@ -429,6 +520,18 @@ export default function ChatPage() {
             {msg.role === 'assistant' && msg.reasoning && msg.reasoning.length > 0 && (
               <ReasoningPanel steps={msg.reasoning} confidence={msg.strategy?.confidence} />
             )}
+
+            {/* 可解释性面板（新） */}
+            {msg.role === 'assistant' && (
+              <ExplainabilityPanel
+                trace_id={msg.trace_id}
+                memory_explanation={msg.memory_explanation}
+                safety_check={msg.safety_check}
+                strategy={msg.strategy}
+                sections_included={msg.memory_explanation ? undefined : undefined}
+                sections_truncated={msg.memory_explanation ? undefined : undefined}
+              />
+            )}
           </div>
         ))}
 
@@ -467,6 +570,65 @@ export default function ChatPage() {
       <SuggestedReplies lastAgentMessage={lastAgentMessage} onSelect={(text) => setInput(text)} />
 
       <div className="p-4 bg-[#0B1120]">
+        {/* RAG Strategy Selector */}
+        <div className="flex gap-2 justify-center mb-3">
+          <button
+            onClick={() => setRagMode(null)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
+              ragMode === null
+                ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <BrainCircuit className="w-3 h-3" />
+            通用对话
+          </button>
+          <button
+            onClick={() => setRagMode('naive')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
+              ragMode === 'naive'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Database className="w-3 h-3" />
+            Naive RAG
+          </button>
+          <button
+            onClick={() => setRagMode('graph_rag')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
+              ragMode === 'graph_rag'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <GitBranch className="w-3 h-3" />
+            Graph RAG
+          </button>
+          <button
+            onClick={() => setRagMode('agentic')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
+              ragMode === 'agentic'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            Agentic RAG
+          </button>
+          <button
+            onClick={() => { setSwarmMode((s) => !s); setRagMode(null); }}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
+              swarmMode
+                ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-3 h-3" />
+            Swarm
+          </button>
+        </div>
+
         {/* Quick action buttons */}
         <div className="flex gap-2 justify-center mb-3">
           <button

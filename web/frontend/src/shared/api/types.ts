@@ -77,6 +77,62 @@ export interface Message {
     agent_state: string
   }
   reasoning?: ReasoningStep[]
+  trace_id?: string
+  memory_explanation?: MemoryExplanation
+  safety_check?: SafetyCheckResult
+}
+
+export interface MemoryAttribution {
+  memory_key: string
+  layer: string
+  retrieval_method: string
+  match_score: number
+  match_keywords: string[]
+  rank: number
+  truncation_status: string
+  token_consumption: number
+  source?: string
+  created_at?: string
+}
+
+export interface MemoryExplanation {
+  query: string
+  user_id: string
+  retrieval_timestamp: string
+  total_memories_considered: number
+  total_memories_included: number
+  total_memories_truncated: number
+  attributions: MemoryAttribution[]
+  layer_distribution: Record<string, number>
+  conflict_explanations: Array<{
+    conflict_id: string
+    memory_key: string
+    layer: string
+    severity: string
+    description: string
+    impact: string
+    detected_at: string
+  }>
+  counterfactual_notes: string[]
+  summary: string
+}
+
+export interface SafetyCheckResult {
+  overall_level: string
+  overall_score: number
+  checks: Array<{
+    principle_id: string
+    principle_name: string
+    category: string
+    severity: string
+    triggered: boolean
+    score: number
+    details: string
+  }>
+  triggered_principles: string[]
+  refusal_reason?: string
+  suggested_modification?: string
+  checked_at: string
 }
 
 export interface ChatSession {

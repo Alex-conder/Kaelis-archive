@@ -20,42 +20,5 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/service-worker.js').catch(function() {});
-        });
-      }
-    </script>
-    <script>
-      // PWA Push 订阅
-      async function subscribePush() {
-        if (!('serviceWorker' in navigator)) return;
-        const reg = await navigator.serviceWorker.ready;
-        if (!reg.pushManager) return;
-        try {
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array('BNkYlLvK8L7L8F7L8F7L8F7L8F7L8F7L8F7L8F7L8F7L8F7L8F7L8F7L8F7L8'),
-            // TODO: 替换为真实 VAPID 公钥
-          });
-          const apiUrl = import.meta?.env?.VITE_API_URL || '';
-          await fetch(apiUrl + '/api/notifications/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.toJSON().keys }),
-          });
-        } catch(e) {}
-      }
-      function urlBase64ToUint8Array(base64String) {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-        const rawData = window.atob(base64);
-        return Uint8Array.from(rawData.split('').map(c => c.charCodeAt(0)));
-      }
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', subscribePush);
-      }
-    </script>
   </body>
 </html>

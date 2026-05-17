@@ -21,8 +21,11 @@ import {
   AlertCircle,
   FileText,
   Clock,
+  Network,
+  Workflow,
 } from 'lucide-react'
 import { useKGExtract, useKGQuery, useKGHistory } from '@/features/knowledge-graph/hooks'
+import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
 const nodeColor = (node: Node) => {
   switch (node.data?.type) {
@@ -98,6 +101,7 @@ export default function KnowledgeGraphPage() {
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[])
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[])
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
+  const [renderer, setRenderer] = useState<'xyflow' | 'g6'>('xyflow')
   const extract = useKGExtract()
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
@@ -107,6 +111,19 @@ export default function KnowledgeGraphPage() {
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   )
+
+  // 转换 ReactFlow 节点/边为 G6 格式
+  const g6Nodes = nodes.map((n) => ({
+    id: n.id,
+    name: (n.data?.label as string) || n.id,
+    type: (n.data?.type as string) || 'entity',
+  }))
+  const g6Edges = edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    relation: String(e.label || ''),
+  }))
 
   const handleExtract = async () => {
     if (!inputText.trim()) return
@@ -236,28 +253,61 @@ export default function KnowledgeGraphPage() {
         </div>
 
         {/* Graph Viewer */}
-        <div className="rounded-xl bg-slate-900/60 border border-slate-800 overflow-hidden" style={{ height: 500 }}>
-          {nodes.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-500">
-              <Brain className="w-12 h-12 mb-3 opacity-20" />
-              <p className="text-sm">{t('knowledgeGraph_noGraphData')}</p>
-              <p className="text-xs mt-1">{t('knowledgeGraph_extractHint')}</p>
+        <div className="space-y-2">
+          {/* Renderer Switch */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">Graph Renderer</span>
+            <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-0.5">
+              <button
+                onClick={() => setRenderer('xyflow')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  renderer === 'xyflow'
+                    ? 'bg-slate-700 text-white'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Workflow className="w-3 h-3" />
+                React Flow
+              </button>
+              <button
+                onClick={() => setRenderer('g6')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  renderer === 'g6'
+                    ? 'bg-slate-700 text-white'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Network className="w-3 h-3" />
+                AntV G6
+              </button>
             </div>
-          ) : (
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              fitView
-              attributionPosition="bottom-left"
-            >
-              <MiniMap nodeColor={nodeColor} className="!bg-slate-900/80 !border-slate-700" />
-              <Controls className="!bg-slate-800 !border-slate-700" />
-              <Background color="#334155" gap={16} size={1} />
-            </ReactFlow>
-          )}
+          </div>
+
+          <div className="rounded-xl bg-slate-900/60 border border-slate-800 overflow-hidden" style={{ height: 500 }}>
+            {nodes.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                <Brain className="w-12 h-12 mb-3 opacity-20" />
+                <p className="text-sm">{t('knowledgeGraph_noGraphData')}</p>
+                <p className="text-xs mt-1">{t('knowledgeGraph_extractHint')}</p>
+              </div>
+            ) : renderer === 'xyflow' ? (
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                fitView
+                attributionPosition="bottom-left"
+              >
+                <MiniMap nodeColor={nodeColor} className="!bg-slate-900/80 !border-slate-700" />
+                <Controls className="!bg-slate-800 !border-slate-700" />
+                <Background color="#334155" gap={16} size={1} />
+              </ReactFlow>
+            ) : (
+              <NebulaGraphG6 nodes={g6Nodes} edges={g6Edges} />
+            )}
+          </div>
         </div>
 
         {/* Query Panel */}

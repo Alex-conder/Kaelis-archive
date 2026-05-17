@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Search, Brain, Zap, Shield, MessageCircle, TrendingUp, Settings, Home } from 'lucide-react'
+import { Search, Brain, Zap, Shield, MessageCircle, TrendingUp, Settings, Home, Eye, BarChart3 } from 'lucide-react'
 
 interface CommandItem {
   id: string
@@ -28,6 +28,8 @@ const NAV_ITEMS: CommandItem[] = [
   { id: 'nav-skills', title: 'Capabilities', subtitle: '技能市场', icon: Zap, category: '导航', action: () => window.location.hash = '#/skills' },
   { id: 'nav-security', title: 'Security', subtitle: '安全中心', icon: Shield, category: '导航', action: () => window.location.hash = '#/security' },
   { id: 'nav-growth', title: 'My Growth', subtitle: '成长指数', icon: TrendingUp, category: '导航', action: () => window.location.hash = '#/growth' },
+  { id: 'nav-explainability', title: 'Explainability', subtitle: '可解释性仪表板', icon: Eye, category: '导航', action: () => window.location.hash = '#/explainability' },
+  { id: 'nav-rag-demo', title: 'RAG Lab', subtitle: 'RAG v3 策略实验室', icon: BarChart3, category: '导航', action: () => window.location.hash = '#/rag-demo' },
   { id: 'nav-settings', title: 'Settings', subtitle: '系统设置', icon: Settings, category: '导航', action: () => window.location.hash = '#/settings' },
 ]
 

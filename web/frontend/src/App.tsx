@@ -34,6 +34,10 @@ const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 const StrategyFlywheelPage = lazy(() => import('./pages/StrategyFlywheelPage'))
 const LLMSettingsPage = lazy(() => import('./pages/LLMSettingsPage'))
 const ShortcutsPage = lazy(() => import('./pages/ShortcutsPage'))
+const ExplainabilityDashboardPage = lazy(() => import('./pages/ExplainabilityDashboardPage'))
+const RagDemoPage = lazy(() => import('./pages/RagDemoPage'))
+const EvolvePage = lazy(() => import('./pages/EvolvePage'))
+const SwarmPage = lazy(() => import('./pages/SwarmPage'))
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useAuthUser()
@@ -87,6 +91,35 @@ function App() {
     return localStorage.getItem('kaelis_onboarding_completed') !== 'true'
   })
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+
+  // Phase 3: Web Vitals 性能监控上报
+  useEffect(() => {
+    let cancelled = false
+    import('web-vitals').then(({ onLCP, onINP, onCLS, onFCP, onTTFB }) => {
+      if (cancelled) return
+      const reportMetric = (metric: { name: string; value: number; rating: string; delta: number; id: string; navigationType?: string }) => {
+        fetch('/api/metrics/frontend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: metric.name,
+            value: metric.value,
+            rating: metric.rating,
+            delta: metric.delta,
+            navType: metric.navigationType,
+            pagePath: window.location.hash,
+          }),
+          keepalive: true,
+        }).catch(() => {})
+      }
+      onLCP(reportMetric)
+      onINP(reportMetric)
+      onCLS(reportMetric)
+      onFCP(reportMetric)
+      onTTFB(reportMetric)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false)
@@ -159,6 +192,10 @@ function App() {
                     <Route path="/strategy-flywheel" element={<StrategyFlywheelPage />} />
                     <Route path="/llm-settings" element={<LLMSettingsPage />} />
                     <Route path="/shortcuts" element={<ShortcutsPage />} />
+                    <Route path="/explainability" element={<ExplainabilityDashboardPage />} />
+                    <Route path="/rag-demo" element={<RagDemoPage />} />
+                    <Route path="/evolve" element={<EvolvePage />} />
+                    <Route path="/swarm" element={<SwarmPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
