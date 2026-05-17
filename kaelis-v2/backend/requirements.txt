@@ -1,0 +1,17 @@
+# Kaelis v2 Backend Dependencies
+# Python 3.10+
+
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.13.2
+pydantic-settings==2.8.0
+
+# NebulaGraph Client
+nebula3-python==3.8.0
+
+# OneKE (placeholder - replace with actual package or git+https)
+# oneke
+
+# Utilities
+python-dotenv==1.2.2
+httpx==0.28.0

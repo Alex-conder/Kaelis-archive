@@ -117,3 +117,10 @@ tmp_pytest_out.txt
 # Local state
 .kaelis-telemetry.jsonl
 .kaelis/onboarding_completed
+
+# Python build artifacts
+*egg-info/
+*.egg
+
+# VSCode extension packages
+*.vsix

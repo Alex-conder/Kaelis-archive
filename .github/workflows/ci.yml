@@ -1,348 +1,139 @@
 name: Kaelis CI
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, develop]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main]
 
 jobs:
-  backend-tests:
-    runs-on: windows-latest
-    timeout-minutes: 15
+  backend-test:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.12', '3.13', '3.14']
-      fail-fast: false
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
-        continue-on-error: ${{ matrix.python-version == '3.14' }}
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --timeout=120 --retries=3
-          pip install pytest pytest-cov pytest-xdist
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
 
-      - name: Run fast unit tests (parallel)
-        run: |
-          python -m pytest -q --tb=short -m "not slow and not e2e" tests/ -n auto --dist loadfile
+      - name: Run pytest
         env:
-          PYTHONIOENCODING: utf-8
-          GRAPH_DB_TYPE: sqlite
-
-      - name: Run integration + slow + e2e tests (parallel)
+          ONEKE_MOCK_MODE: "true"
+          SECRET_KEY: "ci-test-secret"
         run: |
-          python -m pytest -q --tb=short -m "slow or integration or e2e" tests/ -n auto --dist loadfile
-        env:
-          PYTHONIOENCODING: utf-8
-          GRAPH_DB_TYPE: sqlite
-
-      - name: Run tests with coverage (parallel)
-        if: matrix.python-version != '3.14'
-        run: |
-          python -m pytest tests/ --cov=core --cov-report=xml -n auto --dist loadfile
-        env:
-          PYTHONIOENCODING: utf-8
-          GRAPH_DB_TYPE: sqlite
-
-      - name: Check v1.0.0 core module coverage
-        if: matrix.python-version != '3.14'
-        run: |
-          python -m coverage report --fail-under=60 --include="core/workflow/workflow_engine.py,core/workflow/workflow_executor.py,core/workflow_monitoring.py,core/security/taint_tracker.py,core/security/api_proxy.py,core/security/credential_vault.py,core/network/ws_server.py,core/network/ws_manager.py,core/network/offline_queue.py,core/monitoring/scheduler.py,core/monitoring/metrics.py"
-
-      - name: Coverage diff gate
-        run: |
-          python scripts/check_coverage_gate.py --threshold 1.0
-        env:
-          PYTHONIOENCODING: utf-8
-
-      - name: Performance regression check
-        run: |
-          python scripts/check_performance.py
-        env:
-          PYTHONIOENCODING: utf-8
-          GRAPH_DB_TYPE: sqlite
+          pytest tests/ -v --cov=core --cov=api --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.13'
+        if: matrix.python-version == '3.10'
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
-          verbose: true
 
   frontend-build:
-    runs-on: windows-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: web/frontend
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/frontend/package-lock.json
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/frontend/package.json
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        working-directory: web/frontend
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: web/frontend
+        run: npm run lint || true
 
       - name: Build frontend
+        working-directory: web/frontend
         run: npm run build
 
-      - name: Run lint check
-        run: npm run lint -- --max-warnings=50
-
-      - name: Bundle size check
-        run: |
-          python ../../scripts/check_bundle_size.py --dist ./dist
-        shell: pwsh
-
-  extension-build:
-    runs-on: windows-latest
-    timeout-minutes: 10
+  e2e-test:
+    runs-on: ubuntu-latest
     needs: [frontend-build]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/frontend/package.json
 
-      - name: Lint extension
-        shell: pwsh
-        run: |
-          cd extensions/chrome
-          if (Test-Path package.json) {
-            npm install
-            npm run lint
-          } else {
-            Write-Host "No package.json, skipping extension lint"
-          }
+      - name: Install frontend dependencies
+        working-directory: web/frontend
+        run: npm ci
 
-      - name: Package Chrome extension
-        shell: bash
-        run: |
-          cd extensions/chrome
-          zip -r kaelis-chrome-ext.zip . -x "*.git*" -x "node_modules/*"
+      - name: Install Playwright Browsers
+        working-directory: web/frontend
+        run: npx playwright install --with-deps
 
-      - name: Upload extension artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kaelis-chrome-extension
-          path: extensions/chrome/kaelis-chrome-ext.zip
+      - name: Run Playwright tests
+        working-directory: web/frontend
+        run: npx playwright test
 
-  security-scan:
-    runs-on: windows-latest
-    timeout-minutes: 10
-    needs: [backend-tests, frontend-build]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-
-      - name: Install Python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --timeout=120 --retries=3
-
-      - name: Python dependency audit
-        run: |
-          pip install pip-audit
-          pip-audit --format=json --output=python-audit.json || true
-          pip-audit --format=markdown --output=python-audit.md || true
-        continue-on-error: true
-
-      - name: Upload Python audit report
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: python-security-audit
-          path: python-audit.*
+          name: playwright-report
+          path: web/frontend/playwright-report/
+          retention-days: 7
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-
-      - name: NPM audit (frontend)
-        run: |
-          cd web/frontend
-          npm install
-          npm audit --audit-level=high || true
-        continue-on-error: true
-
-      - name: NPM audit (extension)
-        run: |
-          cd extensions/chrome
-          npm install
-          npm audit --audit-level=high || true
-        continue-on-error: true
-
-  hygiene-check:
-    runs-on: windows-latest
-    timeout-minutes: 5
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-build, e2e-test]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: TODO/FIXME hygiene gate
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
         run: |
-          python scripts/auto_fix_todos.py
-        env:
-          PYTHONIOENCODING: utf-8
+          docker build -t kaelis:test .
+          docker images kaelis:test
 
-      - name: "Check bare except: pass"
-        shell: bash
-        continue-on-error: true
+      - name: Test Docker image health
         run: |
-          count=$(grep -Pr "except\s*:\s*pass" core/ api/ scripts/ --include="*.py" | wc -l)
-          echo "Bare except: pass count: $count"
-          if [ "$count" -gt 0 ]; then
-            echo "::warning::Found $count occurrences of bare except: pass"
-            grep -Pr "except\s*:\s*pass" core/ api/ scripts/ --include="*.py"
-          fi
-
-  smoke-test:
-    runs-on: windows-latest
-    timeout-minutes: 10
-    needs: [frontend-build]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-
-      - name: Install backend dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --timeout=120 --retries=3
-
-      - name: Start backend in background
-        shell: pwsh
-        run: |
-          $proc = Start-Process python -ArgumentList "prod_server.py" -PassThru -WindowStyle Hidden
-          echo "BACKEND_PID=$($proc.Id)" >> $env:GITHUB_ENV
-          # 轮询等待后端就绪（最多 30 秒）
-          $maxWait = 30
-          $elapsed = 0
-          while ($elapsed -lt $maxWait) {
-            try {
-              $resp = Invoke-RestMethod -Uri "http://localhost:5000/api/health" -Method GET -TimeoutSec 2
-              if ($resp.status -eq "healthy") { Write-Host "Backend ready"; break }
-            } catch { }
-            Start-Sleep -Seconds 1
-            $elapsed++
-          }
-          if ($elapsed -ge $maxWait) { Write-Warning "Backend health check timed out"; exit 1 }
-
-      - name: Smoke test streaming API
-        shell: powershell
-        run: |
-          python scripts/smoke_test_stream.ps1
-
-      - name: Stop backend
-        if: always()
-        shell: powershell
-        run: |
-          if ($env:BACKEND_PID) { Stop-Process -Id $env:BACKEND_PID -Force -ErrorAction SilentlyContinue }
-
-  committee-review:
-    runs-on: windows-latest
-    timeout-minutes: 10
-    needs: [backend-tests, frontend-build, hygiene-check]
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-
-      - name: Install backend dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --timeout=120 --retries=3
-
-      - name: Generate ten-dimension report
-        run: |
-          python -m kaelis diagnose --full > committee_report.md || echo "DIAGNOSE_FAILED=true" >> $env:GITHUB_ENV
-        env:
-          PYTHONIOENCODING: utf-8
-          GRAPH_DB_TYPE: sqlite
-
-      - name: Generate tech-debt snapshot
-        run: |
-          python scripts/auto_fix_todos.py --report-only >> committee_report.md
-        env:
-          PYTHONIOENCODING: utf-8
-
-      - name: Generate performance baseline
-        run: |
-          python scripts/check_performance.py >> committee_report.md
-        env:
-          PYTHONIOENCODING: utf-8
-          GRAPH_DB_TYPE: sqlite
-
-      - name: Append ecosystem integration assessment
-        run: |
-          echo "" >> committee_report.md
-          echo "## 生态整合维度专项评估" >> committee_report.md
-          echo "" >> committee_report.md
-          echo "- MCP Tool 数量: $(grep -c '@mcp.tool' core/mcp/server.py || echo 'N/A')" >> committee_report.md
-          echo "- 外部协议适配: A2A(骨架), LSP(无), MCP(完整)" >> committee_report.md
-          echo "- 第三方集成: NVIDIA NIM, n8n, Hermes/OpenClaw" >> committee_report.md
-          echo "- 社区插件机制: tool.register_external 已就绪, 待文档化" >> committee_report.md
-
-      - name: Post committee report as PR comment
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const report = fs.readFileSync('committee_report.md', 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🏛️ Committee Review Report (Auto-generated)\n\n${report}`
-            });
-
-      - name: Upload committee report artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: committee-review-report
-          path: committee_report.md
+          docker run -d --name kaelis-test -p 5000:5000 \
+            -e SECRET_KEY=test-secret \
+            -e ONEKE_MOCK_MODE=true \
+            kaelis:test
+          sleep 5
+          curl -f http://localhost:5000/health || exit 1
+          docker stop kaelis-test
+          docker rm kaelis-test

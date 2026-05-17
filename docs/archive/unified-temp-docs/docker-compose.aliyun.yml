@@ -1,0 +1,218 @@
+# Kaelis 阿里云单服务器部署配置
+# 服务器: 8.137.38.71
+# 域名: kaelis.me
+
+version: '3.8'
+
+services:
+  # Nginx 反向代理 + SSL
+  nginx:
+    image: nginx:alpine
+    container_name: kaelis-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/aliyun.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 后端 API 服务
+  backend:
+    image: ghcr.io/your-org/kaelis-backend:latest
+    container_name: kaelis-backend
+    expose:
+      - "5000"
+    environment:
+      - ENV=production
+      - DATABASE_URL=postgresql://kaelis:${DB_PASSWORD}@postgres:5432/kaelis_prod
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=60
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+    volumes:
+      - backend_logs:/app/logs
+      - backend_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端静态文件服务 (由 Nginx 直接服务，此处用于构建)
+  frontend:
+    image: ghcr.io/your-org/kaelis-frontend:latest
+    container_name: kaelis-frontend
+    volumes:
+      - frontend_dist:/app/dist
+    command: ["sh", "-c", "cp -r /usr/share/nginx/html/* /app/dist/ && tail -f /dev/null"]
+    networks:
+      - kaelis-network
+    restart: "no"
+
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: kaelis-postgres
+    environment:
+      - POSTGRES_USER=kaelis
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=kaelis_prod
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kaelis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: kaelis-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: kaelis-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert-rules.yml:/etc/prometheus/rules/alert-rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+
+  # Grafana 可视化
+  grafana:
+    image: grafana/grafana:latest
+    container_name: kaelis-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://monitor.kaelis.me
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  # Certbot SSL 证书自动更新
+  certbot:
+    image: certbot/certbot:latest
+    container_name: kaelis-certbot
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - kaelis-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_logs:
+    driver: local
+  backend_data:
+    driver: local
+  frontend_dist:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  kaelis-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
