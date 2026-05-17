@@ -17,7 +17,7 @@
     "gateway": {
       "enabled": true,
       "port": 18789,
-      "token": "${ECOSYSTEM_GATEWAY_TOKEN}",
+      "token": "your-gateway-token-here",
       "mode": "local",
       "source": "user_install",
       "path": "C:\\Users\\11526\\.openclaw",
@@ -82,7 +82,7 @@
   "ai_providers": {
     "deepseek": {
       "enabled": true,
-      "api_key": "${DEEPSEEK_API_KEY}",
+      "api_key": "sk-your-deepseek-key",
       "base_url": "https://api.deepseek.com/v1",
       "models": [
         {
@@ -108,7 +108,7 @@
     },
     "moonshot": {
       "enabled": true,
-      "api_key": "${MOONSHOT_API_KEY}",
+      "api_key": "sk-your-moonshot-key",
       "base_url": "https://api.moonshot.cn/v1",
       "models": [
         {
