@@ -508,9 +508,73 @@ def kg_graph_data():
                     "relation": r["relation"],
                 })
 
+        # ------------------------------------------------------------------
+        # Social Network Analysis (NetworkX)
+        # ------------------------------------------------------------------
+        sna_stats = {}
+        if nodes and edges:
+            import networkx as nx
+            G = nx.Graph()
+            for n in nodes:
+                G.add_node(n["id"], name=n["name"], type=n["type"])
+            for e in edges:
+                G.add_edge(e["source"], e["target"], relation=e["relation"])
+
+            # Centrality
+            degree_cent = nx.degree_centrality(G)
+            betweenness_cent = nx.betweenness_centrality(G)
+            try:
+                eigenvector_cent = nx.eigenvector_centrality(G, max_iter=1000)
+            except Exception:
+                eigenvector_cent = {n["id"]: 0.0 for n in nodes}
+
+            # Louvain community detection
+            communities = list(nx.community.louvain_communities(G))
+            community_map = {}
+            for i, comm in enumerate(communities):
+                for node_id in comm:
+                    community_map[node_id] = i
+
+            # Bridges (structural holes)
+            try:
+                bridge_edges = set(nx.bridges(G))
+            except Exception:
+                bridge_edges = set()
+
+            # Attach metrics to nodes
+            for n in nodes:
+                nid = n["id"]
+                n["degree_centrality"] = round(degree_cent.get(nid, 0), 4)
+                n["betweenness_centrality"] = round(betweenness_cent.get(nid, 0), 4)
+                n["eigenvector_centrality"] = round(eigenvector_cent.get(nid, 0), 4)
+                n["community"] = community_map.get(nid, -1)
+
+            # Attach bridge flag to edges
+            for e in edges:
+                e["is_bridge"] = (e["source"], e["target"]) in bridge_edges or (e["target"], e["source"]) in bridge_edges
+                src_comm = community_map.get(e["source"], -1)
+                tgt_comm = community_map.get(e["target"], -1)
+                e["cross_community"] = src_comm != tgt_comm
+
+            # Top 5 hubs by degree centrality
+            top_hubs = sorted(
+                [{"id": n["id"], "name": n["name"], "degree_centrality": n["degree_centrality"]} for n in nodes],
+                key=lambda x: x["degree_centrality"],
+                reverse=True,
+            )[:5]
+
+            sna_stats = {
+                "node_count": G.number_of_nodes(),
+                "edge_count": G.number_of_edges(),
+                "density": round(nx.density(G), 4),
+                "community_count": len(communities),
+                "bridge_edge_count": len(bridge_edges),
+                "top_hubs": top_hubs,
+            }
+
         return jsonify({
             "success": True,
-            "data": {"nodes": nodes, "edges": edges},
+            "data": {"nodes": nodes, "edges": edges, "sna": sna_stats},
             "timestamp": datetime.now(timezone.utc).isoformat()
         }), 200
     except Exception as e:

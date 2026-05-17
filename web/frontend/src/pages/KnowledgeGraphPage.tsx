@@ -28,7 +28,17 @@ import {
 import { useKGExtract, useKGQuery, useKGHistory, useKGStats, useKGGraphData } from '@/features/knowledge-graph/hooks'
 import NebulaGraphG6 from '@/components/NebulaGraphG6'
 
+const COMMUNITY_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+  '#14b8a6', '#d946ef',
+]
+
 const nodeColor = (node: Node) => {
+  const comm = node.data?.community as number | undefined
+  if (typeof comm === 'number' && comm >= 0) {
+    return COMMUNITY_COLORS[comm % COMMUNITY_COLORS.length]
+  }
   switch (node.data?.type) {
     case 'entity':
       return '#3b82f6'
@@ -105,6 +115,7 @@ export default function KnowledgeGraphPage() {
   const [renderer, setRenderer] = useState<'xyflow' | 'g6'>('xyflow')
   const [traceId, setTraceId] = useState('')
   const [traceLoading, setTraceLoading] = useState(false)
+  const [showSNA, setShowSNA] = useState(false)
   const extract = useKGExtract()
   const query = useKGQuery()
   const { start, end } = getTimeRangeParams(timeRange)
@@ -170,6 +181,48 @@ export default function KnowledgeGraphPage() {
     if (!queryText.trim()) return
     await query.mutateAsync({ query: queryText, query_type: 'semantic' })
   }
+
+  const loadSNA = useCallback(async () => {
+    const res = await graphData.refetch()
+    const raw = res.data?.data
+    if (!raw?.nodes?.length) return
+    const snaNodes: Node[] = raw.nodes.map((n: any, i: number) => {
+      const dc = n.degree_centrality || 0
+      const size = 120 + Math.min(dc * 300, 180)
+      return {
+        id: n.id,
+        type: 'default',
+        position: { x: 100 + (i % 8) * 160, y: 100 + Math.floor(i / 8) * 120 },
+        data: { label: n.name, type: n.type, community: n.community, ...n },
+        style: {
+          background: '#1e293b',
+          border: `2px solid ${COMMUNITY_COLORS[(n.community ?? 0) % COMMUNITY_COLORS.length]}`,
+          color: '#e2e8f0',
+          borderRadius: 8,
+          padding: 8,
+          fontSize: 12,
+          width: size,
+          boxShadow: `0 0 8px ${COMMUNITY_COLORS[(n.community ?? 0) % COMMUNITY_COLORS.length]}33`,
+        },
+      }
+    })
+    const snaEdges: Edge[] = raw.edges.map((e: any, i: number) => ({
+      id: e.id || `edge-${i}`,
+      source: e.source,
+      target: e.target,
+      label: e.relation,
+      style: {
+        stroke: e.is_bridge ? '#f97316' : e.cross_community ? '#8b5cf6' : '#475569',
+        strokeWidth: e.is_bridge ? 2.5 : 1.5,
+        strokeDasharray: e.is_bridge ? '4,4' : undefined,
+      },
+      labelStyle: { fill: '#94a3b8', fontSize: 10 },
+      animated: e.is_bridge,
+    })).filter((e: Edge) => e.source && e.target)
+    setNodes(snaNodes)
+    setEdges(snaEdges)
+    setShowSNA(true)
+  }, [graphData, setNodes, setEdges])
 
   const handleTraceHighlight = async () => {
     if (!traceId.trim()) return
@@ -339,31 +392,65 @@ export default function KnowledgeGraphPage() {
           {/* Renderer Switch */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">Graph Renderer</span>
-            <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-0.5">
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setRenderer('xyflow')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  renderer === 'xyflow'
-                    ? 'bg-slate-700 text-white'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+                onClick={loadSNA}
+                disabled={graphData.isFetching}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-40"
               >
-                <Workflow className="w-3 h-3" />
-                React Flow
+                {graphData.isFetching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Network className="w-3 h-3" />}
+                SNA View
               </button>
-              <button
-                onClick={() => setRenderer('g6')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  renderer === 'g6'
-                    ? 'bg-slate-700 text-white'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Network className="w-3 h-3" />
-                AntV G6
-              </button>
+              <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-0.5">
+                <button
+                  onClick={() => setRenderer('xyflow')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    renderer === 'xyflow'
+                      ? 'bg-slate-700 text-white'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Workflow className="w-3 h-3" />
+                  React Flow
+                </button>
+                <button
+                  onClick={() => setRenderer('g6')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    renderer === 'g6'
+                      ? 'bg-slate-700 text-white'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Network className="w-3 h-3" />
+                  AntV G6
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* SNA Stats Panel */}
+          {showSNA && graphData.data?.data?.sna && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-xl bg-slate-900/60 border border-slate-800 p-4">
+              <div>
+                <p className="text-xs text-slate-500">Density</p>
+                <p className="text-lg font-bold text-white">{graphData.data.data.sna.density}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Communities</p>
+                <p className="text-lg font-bold text-white">{graphData.data.data.sna.community_count}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Bridges</p>
+                <p className="text-lg font-bold text-white">{graphData.data.data.sna.bridge_edge_count}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Top Hub</p>
+                <p className="text-sm font-medium text-amber-400 truncate">
+                  {graphData.data.data.sna.top_hubs?.[0]?.name || '-'}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-xl bg-slate-900/60 border border-slate-800 overflow-hidden" style={{ height: 500 }}>
             {nodes.length === 0 ? (
@@ -393,6 +480,28 @@ export default function KnowledgeGraphPage() {
               />
             )}
           </div>
+
+          {/* SNA Legend */}
+          {showSNA && (
+            <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-indigo-500" />
+                Community
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-8 h-0.5 border-b-2 border-dashed border-orange-500" />
+                Bridge Edge
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-8 h-0.5 border-b-2 border-violet-500" />
+                Cross-Community
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 rounded border border-slate-500" />
+                Size ∝ Degree Centrality
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Trace Explainability Panel */}
