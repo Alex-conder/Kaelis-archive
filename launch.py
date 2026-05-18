@@ -419,10 +419,20 @@ def start_server():
             }
         
         use_reloader = '--no-reload' not in sys.argv
+        is_production = os.environ.get('FLASK_ENV') == 'production'
         if socketio is not None:
-            socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=use_reloader)
+            socketio.run(
+                app,
+                host='0.0.0.0',
+                port=5000,
+                debug=not is_production,
+                use_reloader=use_reloader,
+                allow_unsafe_werkzeug=True
+            )
         else:
-            app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=use_reloader)
+            if is_production:
+                os.environ['WERKZEUG_RUN_MAIN'] = 'true'
+            app.run(host='0.0.0.0', port=5000, debug=not is_production, use_reloader=use_reloader)
         
     except Exception as e:
         logger.error(f"[FAIL] Launch failed: {e}")
