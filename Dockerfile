@@ -8,7 +8,7 @@ FROM node:20 AS frontend-builder
 
 WORKDIR /app/web/frontend
 COPY web/frontend/package*.json ./
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts
 COPY web/frontend/ ./
 RUN npm run build
 
