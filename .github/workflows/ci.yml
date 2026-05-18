@@ -169,7 +169,17 @@ jobs:
           docker inspect kaelis-test --format='{{.State.Status}} {{.State.ExitCode}}'
           docker logs kaelis-test --tail 100 2>&1 || echo "NO LOGS"
           docker exec kaelis-test python -c "import flask; print('Flask OK')" || echo "PYTHON/FLASK FAILED"
-          docker exec kaelis-test curl -s --max-time 5 http://localhost:5000/api/knowledge_graph/health || echo "INTERNAL CURL FAILED"
+          docker exec kaelis-test python -c "
+import urllib.request
+import sys
+try:
+    res = urllib.request.urlopen('http://localhost:5000/api/knowledge_graph/health', timeout=5)
+    print(res.read().decode())
+    sys.exit(0)
+except Exception as e:
+    print(f'Error: {e}')
+    sys.exit(1)
+" || echo "INTERNAL HEALTH CHECK FAILED"
           curl -v --max-time 10 http://localhost:5000/api/knowledge_graph/health || true
           curl -f --max-time 10 http://localhost:5000/api/knowledge_graph/health
           docker stop kaelis-test
