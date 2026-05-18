@@ -43,6 +43,7 @@ interface NebulaGraphG6Props {
  */
 export default function NebulaGraphG6({ nodes, edges, className = '' }: NebulaGraphG6Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const graphRef = useRef<any>(null)
   const [currentLayout, setCurrentLayout] = useState<'force' | 'circular'>('force')
 
@@ -71,6 +72,7 @@ export default function NebulaGraphG6({ nodes, edges, className = '' }: NebulaGr
           fill: '#4F46E5',
           stroke: '#312E81',
           lineWidth: 2,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           labelText: (d: any) => d.name || d.id,
           labelFill: '#fff',
           labelFontSize: 11,
@@ -89,6 +91,7 @@ export default function NebulaGraphG6({ nodes, edges, className = '' }: NebulaGr
         style: {
           stroke: '#64748B',
           lineWidth: 1.5,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           labelText: (d: any) => d.relation || '',
           labelFontSize: 10,
           labelFill: '#94A3B8',

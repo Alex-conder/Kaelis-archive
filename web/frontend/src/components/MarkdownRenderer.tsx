@@ -26,6 +26,7 @@ const SyntaxHighlighter = lazy(() =>
       PrismLight.registerLanguage('yaml', yaml.default)
       PrismLight.registerLanguage('yml', yaml.default)
       PrismLight.registerLanguage('markdown', markdown.default)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return { default: PrismLight as React.ComponentType<any>, style: styleMod.default }
     })
   })

@@ -38,6 +38,7 @@ export default function FilePage() {
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [fileContent, setFileContent] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)

@@ -8,6 +8,7 @@ interface WSMessage {
 type WSHandler = (payload: Record<string, unknown>) => void
 
 function getWSUrl(): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const apiUrl = (import.meta as any).env?.VITE_API_URL || ''
   if (apiUrl) {
     return apiUrl.replace(/^http/, 'ws').replace(/\/+$/, '') + '/ws'

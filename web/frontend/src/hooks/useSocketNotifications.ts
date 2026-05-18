@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
-// @ts-ignore - socket.io-client types may be missing in some envs
 
 export interface SocketNotification {
   category: string
