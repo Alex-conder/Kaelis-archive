@@ -148,6 +148,7 @@ jobs:
 
       - name: Build Docker image
         run: |
+          set -o pipefail
           docker build --progress=plain -t kaelis:test . 2>&1 | tee docker-build.log
           docker images kaelis:test
 
