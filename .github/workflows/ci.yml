@@ -164,9 +164,17 @@ jobs:
             -e ONEKE_MOCK_MODE=true \
             -e KAELIS_DATA_DIR=/tmp/kaelis \
             kaelis:test
-          sleep 10
-          docker logs kaelis-test --tail 50 || true
+          sleep 15
+          docker logs kaelis-test > docker-run.log 2>&1 || true
+          cat docker-run.log
           curl -v http://localhost:5000/api/knowledge_graph/health || true
           curl -f http://localhost:5000/api/knowledge_graph/health
           docker stop kaelis-test
           docker rm kaelis-test
+
+      - name: Upload container logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-run-logs
+          path: docker-run.log
