@@ -41,6 +41,8 @@ WORKDIR /app
 # 安装运行时依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
+    libblas3 \
+    liblapack3 \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制前端构建产物
