@@ -166,7 +166,7 @@ jobs:
             kaelis:test
           sleep 10
           docker logs kaelis-test --tail 50 || true
-          curl -v http://localhost:5000/health || true
-          curl -f http://localhost:5000/health
+          curl -v http://localhost:5000/api/knowledge_graph/health || true
+          curl -f http://localhost:5000/api/knowledge_graph/health
           docker stop kaelis-test
           docker rm kaelis-test
